@@ -1,0 +1,62 @@
+services:
+  # Backend NestJS Service
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wechat_api
+    restart: always
+    ports:
+      - "${PORT:-3000}:3000"
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    env_file:
+      - .env.dev
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - wechat_network
+
+  # MySQL 8 Database Service
+  mysql:
+    image: mysql:8
+    container_name: wechat_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASS}
+      MYSQL_ROOT_PASSWORD: root_password_here
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - wechat_network
+
+  # Redis 7 Cache Service
+  redis:
+    image: redis:7-alpine
+    container_name: wechat_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    # No persistence as requested
+    networks:
+      - wechat_network
+
+networks:
+  wechat_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
