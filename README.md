@@ -1,73 +1,130 @@
-# WeChat Mini Program - Backend Development Environment
+# Insta Auto - Instagram Automation Platform
 
-This project features an all-in-one Dockerized development environment for NestJS, MySQL, and Redis.
+A Next.js application with authentication and user management, built for Instagram automation workflows.
+
+## Tech Stack
+
+- **Framework**: Next.js 16 (App Router)
+- **Authentication**: NextAuth.js v5 with Supabase adapter
+- **Database**: Supabase (PostgreSQL)
+- **Styling**: Tailwind CSS
+- **Language**: TypeScript
+- **Password Hashing**: bcryptjs
 
 ## Prerequisites
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running.
-- Node.js (if running commands locally, though Docker handles this).
+Before you begin, ensure you have the following installed:
 
-## Stack Information
+- **Node.js** (v18 or higher) - [Download](https://nodejs.org/)
+- **npm** or **yarn** or **pnpm** - Package manager
+- **Git** - [Download](https://git-scm.com/)
+- **Supabase Account** - [Sign up](https://supabase.com/)
 
-- **Backend**: NestJS (Node.js LTS) - Port `3000`
-- **Database**: MySQL 8 - Port `3306`
-- **Cache**: Redis 7 - Port `6379`
+## Local Setup Instructions
 
----
-
-## Quick Start
-
-### 1. Initialize Environment Variables
-Copy the development environment template to your local `.env`:
+### 1. Clone the Repository
 
 ```bash
-cp .env.dev .env
+git clone <your-repo-url>
+cd insta-auto
 ```
 
-### 2. Start the Environment
-Run the following command to build the containers and start the services in the background:
+### 2. Install Dependencies
 
 ```bash
-docker compose up -d --build
+npm install
+# or
+yarn install
+# or
+pnpm install
 ```
 
-### 3. Verify Services
-- **API**: [http://localhost:3000](http://localhost:3000)
-- **Database**: Connect via `localhost:3306` using details in `.env`
-- **Redis**: Connect via `localhost:6379`
+### 3. Set Up Supabase
 
----
+#### 3.1 Create a Supabase Project
+1. Go to [Supabase Dashboard](https://supabase.com/dashboard)
+2. Click "New Project"
+3. Fill in project details and create the project
 
-## Service Details
+#### 3.2 Create the Users Table
+Run this SQL in the Supabase SQL Editor:
 
-### Backend (api)
-- **Hot Reload**: Enabled. Changes made to files in `src/` will automatically trigger a rebuild inside the container.
-- **Log Access**: `docker compose logs -f api`
+```sql
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE NOT NULL,
+  name TEXT,
+  password_hash TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-### Database (mysql)
-- **Database Name**: `wechat_dev`
-- **User**: `wechat`
-- **Password**: `wechat123`
-- **Persistence**: Data is stored in the Docker volume `mysql_data`.
+-- Create index for faster email lookups
+CREATE INDEX idx_users_email ON users(email);
+```
 
-### Cache (redis)
-- **Persistence**: None (Development usage only).
+#### 3.3 Get Your API Keys
+1. Go to **Project Settings** → **API**
+2. Copy the following:
+   - Project URL (e.g., `https://xxxxx.supabase.co`)
+   - `anon` public key
+   - `service_role` secret key (⚠️ Keep this secure!)
 
----
+### 4. Configure Environment Variables
 
-## Common Commands
+Create a `.env` file in the root directory:
 
-| Task | Command |
-| :--- | :--- |
-| Start all services | `docker compose up -d` |
-| Stop all services | `docker compose down` |
-| View logs | `docker compose logs -f` |
-| Restart API only | `docker compose restart api` |
-| Rebuild containers | `docker compose up -d --build` |
+```bash
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
----
+# NextAuth Configuration
+AUTH_SECRET=your_generated_secret_key
+```
 
-## Project Structure
-- `Dockerfile`: Configuration for the NestJS container.
-- `docker-compose.yml`: Orchestration for API, DB, and Redis.
-- `.env.dev`: Template for development environment variables.
+#### Generate AUTH_SECRET
+
+Run this command to generate a secure random secret:
+
+```bash
+# On Linux/Mac
+openssl rand -base64 32
+
+# On Windows (PowerShell)
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+```
+
+### 5. Run the Development Server
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### 6. Test the Application
+
+1. **Sign Up**: Go to `/signup` and create a new account
+2. **Sign In**: Go to `/signin` and log in with your credentials
+3. **Dashboard**: Access the protected `/dashboard` route (requires authentication)
+
+
+
+## Available Scripts
+
+```bash
+# Development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm start
+
+# Run linter
+npm run lint
+```
+
+
