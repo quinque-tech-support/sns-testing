@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  password_hash String?
+  createdAt     DateTime  @default(now())
+  
+  posts         Post[]
+  instagramAccounts InstagramAccount[]
+}
+
+model InstagramAccount {
+  id        String   @id @default(cuid())
+  userId    String
+  username  String
+  password  String? 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, username]) // Prevent duplicate accounts for same user
+}
+
+model Post {
+  id        String     @id @default(cuid())
+  userId    String
+  createdAt DateTime   @default(now())
+  
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  schedules Schedule[]
+}
+
+model Schedule {
+  id           String         @id @default(cuid())
+  postId       String
+  scheduledFor DateTime
+  status       ScheduleStatus @default(PENDING)
+  createdAt    DateTime       @default(now())
+  
+  post         Post           @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+
+enum ScheduleStatus {
+  PENDING
+  PUBLISHED
+  FAILED
+}

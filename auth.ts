@@ -1,15 +1,15 @@
 import NextAuth from "next-auth"
-import { SupabaseAdapter } from "@auth/supabase-adapter"
+import { PrismaAdapter } from "@auth/prisma-adapter"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { compare } from "bcryptjs"
-import { supabaseAdmin } from "@/lib/supabase"
+import { prisma } from "@/lib/prisma"
 import { validateEmail } from "@/lib/validation"
 
+import { authConfig } from "./auth.config"
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
-    adapter: SupabaseAdapter({
-        url: process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        secret: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    }),
+    ...authConfig,
+    adapter: PrismaAdapter(prisma),
     providers: [
         CredentialsProvider({
             name: "Credentials",
@@ -28,13 +28,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     return null
                 }
 
-                const { data: user, error } = await supabaseAdmin
-                    .from('users')
-                    .select('id, email, name, password_hash')
-                    .eq('email', credentials.email)
-                    .single()
+                const user = await prisma.user.findUnique({
+                    where: { email: credentials.email as string }
+                })
 
-                if (error || !user) {
+                if (!user) {
                     return null
                 }
 
@@ -59,24 +57,4 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             }
         })
     ],
-    session: {
-        strategy: "jwt",
-    },
-    pages: {
-        signIn: '/signin',
-    },
-    callbacks: {
-        async jwt({ token, user }) {
-            if (user) {
-                token.id = user.id
-            }
-            return token
-        },
-        async session({ session, token }) {
-            if (session.user) {
-                session.user.id = token.id as string
-            }
-            return session
-        },
-    },
 })
