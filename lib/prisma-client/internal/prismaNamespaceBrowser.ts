@@ -99,6 +99,8 @@ export type InstagramAccountScalarFieldEnum = (typeof InstagramAccountScalarFiel
 export const PostScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
+  caption: 'caption',
+  imageUrl: 'imageUrl',
   createdAt: 'createdAt'
 } as const
 
