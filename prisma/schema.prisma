@@ -34,6 +34,8 @@ model InstagramAccount {
 model Post {
   id        String     @id @default(cuid())
   userId    String
+  caption   String?
+  imageUrl  String
   createdAt DateTime   @default(now())
   
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)

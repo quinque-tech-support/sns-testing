@@ -1,3 +1,5 @@
+import { z } from 'zod'
+
 // Shared validation utilities used by both client and server
 
 export interface PasswordStrength {
@@ -92,3 +94,10 @@ export function validateName(name: string): ValidationResult {
     }
     return { valid: true }
 }
+
+export const createPostSchema = z.object({
+    caption: z.string().optional(),
+    imageUrl: z.string().url('Invalid image URL'),
+})
+
+export type CreatePostInput = z.infer<typeof createPostSchema>
