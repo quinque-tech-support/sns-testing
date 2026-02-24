@@ -27,13 +27,42 @@ export async function POST(req: Request) {
             }, { status: 400 })
         }
 
-        const { caption, imageUrl } = validation.data
+        const { caption, imageUrl, scheduledAt } = validation.data
+
+        // --- Prevent duplicates / Race conditions ---
+        // Block exact same image from the same user within 1 minute
+        const oneMinuteAgo = new Date(Date.now() - 60 * 1000)
+
+        const existingRecentPost = await prisma.post.findFirst({
+            where: {
+                userId: session.user.id,
+                imageUrl,
+                createdAt: {
+                    gte: oneMinuteAgo
+                }
+            }
+        })
+
+        if (existingRecentPost) {
+            return NextResponse.json(
+                { error: "Duplicate post detected. Please wait before posting the same content again." },
+                { status: 429 } // 429 Too Many Requests
+            )
+        }
+        // ---------------------------------------------
 
         const post = await prisma.post.create({
             data: {
                 userId: session.user.id,
                 caption,
                 imageUrl,
+                ...(scheduledAt && {
+                    schedules: {
+                        create: {
+                            scheduledFor: new Date(scheduledAt),
+                        },
+                    },
+                }),
             },
         })
 

@@ -98,6 +98,14 @@ export function validateName(name: string): ValidationResult {
 export const createPostSchema = z.object({
     caption: z.string().optional(),
     imageUrl: z.string().url('Invalid image URL'),
+    scheduledAt: z
+        .string()
+        .datetime({ message: 'scheduledAt must be a valid ISO 8601 datetime string' })
+        .refine(
+            (val) => new Date(val) > new Date(),
+            { message: 'scheduledAt must be a date in the future' }
+        )
+        .optional(),
 })
 
 export type CreatePostInput = z.infer<typeof createPostSchema>
