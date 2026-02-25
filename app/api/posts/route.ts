@@ -3,6 +3,33 @@ import { prisma } from "@/lib/prisma"
 import { createPostSchema } from "@/lib/validation"
 import { NextResponse } from "next/server"
 
+export async function GET() {
+    try {
+        const session = await auth()
+
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+        }
+
+        const posts = await prisma.post.findMany({
+            where: {
+                userId: session.user.id,
+            },
+            include: {
+                schedules: true,
+            },
+            orderBy: {
+                createdAt: "desc",
+            },
+        })
+
+        return NextResponse.json(posts)
+    } catch (error) {
+        console.error("[POSTS_GET]", error)
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
+    }
+}
+
 export async function POST(req: Request) {
     try {
         const session = await auth()
