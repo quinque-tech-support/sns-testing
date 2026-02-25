@@ -1,4 +1,5 @@
-import { prisma } from '../lib/prisma'
+import "dotenv/config"
+import { prisma } from '@/lib/prisma'
 
 // Delay between polling attempts (e.g. 30 seconds)
 const POLL_INTERVAL_MS = 30000
@@ -23,17 +24,17 @@ async function processSchedule(scheduleId: string) {
             throw new Error(`Schedule ${scheduleId} failed: Post ${post.id} has no linked Instagram account.`)
         }
 
-        const { accessToken, instagramBusinessAccountId } = post.instagramAccount
+        const { accessToken, instagramBusinessId } = post.instagramAccount
 
-        if (!accessToken || !instagramBusinessAccountId) {
+        if (!accessToken || !instagramBusinessId) {
             throw new Error(`Schedule ${scheduleId} failed: Missing Instagram access token or business account ID.`)
         }
 
-        console.log(`[Worker] Started processing post ${post.id} for IG account ${instagramBusinessAccountId}...`)
+        console.log(`[Worker] Started processing post ${post.id} for IG account ${instagramBusinessId}...`)
 
         // Step 1: Create Media Container
         // https://developers.facebook.com/docs/instagram-api/reference/ig-user/media
-        const containerUrl = `https://graph.facebook.com/v19.0/${instagramBusinessAccountId}/media`
+        const containerUrl = `https://graph.facebook.com/v19.0/${instagramBusinessId}/media`
         const containerRes = await fetch(containerUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -56,7 +57,7 @@ async function processSchedule(scheduleId: string) {
 
         // Step 2: Publish the Media
         // https://developers.facebook.com/docs/instagram-api/reference/ig-user/media_publish
-        const publishUrl = `https://graph.facebook.com/v19.0/${instagramBusinessAccountId}/media_publish`
+        const publishUrl = `https://graph.facebook.com/v19.0/${instagramBusinessId}/media_publish`
         const publishRes = await fetch(publishUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -135,9 +136,7 @@ async function pollQueue() {
 
 // Start worker
 async function startWorker() {
-    console.log("==========================================")
     console.log("[Worker] Instagram Media Worker Started")
-    console.log("==========================================")
     pollQueue()
 }
 
