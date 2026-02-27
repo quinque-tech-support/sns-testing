@@ -2,9 +2,8 @@
 
 ## Overview
 
-Insta Auto is a Next.js-based web application designed for automating Instagram workflows. It provides a user-friendly interface for managing Instagram accounts, scheduling posts, and handling authentication. The platform allows users to link their Instagram accounts, create and schedule posts with captions and images, and view their post history.
+Insta Auto is a Next.js-based web application designed for automating Instagram workflows. It curretnly provides a interface for managing Instagram accounts, scheduling posts, and handling authentication. The platform allows users to link their Instagram accounts, create and schedule posts with captions and images, and view their post history.
 
-The project is built as a modern web application with a focus on scalability, security, and ease of use. It leverages server-side rendering with Next.js, robust authentication with NextAuth.js, and a PostgreSQL database managed through Prisma.
 
 ## Tech Stack
 
@@ -12,13 +11,10 @@ The project is built as a modern web application with a focus on scalability, se
 - **Authentication**: NextAuth.js v5 - Handles user authentication and session management.
 - **Database**: Supabase (PostgreSQL) - Cloud-hosted database for data persistence.
 - **ORM**: Prisma 7.4.0 - For database schema definition, migrations, and type-safe queries.
-- **Styling**: Tailwind CSS v4 - Utility-first CSS framework for responsive UI design.
 - **Language**: TypeScript - Provides type safety and improved developer experience.
 - **Password Hashing**: bcryptjs - For secure password storage.
 - **Validation**: Zod - For runtime type validation and schema enforcement.
-- **UI Components**: Custom React components with Tailwind CSS.
-- **State Management**: React hooks and context for client-side state.
-- **Deployment**: Designed for deployment on platforms like Vercel or similar Node.js hosts.
+- **Meta Graph API**: Third-Party API / External Service Integration
 
 ## Project Structure
 
@@ -273,6 +269,12 @@ The worker system is designed to run continuously and process scheduled Instagra
 #### Testing the Worker with Utility Scripts
 The worker can be tested using the utility file `scripts/create-test-post.ts`:
 
+**Pre Requisites**: 
+- Instagram business account linked with facebook page.
+- Run npx tsx scripts/link-accounts.ts
+- add details to link account.
+
+
 1. **Create Test Data**: Run the test post creation script to insert a test post with a scheduled time:
 
 ```bash
@@ -303,34 +305,12 @@ npx tsx scripts/worker.ts
 For development, ensure all environment variables are set and the database is accessible. The worker will continue running until manually stopped.
 
 ### Database Schema Visualization
-To include a visual representation of the database schema in the documentation:
-
-1. **Generate Schema Diagram**:
-   - Use Prisma Studio: Run `npx prisma studio` and take a screenshot of the schema view
-   - Use DBML tools: Generate DBML from Prisma schema and convert to image using online tools
-   - Use database visualization tools like dbdiagram.io or draw.io by importing the schema
-
-2. **Export as Image**:
-   - Save the generated diagram as `docs/schema-diagram.png` in the repository
-   - Alternative: Use Mermaid syntax in Markdown for a text-based diagram
-
-3. **Include in Documentation**:
-   Add the image reference to the documentation:
 
 ```
-   ![Database Schema](docs/schema-diagram.png)
+   ![Database Schema](supabase-schema-rykqiqspuihwjlncncvz.png)
 
 ```
 
-4. **Mermaid Alternative** (for text-based representation):
-
-```mermaid
-   erDiagram
-       User ||--o{ InstagramAccount : has
-       User ||--o{ Post : creates
-       InstagramAccount ||--o{ Post : owns
-       Post ||--o{ Schedule : schedules
-```
 
 ## Features in Progress
 
@@ -369,12 +349,9 @@ While the current implementation provides a solid foundation, potential future f
 - Multi-account management improvements
 - Social media platform expansion (beyond Instagram)
 
-## Development Notes
+## Testing
 
-- The project uses Next.js App Router for modern React development
-- TypeScript provides type safety throughout the application
-- Prisma ensures database schema consistency and type generation
-- Tailwind CSS enables rapid UI development
-- The architecture supports easy scaling and feature addition
+- GET and POST endpoints tested using POSTMAN to ensure schedule, instagram account, can be added and fetched.
+- utility files tested and automatic posting tested using self made instagram account.
 
 This documentation covers the current state of the Insta Auto project as of the latest development. The application provides a complete authentication system, basic post scheduling functionality, and a foundation for Instagram automation features.
