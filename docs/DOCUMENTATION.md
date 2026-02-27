@@ -306,10 +306,8 @@ For development, ensure all environment variables are set and the database is ac
 
 ### Database Schema Visualization
 
-```
-   ![Database Schema](supabase-schema-rykqiqspuihwjlncncvz.png)
+![Database Schema](supabase-schema-rykqiqspuihwjlncncvz.png)
 
-```
 
 
 ## Features in Progress
