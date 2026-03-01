@@ -15,35 +15,36 @@ model User {
   createdAt     DateTime  @default(now())
   
   posts         Post[]
-  instagramAccounts InstagramAccount[]
+  connectedAccounts ConnectedAccount[]
 }
 
-model InstagramAccount {
-  id                         String   @id @default(cuid())
-  userId                     String
-  username                   String
-  password                   String?
-  accessToken                String?
-  instagramBusinessId String?
-  createdAt           DateTime @default(now())
-  updatedAt                  DateTime @updatedAt
+model ConnectedAccount {
+  id                    String   @id @default(uuid())
+  userId                String
+  facebookUserId        String
+  pageId                String
+  pageAccessToken       String
+  instagramBusinessId   String
+  longLivedUserToken    String
+  tokenExpiry           DateTime
+  createdAt             DateTime @default(now())
 
-  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  posts Post[]
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  posts                 Post[]
 
-  @@unique([userId, username]) // Prevent duplicate accounts for same user
+  @@unique([userId, pageId]) // Prevent duplicate connected accounts for same page
 }
 
 model Post {
   id                 String           @id @default(cuid())
   userId             String
-  instagramAccountId String
+  connectedAccountId String
   caption            String?
   imageUrl           String
   createdAt          DateTime         @default(now())
 
   user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  instagramAccount  InstagramAccount @relation(fields: [instagramAccountId], references: [id], onDelete: Cascade)
+  connectedAccount  ConnectedAccount @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
   schedules         Schedule[]
 }
 
