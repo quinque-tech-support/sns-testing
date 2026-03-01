@@ -27,6 +27,7 @@ export type AggregatePost = {
 export type PostMinAggregateOutputType = {
   id: string | null
   userId: string | null
+  connectedAccountId: string | null
   caption: string | null
   imageUrl: string | null
   createdAt: Date | null
@@ -35,6 +36,7 @@ export type PostMinAggregateOutputType = {
 export type PostMaxAggregateOutputType = {
   id: string | null
   userId: string | null
+  connectedAccountId: string | null
   caption: string | null
   imageUrl: string | null
   createdAt: Date | null
@@ -43,6 +45,7 @@ export type PostMaxAggregateOutputType = {
 export type PostCountAggregateOutputType = {
   id: number
   userId: number
+  connectedAccountId: number
   caption: number
   imageUrl: number
   createdAt: number
@@ -53,6 +56,7 @@ export type PostCountAggregateOutputType = {
 export type PostMinAggregateInputType = {
   id?: true
   userId?: true
+  connectedAccountId?: true
   caption?: true
   imageUrl?: true
   createdAt?: true
@@ -61,6 +65,7 @@ export type PostMinAggregateInputType = {
 export type PostMaxAggregateInputType = {
   id?: true
   userId?: true
+  connectedAccountId?: true
   caption?: true
   imageUrl?: true
   createdAt?: true
@@ -69,6 +74,7 @@ export type PostMaxAggregateInputType = {
 export type PostCountAggregateInputType = {
   id?: true
   userId?: true
+  connectedAccountId?: true
   caption?: true
   imageUrl?: true
   createdAt?: true
@@ -150,6 +156,7 @@ export type PostGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
 export type PostGroupByOutputType = {
   id: string
   userId: string
+  connectedAccountId: string
   caption: string | null
   imageUrl: string
   createdAt: Date
@@ -179,20 +186,24 @@ export type PostWhereInput = {
   NOT?: Prisma.PostWhereInput | Prisma.PostWhereInput[]
   id?: Prisma.StringFilter<"Post"> | string
   userId?: Prisma.StringFilter<"Post"> | string
+  connectedAccountId?: Prisma.StringFilter<"Post"> | string
   caption?: Prisma.StringNullableFilter<"Post"> | string | null
   imageUrl?: Prisma.StringFilter<"Post"> | string
   createdAt?: Prisma.DateTimeFilter<"Post"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  connectedAccount?: Prisma.XOR<Prisma.ConnectedAccountScalarRelationFilter, Prisma.ConnectedAccountWhereInput>
   schedules?: Prisma.ScheduleListRelationFilter
 }
 
 export type PostOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  connectedAccountId?: Prisma.SortOrder
   caption?: Prisma.SortOrderInput | Prisma.SortOrder
   imageUrl?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   user?: Prisma.UserOrderByWithRelationInput
+  connectedAccount?: Prisma.ConnectedAccountOrderByWithRelationInput
   schedules?: Prisma.ScheduleOrderByRelationAggregateInput
 }
 
@@ -202,16 +213,19 @@ export type PostWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.PostWhereInput[]
   NOT?: Prisma.PostWhereInput | Prisma.PostWhereInput[]
   userId?: Prisma.StringFilter<"Post"> | string
+  connectedAccountId?: Prisma.StringFilter<"Post"> | string
   caption?: Prisma.StringNullableFilter<"Post"> | string | null
   imageUrl?: Prisma.StringFilter<"Post"> | string
   createdAt?: Prisma.DateTimeFilter<"Post"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  connectedAccount?: Prisma.XOR<Prisma.ConnectedAccountScalarRelationFilter, Prisma.ConnectedAccountWhereInput>
   schedules?: Prisma.ScheduleListRelationFilter
 }, "id">
 
 export type PostOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  connectedAccountId?: Prisma.SortOrder
   caption?: Prisma.SortOrderInput | Prisma.SortOrder
   imageUrl?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -226,6 +240,7 @@ export type PostScalarWhereWithAggregatesInput = {
   NOT?: Prisma.PostScalarWhereWithAggregatesInput | Prisma.PostScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Post"> | string
   userId?: Prisma.StringWithAggregatesFilter<"Post"> | string
+  connectedAccountId?: Prisma.StringWithAggregatesFilter<"Post"> | string
   caption?: Prisma.StringNullableWithAggregatesFilter<"Post"> | string | null
   imageUrl?: Prisma.StringWithAggregatesFilter<"Post"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Post"> | Date | string
@@ -237,12 +252,14 @@ export type PostCreateInput = {
   imageUrl: string
   createdAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutPostsInput
+  connectedAccount: Prisma.ConnectedAccountCreateNestedOneWithoutPostsInput
   schedules?: Prisma.ScheduleCreateNestedManyWithoutPostInput
 }
 
 export type PostUncheckedCreateInput = {
   id?: string
   userId: string
+  connectedAccountId: string
   caption?: string | null
   imageUrl: string
   createdAt?: Date | string
@@ -255,12 +272,14 @@ export type PostUpdateInput = {
   imageUrl?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutPostsNestedInput
+  connectedAccount?: Prisma.ConnectedAccountUpdateOneRequiredWithoutPostsNestedInput
   schedules?: Prisma.ScheduleUpdateManyWithoutPostNestedInput
 }
 
 export type PostUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  connectedAccountId?: Prisma.StringFieldUpdateOperationsInput | string
   caption?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   imageUrl?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -270,6 +289,7 @@ export type PostUncheckedUpdateInput = {
 export type PostCreateManyInput = {
   id?: string
   userId: string
+  connectedAccountId: string
   caption?: string | null
   imageUrl: string
   createdAt?: Date | string
@@ -285,6 +305,7 @@ export type PostUpdateManyMutationInput = {
 export type PostUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  connectedAccountId?: Prisma.StringFieldUpdateOperationsInput | string
   caption?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   imageUrl?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -303,6 +324,7 @@ export type PostOrderByRelationAggregateInput = {
 export type PostCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  connectedAccountId?: Prisma.SortOrder
   caption?: Prisma.SortOrder
   imageUrl?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -311,6 +333,7 @@ export type PostCountOrderByAggregateInput = {
 export type PostMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  connectedAccountId?: Prisma.SortOrder
   caption?: Prisma.SortOrder
   imageUrl?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -319,6 +342,7 @@ export type PostMaxOrderByAggregateInput = {
 export type PostMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  connectedAccountId?: Prisma.SortOrder
   caption?: Prisma.SortOrder
   imageUrl?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -371,6 +395,48 @@ export type PostUncheckedUpdateManyWithoutUserNestedInput = {
   deleteMany?: Prisma.PostScalarWhereInput | Prisma.PostScalarWhereInput[]
 }
 
+export type PostCreateNestedManyWithoutConnectedAccountInput = {
+  create?: Prisma.XOR<Prisma.PostCreateWithoutConnectedAccountInput, Prisma.PostUncheckedCreateWithoutConnectedAccountInput> | Prisma.PostCreateWithoutConnectedAccountInput[] | Prisma.PostUncheckedCreateWithoutConnectedAccountInput[]
+  connectOrCreate?: Prisma.PostCreateOrConnectWithoutConnectedAccountInput | Prisma.PostCreateOrConnectWithoutConnectedAccountInput[]
+  createMany?: Prisma.PostCreateManyConnectedAccountInputEnvelope
+  connect?: Prisma.PostWhereUniqueInput | Prisma.PostWhereUniqueInput[]
+}
+
+export type PostUncheckedCreateNestedManyWithoutConnectedAccountInput = {
+  create?: Prisma.XOR<Prisma.PostCreateWithoutConnectedAccountInput, Prisma.PostUncheckedCreateWithoutConnectedAccountInput> | Prisma.PostCreateWithoutConnectedAccountInput[] | Prisma.PostUncheckedCreateWithoutConnectedAccountInput[]
+  connectOrCreate?: Prisma.PostCreateOrConnectWithoutConnectedAccountInput | Prisma.PostCreateOrConnectWithoutConnectedAccountInput[]
+  createMany?: Prisma.PostCreateManyConnectedAccountInputEnvelope
+  connect?: Prisma.PostWhereUniqueInput | Prisma.PostWhereUniqueInput[]
+}
+
+export type PostUpdateManyWithoutConnectedAccountNestedInput = {
+  create?: Prisma.XOR<Prisma.PostCreateWithoutConnectedAccountInput, Prisma.PostUncheckedCreateWithoutConnectedAccountInput> | Prisma.PostCreateWithoutConnectedAccountInput[] | Prisma.PostUncheckedCreateWithoutConnectedAccountInput[]
+  connectOrCreate?: Prisma.PostCreateOrConnectWithoutConnectedAccountInput | Prisma.PostCreateOrConnectWithoutConnectedAccountInput[]
+  upsert?: Prisma.PostUpsertWithWhereUniqueWithoutConnectedAccountInput | Prisma.PostUpsertWithWhereUniqueWithoutConnectedAccountInput[]
+  createMany?: Prisma.PostCreateManyConnectedAccountInputEnvelope
+  set?: Prisma.PostWhereUniqueInput | Prisma.PostWhereUniqueInput[]
+  disconnect?: Prisma.PostWhereUniqueInput | Prisma.PostWhereUniqueInput[]
+  delete?: Prisma.PostWhereUniqueInput | Prisma.PostWhereUniqueInput[]
+  connect?: Prisma.PostWhereUniqueInput | Prisma.PostWhereUniqueInput[]
+  update?: Prisma.PostUpdateWithWhereUniqueWithoutConnectedAccountInput | Prisma.PostUpdateWithWhereUniqueWithoutConnectedAccountInput[]
+  updateMany?: Prisma.PostUpdateManyWithWhereWithoutConnectedAccountInput | Prisma.PostUpdateManyWithWhereWithoutConnectedAccountInput[]
+  deleteMany?: Prisma.PostScalarWhereInput | Prisma.PostScalarWhereInput[]
+}
+
+export type PostUncheckedUpdateManyWithoutConnectedAccountNestedInput = {
+  create?: Prisma.XOR<Prisma.PostCreateWithoutConnectedAccountInput, Prisma.PostUncheckedCreateWithoutConnectedAccountInput> | Prisma.PostCreateWithoutConnectedAccountInput[] | Prisma.PostUncheckedCreateWithoutConnectedAccountInput[]
+  connectOrCreate?: Prisma.PostCreateOrConnectWithoutConnectedAccountInput | Prisma.PostCreateOrConnectWithoutConnectedAccountInput[]
+  upsert?: Prisma.PostUpsertWithWhereUniqueWithoutConnectedAccountInput | Prisma.PostUpsertWithWhereUniqueWithoutConnectedAccountInput[]
+  createMany?: Prisma.PostCreateManyConnectedAccountInputEnvelope
+  set?: Prisma.PostWhereUniqueInput | Prisma.PostWhereUniqueInput[]
+  disconnect?: Prisma.PostWhereUniqueInput | Prisma.PostWhereUniqueInput[]
+  delete?: Prisma.PostWhereUniqueInput | Prisma.PostWhereUniqueInput[]
+  connect?: Prisma.PostWhereUniqueInput | Prisma.PostWhereUniqueInput[]
+  update?: Prisma.PostUpdateWithWhereUniqueWithoutConnectedAccountInput | Prisma.PostUpdateWithWhereUniqueWithoutConnectedAccountInput[]
+  updateMany?: Prisma.PostUpdateManyWithWhereWithoutConnectedAccountInput | Prisma.PostUpdateManyWithWhereWithoutConnectedAccountInput[]
+  deleteMany?: Prisma.PostScalarWhereInput | Prisma.PostScalarWhereInput[]
+}
+
 export type PostCreateNestedOneWithoutSchedulesInput = {
   create?: Prisma.XOR<Prisma.PostCreateWithoutSchedulesInput, Prisma.PostUncheckedCreateWithoutSchedulesInput>
   connectOrCreate?: Prisma.PostCreateOrConnectWithoutSchedulesInput
@@ -390,11 +456,13 @@ export type PostCreateWithoutUserInput = {
   caption?: string | null
   imageUrl: string
   createdAt?: Date | string
+  connectedAccount: Prisma.ConnectedAccountCreateNestedOneWithoutPostsInput
   schedules?: Prisma.ScheduleCreateNestedManyWithoutPostInput
 }
 
 export type PostUncheckedCreateWithoutUserInput = {
   id?: string
+  connectedAccountId: string
   caption?: string | null
   imageUrl: string
   createdAt?: Date | string
@@ -433,9 +501,54 @@ export type PostScalarWhereInput = {
   NOT?: Prisma.PostScalarWhereInput | Prisma.PostScalarWhereInput[]
   id?: Prisma.StringFilter<"Post"> | string
   userId?: Prisma.StringFilter<"Post"> | string
+  connectedAccountId?: Prisma.StringFilter<"Post"> | string
   caption?: Prisma.StringNullableFilter<"Post"> | string | null
   imageUrl?: Prisma.StringFilter<"Post"> | string
   createdAt?: Prisma.DateTimeFilter<"Post"> | Date | string
+}
+
+export type PostCreateWithoutConnectedAccountInput = {
+  id?: string
+  caption?: string | null
+  imageUrl: string
+  createdAt?: Date | string
+  user: Prisma.UserCreateNestedOneWithoutPostsInput
+  schedules?: Prisma.ScheduleCreateNestedManyWithoutPostInput
+}
+
+export type PostUncheckedCreateWithoutConnectedAccountInput = {
+  id?: string
+  userId: string
+  caption?: string | null
+  imageUrl: string
+  createdAt?: Date | string
+  schedules?: Prisma.ScheduleUncheckedCreateNestedManyWithoutPostInput
+}
+
+export type PostCreateOrConnectWithoutConnectedAccountInput = {
+  where: Prisma.PostWhereUniqueInput
+  create: Prisma.XOR<Prisma.PostCreateWithoutConnectedAccountInput, Prisma.PostUncheckedCreateWithoutConnectedAccountInput>
+}
+
+export type PostCreateManyConnectedAccountInputEnvelope = {
+  data: Prisma.PostCreateManyConnectedAccountInput | Prisma.PostCreateManyConnectedAccountInput[]
+  skipDuplicates?: boolean
+}
+
+export type PostUpsertWithWhereUniqueWithoutConnectedAccountInput = {
+  where: Prisma.PostWhereUniqueInput
+  update: Prisma.XOR<Prisma.PostUpdateWithoutConnectedAccountInput, Prisma.PostUncheckedUpdateWithoutConnectedAccountInput>
+  create: Prisma.XOR<Prisma.PostCreateWithoutConnectedAccountInput, Prisma.PostUncheckedCreateWithoutConnectedAccountInput>
+}
+
+export type PostUpdateWithWhereUniqueWithoutConnectedAccountInput = {
+  where: Prisma.PostWhereUniqueInput
+  data: Prisma.XOR<Prisma.PostUpdateWithoutConnectedAccountInput, Prisma.PostUncheckedUpdateWithoutConnectedAccountInput>
+}
+
+export type PostUpdateManyWithWhereWithoutConnectedAccountInput = {
+  where: Prisma.PostScalarWhereInput
+  data: Prisma.XOR<Prisma.PostUpdateManyMutationInput, Prisma.PostUncheckedUpdateManyWithoutConnectedAccountInput>
 }
 
 export type PostCreateWithoutSchedulesInput = {
@@ -444,11 +557,13 @@ export type PostCreateWithoutSchedulesInput = {
   imageUrl: string
   createdAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutPostsInput
+  connectedAccount: Prisma.ConnectedAccountCreateNestedOneWithoutPostsInput
 }
 
 export type PostUncheckedCreateWithoutSchedulesInput = {
   id?: string
   userId: string
+  connectedAccountId: string
   caption?: string | null
   imageUrl: string
   createdAt?: Date | string
@@ -476,11 +591,13 @@ export type PostUpdateWithoutSchedulesInput = {
   imageUrl?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutPostsNestedInput
+  connectedAccount?: Prisma.ConnectedAccountUpdateOneRequiredWithoutPostsNestedInput
 }
 
 export type PostUncheckedUpdateWithoutSchedulesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  connectedAccountId?: Prisma.StringFieldUpdateOperationsInput | string
   caption?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   imageUrl?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -488,6 +605,7 @@ export type PostUncheckedUpdateWithoutSchedulesInput = {
 
 export type PostCreateManyUserInput = {
   id?: string
+  connectedAccountId: string
   caption?: string | null
   imageUrl: string
   createdAt?: Date | string
@@ -498,11 +616,13 @@ export type PostUpdateWithoutUserInput = {
   caption?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   imageUrl?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  connectedAccount?: Prisma.ConnectedAccountUpdateOneRequiredWithoutPostsNestedInput
   schedules?: Prisma.ScheduleUpdateManyWithoutPostNestedInput
 }
 
 export type PostUncheckedUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  connectedAccountId?: Prisma.StringFieldUpdateOperationsInput | string
   caption?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   imageUrl?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -511,6 +631,41 @@ export type PostUncheckedUpdateWithoutUserInput = {
 
 export type PostUncheckedUpdateManyWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  connectedAccountId?: Prisma.StringFieldUpdateOperationsInput | string
+  caption?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type PostCreateManyConnectedAccountInput = {
+  id?: string
+  userId: string
+  caption?: string | null
+  imageUrl: string
+  createdAt?: Date | string
+}
+
+export type PostUpdateWithoutConnectedAccountInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  caption?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneRequiredWithoutPostsNestedInput
+  schedules?: Prisma.ScheduleUpdateManyWithoutPostNestedInput
+}
+
+export type PostUncheckedUpdateWithoutConnectedAccountInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  caption?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  schedules?: Prisma.ScheduleUncheckedUpdateManyWithoutPostNestedInput
+}
+
+export type PostUncheckedUpdateManyWithoutConnectedAccountInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
   caption?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   imageUrl?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -550,10 +705,12 @@ export type PostCountOutputTypeCountSchedulesArgs<ExtArgs extends runtime.Types.
 export type PostSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   userId?: boolean
+  connectedAccountId?: boolean
   caption?: boolean
   imageUrl?: boolean
   createdAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  connectedAccount?: boolean | Prisma.ConnectedAccountDefaultArgs<ExtArgs>
   schedules?: boolean | Prisma.Post$schedulesArgs<ExtArgs>
   _count?: boolean | Prisma.PostCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["post"]>
@@ -561,51 +718,61 @@ export type PostSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
 export type PostSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   userId?: boolean
+  connectedAccountId?: boolean
   caption?: boolean
   imageUrl?: boolean
   createdAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  connectedAccount?: boolean | Prisma.ConnectedAccountDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["post"]>
 
 export type PostSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   userId?: boolean
+  connectedAccountId?: boolean
   caption?: boolean
   imageUrl?: boolean
   createdAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  connectedAccount?: boolean | Prisma.ConnectedAccountDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["post"]>
 
 export type PostSelectScalar = {
   id?: boolean
   userId?: boolean
+  connectedAccountId?: boolean
   caption?: boolean
   imageUrl?: boolean
   createdAt?: boolean
 }
 
-export type PostOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "caption" | "imageUrl" | "createdAt", ExtArgs["result"]["post"]>
+export type PostOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "connectedAccountId" | "caption" | "imageUrl" | "createdAt", ExtArgs["result"]["post"]>
 export type PostInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  connectedAccount?: boolean | Prisma.ConnectedAccountDefaultArgs<ExtArgs>
   schedules?: boolean | Prisma.Post$schedulesArgs<ExtArgs>
   _count?: boolean | Prisma.PostCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type PostIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  connectedAccount?: boolean | Prisma.ConnectedAccountDefaultArgs<ExtArgs>
 }
 export type PostIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  connectedAccount?: boolean | Prisma.ConnectedAccountDefaultArgs<ExtArgs>
 }
 
 export type $PostPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Post"
   objects: {
     user: Prisma.$UserPayload<ExtArgs>
+    connectedAccount: Prisma.$ConnectedAccountPayload<ExtArgs>
     schedules: Prisma.$SchedulePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     userId: string
+    connectedAccountId: string
     caption: string | null
     imageUrl: string
     createdAt: Date
@@ -1004,6 +1171,7 @@ readonly fields: PostFieldRefs;
 export interface Prisma__PostClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  connectedAccount<T extends Prisma.ConnectedAccountDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ConnectedAccountDefaultArgs<ExtArgs>>): Prisma.Prisma__ConnectedAccountClient<runtime.Types.Result.GetResult<Prisma.$ConnectedAccountPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   schedules<T extends Prisma.Post$schedulesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Post$schedulesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SchedulePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1036,6 +1204,7 @@ export interface Prisma__PostClient<T, Null = never, ExtArgs extends runtime.Typ
 export interface PostFieldRefs {
   readonly id: Prisma.FieldRef<"Post", 'String'>
   readonly userId: Prisma.FieldRef<"Post", 'String'>
+  readonly connectedAccountId: Prisma.FieldRef<"Post", 'String'>
   readonly caption: Prisma.FieldRef<"Post", 'String'>
   readonly imageUrl: Prisma.FieldRef<"Post", 'String'>
   readonly createdAt: Prisma.FieldRef<"Post", 'DateTime'>

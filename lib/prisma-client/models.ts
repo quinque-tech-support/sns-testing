@@ -9,7 +9,7 @@
  * 🟢 You can import this file directly.
  */
 export type * from './models/User'
-export type * from './models/InstagramAccount'
+export type * from './models/ConnectedAccount'
 export type * from './models/Post'
 export type * from './models/Schedule'
 export type * from './commonInputTypes'

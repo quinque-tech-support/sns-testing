@@ -23,10 +23,10 @@ export * from './enums';
  */
 export type User = Prisma.UserModel
 /**
- * Model InstagramAccount
+ * Model ConnectedAccount
  * 
  */
-export type InstagramAccount = Prisma.InstagramAccountModel
+export type ConnectedAccount = Prisma.ConnectedAccountModel
 /**
  * Model Post
  * 

@@ -106,6 +106,7 @@ export const createPostSchema = z.object({
             { message: 'scheduledAt must be a date in the future' }
         )
         .optional(),
+    connectedAccountId: z.string().uuid('Invalid Connected Account ID'),
 })
 
 export type CreatePostInput = z.infer<typeof createPostSchema>
