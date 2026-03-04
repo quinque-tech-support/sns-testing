@@ -37,37 +37,45 @@ async function main() {
     console.log("\n--- Instagram Details ---")
     console.log("To get these, use the Facebook Graph API Explorer (https://developers.facebook.com/tools/explorer)")
 
-    const username = await question("Instagram Username (e.g. my_cool_page): ")
+    const pageId = await question("Facebook Page ID: ")
+    const facebookUserId = await question("Facebook User ID: ")
     const instagramBusinessId = await question("Instagram Business Account / IG User ID (usually a long number): ")
-    const accessToken = await question("Facebook Graph API Page Access Token: ")
+    const pageAccessToken = await question("Facebook Graph API Page Access Token: ")
+    const longLivedUserToken = await question("Facebook Graph API Long Lived User Token: ")
 
-    if (!username || !instagramBusinessId || !accessToken) {
+    if (!pageId || !instagramBusinessId || !pageAccessToken || !facebookUserId || !longLivedUserToken) {
         console.error("❌ All fields are required.")
         process.exit(1)
     }
 
     try {
         // 3. Upsert into database
-        const account = await prisma.instagramAccount.upsert({
+        const account = await prisma.connectedAccount.upsert({
             where: {
-                userId_username: {
+                userId_pageId: {
                     userId: user.id,
-                    username: username
+                    pageId: pageId
                 }
             },
             update: {
+                facebookUserId,
                 instagramBusinessId,
-                accessToken
+                pageAccessToken,
+                longLivedUserToken,
+                tokenExpiry: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000) // 60 days mock
             },
             create: {
                 userId: user.id,
-                username,
+                facebookUserId,
+                pageId,
                 instagramBusinessId,
-                accessToken
+                pageAccessToken,
+                longLivedUserToken,
+                tokenExpiry: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000) // 60 days mock
             }
         })
 
-        console.log("\n✅ Successfully linked Instagram account!")
+        console.log("\n✅ Successfully linked Instagram account as ConnectedAccount!")
         console.log(`Database ID: ${account.id}`)
         console.log(`You can now use this account to test the worker.`)
     } catch (error) {

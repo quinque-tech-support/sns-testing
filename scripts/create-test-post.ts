@@ -6,17 +6,17 @@ async function main() {
     console.log("     Creating Test Post & Schedule      ")
     console.log("==========================================")
 
-    // Get the user and their newly linked Instagram account
-    const account = await prisma.instagramAccount.findFirst({
+    // Get the user and their newly linked connected account
+    const account = await prisma.connectedAccount.findFirst({
         include: { user: true }
     })
 
     if (!account) {
-        console.error("❌ No Instagram account found in the database. Run link-account.ts first.")
+        console.error("❌ No connected account found in the database. Run link-account.ts first.")
         process.exit(1)
     }
 
-    console.log(`Using Instagram Account: ${account.username} (ID: ${account.id})`)
+    console.log(`Using Connected Account for Page: ${account.pageId} (ID: ${account.id})`)
 
     // Schedule for 10 seconds in the past so the worker picks it up IMMEDIATELY
     const scheduledTime = new Date(Date.now() - 10000)
@@ -25,7 +25,7 @@ async function main() {
         const post = await prisma.post.create({
             data: {
                 userId: account.userId,
-                instagramAccountId: account.id,
+                connectedAccountId: account.id,
                 caption: "Hello world! This is an automated test post from my new script 🚀🌟 #InstaAutoTest",
                 // Using a reliable sample image URL
                 imageUrl: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1000&auto=format&fit=crop",

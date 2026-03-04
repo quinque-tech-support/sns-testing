@@ -54,7 +54,7 @@ export async function POST(req: Request) {
             }, { status: 400 })
         }
 
-        const { caption, imageUrl, scheduledAt, instagramAccountId } = validation.data
+        const { caption, imageUrl, scheduledAt, connectedAccountId } = validation.data
 
         // --- Prevent duplicates / Race conditions ---
         // Block exact same image from the same user within 1 minute
@@ -81,7 +81,7 @@ export async function POST(req: Request) {
         const post = await prisma.post.create({
             data: {
                 userId: session.user.id,
-                instagramAccountId,
+                connectedAccountId,
                 caption,
                 imageUrl,
                 ...(scheduledAt && {

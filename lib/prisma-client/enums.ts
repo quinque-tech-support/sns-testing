@@ -11,6 +11,7 @@
 
 export const ScheduleStatus = {
   PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING',
   PUBLISHED: 'PUBLISHED',
   FAILED: 'FAILED'
 } as const

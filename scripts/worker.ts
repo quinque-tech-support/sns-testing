@@ -11,7 +11,7 @@ async function processSchedule(scheduleId: string) {
             include: {
                 post: {
                     include: {
-                        instagramAccount: true
+                        connectedAccount: true
                     }
                 }
             }
@@ -20,14 +20,14 @@ async function processSchedule(scheduleId: string) {
         if (!schedule) throw new Error("Schedule not found")
         const { post } = schedule
 
-        if (!post.instagramAccount) {
-            throw new Error(`Schedule ${scheduleId} failed: Post ${post.id} has no linked Instagram account.`)
+        if (!post.connectedAccount) {
+            throw new Error(`Schedule ${scheduleId} failed: Post ${post.id} has no linked connected account.`)
         }
 
-        const { accessToken, instagramBusinessId } = post.instagramAccount
+        const { pageAccessToken, instagramBusinessId } = post.connectedAccount
 
-        if (!accessToken || !instagramBusinessId) {
-            throw new Error(`Schedule ${scheduleId} failed: Missing Instagram access token or business account ID.`)
+        if (!pageAccessToken || !instagramBusinessId) {
+            throw new Error(`Schedule ${scheduleId} failed: Missing page access token or business account ID.`)
         }
 
         console.log(`[Worker] Started processing post ${post.id} for IG account ${instagramBusinessId}...`)
@@ -41,7 +41,7 @@ async function processSchedule(scheduleId: string) {
             body: JSON.stringify({
                 image_url: post.imageUrl,
                 caption: post.caption || '',
-                access_token: accessToken
+                access_token: pageAccessToken
             })
         })
 
@@ -63,7 +63,7 @@ async function processSchedule(scheduleId: string) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 creation_id: creationId,
-                access_token: accessToken
+                access_token: pageAccessToken
             })
         })
 

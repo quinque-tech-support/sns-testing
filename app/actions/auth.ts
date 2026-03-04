@@ -3,7 +3,8 @@
 import { prisma } from '@/lib/prisma'
 import { hash } from 'bcryptjs'
 import { validateEmail, validatePassword, validateName } from '@/lib/validation'
-import { PrismaClientKnownRequestError } from '@/lib/prisma-client/library' // Adjust import based on generation
+import { PrismaClientKnownRequestError } from '@prisma/client'
+
 
 // Since we generate client to ../lib/prisma-client
 // The types should be imported from there.

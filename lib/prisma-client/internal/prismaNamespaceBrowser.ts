@@ -52,7 +52,7 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   User: 'User',
-  InstagramAccount: 'InstagramAccount',
+  ConnectedAccount: 'ConnectedAccount',
   Post: 'Post',
   Schedule: 'Schedule'
 } as const
@@ -84,21 +84,25 @@ export const UserScalarFieldEnum = {
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
 
 
-export const InstagramAccountScalarFieldEnum = {
+export const ConnectedAccountScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
-  username: 'username',
-  password: 'password',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  facebookUserId: 'facebookUserId',
+  pageId: 'pageId',
+  pageAccessToken: 'pageAccessToken',
+  instagramBusinessId: 'instagramBusinessId',
+  longLivedUserToken: 'longLivedUserToken',
+  tokenExpiry: 'tokenExpiry',
+  createdAt: 'createdAt'
 } as const
 
-export type InstagramAccountScalarFieldEnum = (typeof InstagramAccountScalarFieldEnum)[keyof typeof InstagramAccountScalarFieldEnum]
+export type ConnectedAccountScalarFieldEnum = (typeof ConnectedAccountScalarFieldEnum)[keyof typeof ConnectedAccountScalarFieldEnum]
 
 
 export const PostScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
+  connectedAccountId: 'connectedAccountId',
   caption: 'caption',
   imageUrl: 'imageUrl',
   createdAt: 'createdAt'
