@@ -68,6 +68,7 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
     const [activeTab, setActiveTab] = useState('publish')
     const [caption, setCaption] = useState('')
     const [mediaPreview, setMediaPreview] = useState<string | null>(null)
+    const [mediaFile, setMediaFile] = useState<File | null>(null)
     const [selectedAccountId, setSelectedAccountId] = useState(accounts[0]?.id || '')
     const [scheduledFor, setScheduledFor] = useState('')
     const [hashtags, setHashtags] = useState('')
@@ -82,6 +83,7 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
         if (file) {
             const url = URL.createObjectURL(file)
             setMediaPreview(url)
+            setMediaFile(file)
         }
     }
 
@@ -89,7 +91,7 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
         const fd = new FormData()
         fd.set('caption', caption)
         fd.set('connectedAccountId', selectedAccountId)
-        if (mediaPreview) fd.set('imageUrl', mediaPreview)
+        if (mediaFile) fd.set('mediaFile', mediaFile)
         return fd
     }
 
@@ -228,7 +230,10 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
                                     <img src={mediaPreview} alt="Preview" className="w-full h-full object-contain" />
                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
                                         <button
-                                            onClick={() => setMediaPreview(null)}
+                                            onClick={() => {
+                                                setMediaPreview(null)
+                                                setMediaFile(null)
+                                            }}
                                             className="p-3 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/40 transition-all"
                                         >
                                             <X className="w-6 h-6" />
