@@ -166,6 +166,7 @@ export async function publishNow(formData: FormData): Promise<ActionResult> {
                 connectedAccountId,
                 caption: caption || '',
                 imageUrl: finalImageUrl,
+                instagramMediaId: publishData.id,
             }
         })
 
