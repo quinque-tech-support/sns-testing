@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../lib/prisma-client"
 }
 
@@ -23,6 +23,8 @@ model ConnectedAccount {
   userId                String
   facebookUserId        String
   pageId                String
+  username              String?  // Instagram username
+  profilePictureUrl      String?  // Instagram profile picture
   pageAccessToken       String
   instagramBusinessId   String
   longLivedUserToken    String
@@ -41,6 +43,10 @@ model Post {
   connectedAccountId String
   caption            String?
   imageUrl           String
+  instagramMediaId   String?
+  views              Int              @default(0)
+  reach              Int              @default(0)
+  saves              Int              @default(0)
   createdAt          DateTime         @default(now())
 
   user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)

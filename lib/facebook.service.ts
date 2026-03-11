@@ -40,9 +40,24 @@ export interface FacebookPage {
 
 export interface InstagramBusinessAccount {
     id: string
+    username?: string
+    profile_picture_url?: string
 }
 
 export const facebookService = {
+    /**
+     * Generate the Facebook OAuth Login URL
+     */
+    generateAuthUrl(state: string): string {
+        const params = new URLSearchParams({
+            client_id: FACEBOOK_APP_ID,
+            redirect_uri: FACEBOOK_REDIRECT_URI!,
+            state: state,
+            scope: 'pages_show_list,instagram_basic,instagram_content_publish,pages_read_engagement',
+            response_type: 'code',
+        })
+        return `https://www.facebook.com/v19.0/dialog/oauth?${params.toString()}`
+    },
     /**
      * Exchange the short-lived authorization code for a short-lived access token
      */
@@ -151,17 +166,17 @@ export const facebookService = {
     /**
      * Fetch the Instagram Business Account ID associated with a given Page
      */
-    async getInstagramBusinessAccount(pageId: string, pageAccessToken: string): Promise<string | null> {
+    async getInstagramBusinessAccount(pageId: string, pageAccessToken: string): Promise<InstagramBusinessAccount | null> {
         try {
             const response = await graphApi.get(`/${pageId}`, {
                 params: {
-                    fields: 'instagram_business_account',
+                    fields: 'instagram_business_account{id,username,profile_picture_url}',
                     access_token: pageAccessToken,
                 }
             })
 
             if (response.data.instagram_business_account) {
-                return response.data.instagram_business_account.id
+                return response.data.instagram_business_account
             }
             return null
         } catch (error: any) {
@@ -182,6 +197,39 @@ export const facebookService = {
                 )
             }
             // If permission denied or missing, return null rather than crashing the whole flow
+            return null
+        }
+    },
+
+    /**
+     * Fetch insights (impressions, reach, saved) for a published IG Media
+     */
+    async getMediaInsights(mediaId: string, accessToken: string): Promise<{ views: number, reach: number, saves: number } | null> {
+        try {
+            const response = await graphApi.get(`/${mediaId}/insights`, {
+                params: {
+                    metric: 'impressions,reach,saved',
+                    access_token: accessToken,
+                }
+            })
+
+            const data = response.data.data
+            if (!data || !Array.isArray(data)) return null
+
+            let views = 0
+            let reach = 0
+            let saves = 0
+
+            for (const metric of data) {
+                const value = metric.values?.[0]?.value || 0
+                if (metric.name === 'impressions') views = value
+                if (metric.name === 'reach') reach = value
+                if (metric.name === 'saved') saves = value
+            }
+
+            return { views, reach, saves }
+        } catch (error: any) {
+            console.error(`[FacebookService] Failed to fetch insights for media ${mediaId}:`, error.response?.data || error.message)
             return null
         }
     }

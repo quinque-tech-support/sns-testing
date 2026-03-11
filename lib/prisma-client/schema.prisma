@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String   @id @default(cuid())
+  name          String?
+  email         String   @unique
+  password_hash String?
+  createdAt     DateTime @default(now())
+
+  posts             Post[]
+  connectedAccounts ConnectedAccount[]
+}
+
+model ConnectedAccount {
+  id                  String   @id @default(uuid())
+  userId              String
+  facebookUserId      String
+  pageId              String
+  username            String? // Instagram username
+  profilePictureUrl   String? // Instagram profile picture
+  pageAccessToken     String
+  instagramBusinessId String
+  longLivedUserToken  String
+  tokenExpiry         DateTime
+  createdAt           DateTime @default(now())
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  posts Post[]
+
+  @@unique([userId, pageId]) // Prevent duplicate connected accounts for same page
+}
+
+model Post {
+  id                 String   @id @default(cuid())
+  userId             String
+  connectedAccountId String
+  caption            String?
+  imageUrl           String
+  instagramMediaId   String?
+  views              Int      @default(0)
+  reach              Int      @default(0)
+  saves              Int      @default(0)
+  createdAt          DateTime @default(now())
+
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  connectedAccount ConnectedAccount @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
+  schedules        Schedule[]
+}
+
+model Schedule {
+  id           String         @id @default(cuid())
+  postId       String
+  scheduledFor DateTime
+  status       ScheduleStatus @default(PENDING)
+  createdAt    DateTime       @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+
+enum ScheduleStatus {
+  PENDING
+  PROCESSING
+  PUBLISHED
+  FAILED
+}

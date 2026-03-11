@@ -1,98 +1,93 @@
-'use client'
-
-import { useSession, signOut } from 'next-auth/react'
+import { auth } from '@/auth'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { Instagram, ArrowRight, ShieldCheck, Zap, BarChart3 } from 'lucide-react'
 
-export default function Home() {
-  const { data: session, status } = useSession()
+export default async function Home() {
+  const session = await auth()
 
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-gray-900">Loading...</div>
-      </div>
-    )
+  if (session) {
+    redirect('/dashboard')
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Navigation Bar */}
-      <nav className="bg-white border-b border-gray-300 px-6 py-4 flex justify-between items-center">
-        <div className="text-xl font-bold text-gray-900">Insta Auto</div>
-        {session && (
-          <div className="space-x-4">
-            <Link href="/dashboard" className="text-gray-600 hover:text-gray-900 font-medium">Dashboard</Link>
-            <Link href="/account" className="text-gray-600 hover:text-gray-900 font-medium">Account</Link>
+    <div className="min-h-screen bg-white flex flex-col font-sans selection:bg-purple-100 italic-none">
+      {/* Simple Header */}
+      <header className="h-20 flex items-center justify-between px-8 max-w-7xl mx-auto w-full">
+        <div className="flex items-center gap-2.5">
+          <div className="w-10 h-10 rounded-xl instagram-gradient flex items-center justify-center shadow-lg shadow-purple-500/20">
+            <Instagram className="w-6 h-6 text-white" />
           </div>
-        )}
-      </nav>
-
-      {/* Main Content */}
-      <div className="flex-grow flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white border border-gray-300 p-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-            Insta Auto
-          </h1>
-
-          {session ? (
-            <div className="space-y-4">
-              <div className="border border-gray-300 p-4">
-                <h2 className="text-lg font-semibold text-gray-900 mb-2">
-                  Welcome back!
-                </h2>
-                <div className="space-y-1 text-sm text-gray-700">
-                  <p>
-                    <span className="font-medium">Email:</span> {session.user?.email}
-                  </p>
-                  {session.user?.name && (
-                    <p>
-                      <span className="font-medium">Name:</span> {session.user.name}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Link
-                  href="/dashboard"
-                  className="block w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 text-center"
-                >
-                  Go to Dashboard
-                </Link>
-
-                <button
-                  onClick={() => signOut()}
-                  className="w-full bg-white hover:bg-gray-100 text-gray-900 py-2 px-4 border border-gray-300"
-                >
-                  Sign Out
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <p className="text-gray-700 text-center">
-                Get started with Instagram automation
-              </p>
-
-              <div className="space-y-2">
-                <Link
-                  href="/signin"
-                  className="block w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 text-center"
-                >
-                  Sign In
-                </Link>
-
-                <Link
-                  href="/signup"
-                  className="block w-full bg-white hover:bg-gray-100 text-gray-900 py-2 px-4 text-center border border-gray-300"
-                >
-                  Create Account
-                </Link>
-              </div>
-            </div>
-          )}
+          <span className="font-bold text-2xl tracking-tight bg-clip-text text-transparent instagram-gradient">
+            Postara
+          </span>
         </div>
-      </div>
+        <div className="flex items-center gap-6">
+          <Link href="/signin" className="text-sm font-bold text-gray-600 hover:text-gray-900 transition-colors">Sign In</Link>
+          <Link href="/signup" className="px-6 py-2.5 instagram-gradient text-white rounded-xl text-sm font-bold shadow-lg shadow-purple-500/20 hover:opacity-90 active:scale-95 transition-all">
+            Get Started
+          </Link>
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <main className="flex-1 flex flex-col items-center justify-center px-6 text-center max-w-4xl mx-auto py-20">
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-50 rounded-full mb-8 border border-purple-100 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-500"></span>
+          </span>
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-600">Now in Private Beta</span>
+        </div>
+
+        <h1 className="text-5xl md:text-7xl font-black text-gray-900 leading-[1.1] mb-8 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
+          Automate Your <br />
+          <span className="bg-clip-text text-transparent instagram-gradient">Instagram Growth</span>
+        </h1>
+
+        <p className="text-xl text-gray-500 mb-12 max-w-2xl leading-relaxed animate-in fade-in slide-in-from-bottom-12 duration-700 delay-200">
+          The premium automation platform for modern content teams. Schedule posts, track deep analytics, and manage workflows with ease.
+        </p>
+
+        <div className="flex flex-col sm:flex-row items-center gap-4 animate-in fade-in slide-in-from-bottom-16 duration-700 delay-300">
+          <Link href="/signup" className="group px-8 py-4 instagram-gradient text-white rounded-2xl font-black text-lg shadow-2xl shadow-purple-500/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-3">
+            Start for Free
+            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          </Link>
+          <Link href="/signin" className="px-8 py-4 bg-white border border-gray-200 text-gray-600 rounded-2xl font-bold text-lg hover:bg-gray-50 transition-all">
+            View Demo
+          </Link>
+        </div>
+
+        {/* Trust Badges / Features */}
+        <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-12 text-left w-full animate-in fade-in slide-in-from-bottom-20 duration-1000 delay-500">
+          <div className="space-y-4">
+            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center border border-blue-100">
+              <Zap className="w-6 h-6 text-blue-500" />
+            </div>
+            <h3 className="font-bold text-gray-900 text-lg">Instant Scheduling</h3>
+            <p className="text-gray-500 text-sm leading-relaxed">Publish single posts, carousels, and reels exactly when your audience is active.</p>
+          </div>
+          <div className="space-y-4">
+            <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center border border-purple-100">
+              <BarChart3 className="w-6 h-6 text-purple-500" />
+            </div>
+            <h3 className="font-bold text-gray-900 text-lg">Deep Analytics</h3>
+            <p className="text-gray-500 text-sm leading-relaxed">Go beyond likes. Track reach, saves, and conversion rates with detailed reports.</p>
+          </div>
+          <div className="space-y-4">
+            <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center border border-green-100">
+              <ShieldCheck className="w-6 h-6 text-green-500" />
+            </div>
+            <h3 className="font-bold text-gray-900 text-lg">Enterprise Security</h3>
+            <p className="text-gray-500 text-sm leading-relaxed">Official Meta API integration ensures your account stays safe and compliant.</p>
+          </div>
+        </div>
+      </main>
+
+      <footer className="py-10 border-t border-gray-100 text-center">
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">© 2026 Postara Automation Engine</p>
+      </footer>
     </div>
   )
 }

@@ -1,184 +1,107 @@
-import { NextResponse } from 'next/server'
-import { auth } from '@/auth'
+import { NextRequest, NextResponse } from 'next/server'
+import { facebookService } from '@/lib/facebook.service'
 import { prisma } from '@/lib/prisma'
-import { facebookService, FacebookApiError } from '@/lib/facebook.service'
 
-const getRedirectUrl = (baseUrl: string, error?: string, success?: boolean) => {
-    const url = new URL('/account', baseUrl)
+export async function GET(request: NextRequest) {
+    const searchParams = request.nextUrl.searchParams
+    const code = searchParams.get('code')
+    const state = searchParams.get('state')
+    const error = searchParams.get('error')
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+
     if (error) {
-        url.searchParams.set('error', error)
+        console.error('Facebook Auth Error:', error)
+        return NextResponse.redirect(new URL('/account?error=auth_denied', appUrl))
     }
-    if (success) {
-        url.searchParams.set('success', 'true')
-    }
-    return url.toString()
-}
 
-// Route: GET /api/auth/facebook/callback
-export async function GET(req: Request) {
-    const reqUrl = req.url
+    if (!code || !state) {
+        return NextResponse.redirect(new URL('/account?error=invalid_callback', appUrl))
+    }
+
     try {
-        const session = await auth()
-        if (!session?.user?.id) {
-            return NextResponse.redirect(getRedirectUrl(reqUrl, 'Unauthorized'))
+        // 1. Decode state to verify user
+        const stateData = JSON.parse(Buffer.from(state, 'base64').toString('ascii'))
+        const userId = stateData.userId
+
+        if (!userId) {
+            throw new Error('Invalid state identifier')
         }
 
-        const url = new URL(req.url)
-        const code = url.searchParams.get('code')
-        const error = url.searchParams.get('error')
+        // 2. Exchange code for short-lived token
+        const shortLivedToken = await facebookService.exchangeCodeForToken(code)
 
-        if (error) {
-            console.error('[FacebookCallback] Permission denied or OAuth error:', url.searchParams.get('error_description') || error)
-            return NextResponse.redirect(getRedirectUrl(reqUrl, `Facebook error: ${url.searchParams.get('error_description') || error}`))
-        }
+        // 3. Exchange for long-lived token
+        const longLivedResponse = await facebookService.exchangeForLongLivedToken(shortLivedToken)
+        const longLivedToken = longLivedResponse.access_token
 
-        if (!code) {
-            return NextResponse.redirect(getRedirectUrl(reqUrl, 'OAuth code missing'))
-        }
+        // Calculate exact expiry date (default 60 days if expires_in is missing)
+        const expiresIn = longLivedResponse.expires_in || (60 * 24 * 60 * 60)
+        const tokenExpiry = new Date(Date.now() + (expiresIn * 1000))
 
-        // 1. Exchange code for short-lived token
-        let shortLivedToken: string
-        try {
-            shortLivedToken = await facebookService.exchangeCodeForToken(code)
-        } catch (e: any) {
-            return NextResponse.redirect(getRedirectUrl(reqUrl, e instanceof FacebookApiError ? e.message : 'Failed to exchange authorization code'))
-        }
+        // 4. Get User Profile for ID
+        const fbProfile = await facebookService.getUserProfile(longLivedToken)
 
-        // 2. Exchange short-lived token for long-lived user token
-        let longLivedData
-        try {
-            longLivedData = await facebookService.exchangeForLongLivedToken(shortLivedToken)
-        } catch (e: any) {
-            return NextResponse.redirect(getRedirectUrl(reqUrl, e instanceof FacebookApiError ? e.message : 'Failed to obtain long-lived token'))
-        }
-
-        const longLivedUserToken = longLivedData.access_token
-        // Expiry date (expires_in is typically returned in seconds)
-        const tokenExpiry = new Date(Date.now() + (longLivedData.expires_in || 60 * 24 * 60 * 60) * 1000)
-
-        // 3. Fetch User profile (/me) to get facebook_user_id
-        let userProfile
-        try {
-            userProfile = await facebookService.getUserProfile(longLivedUserToken)
-        } catch (e: any) {
-            return NextResponse.redirect(getRedirectUrl(reqUrl, e instanceof FacebookApiError ? e.message : 'Failed to retrieve Facebook User Profile'))
-        }
-
-        if (!userProfile?.id) {
-            return NextResponse.redirect(getRedirectUrl(reqUrl, 'Failed to retrieve Facebook User Profile ID'))
-        }
-        const facebookUserId = userProfile.id
-
-        // Check if user has already linked a different Facebook account
-        const existingOtherFbAccount = await prisma.connectedAccount.findFirst({
-            where: {
-                userId: session.user.id,
-                facebookUserId: { not: facebookUserId },
-            }
-        })
-
-        if (existingOtherFbAccount) {
-            return NextResponse.redirect(getRedirectUrl(reqUrl, 'Please log in with the originally connected Facebook account. You cannot link multiple Facebook accounts to the same profile.'))
-        }
-
-        // 4. Fetch /me/accounts to get Pages
-        let pages
-        try {
-            pages = await facebookService.getUserPages(longLivedUserToken)
-        } catch (e: any) {
-            return NextResponse.redirect(getRedirectUrl(reqUrl, e instanceof FacebookApiError ? e.message : 'Failed to retrieve Facebook pages'))
-        }
+        // 5. Get Facebook Pages
+        const pages = await facebookService.getUserPages(longLivedToken)
 
         if (!pages || pages.length === 0) {
-            return NextResponse.redirect(getRedirectUrl(reqUrl, 'No Facebook pages found for this user.'))
+            return NextResponse.redirect(new URL('/account?error=no_pages_found', appUrl))
         }
 
-        let savedCount = 0
-        let errors: string[] = []
+        let connectedCount = 0
 
-        // 5. For each page, attempt to find instagram_business_account
+        // 6. Iterate through pages to find linked IG accounts
         for (const page of pages) {
             try {
-                // Check if page already connected by another user
-                const existingPageOtherUser = await prisma.connectedAccount.findFirst({
-                    where: {
-                        pageId: page.id,
-                        userId: { not: session.user.id }
-                    }
-                })
+                const igAccount = await facebookService.getInstagramBusinessAccount(page.id, page.access_token)
 
-                if (existingPageOtherUser) {
-                    errors.push(`Page "${page.name}" is already linked by another user.`)
-                    continue
-                }
-
-                // Check if it's already connected by this user
-                const existingPageSameUser = await prisma.connectedAccount.findUnique({
-                    where: {
-                        userId_pageId: {
-                            userId: session.user.id,
-                            pageId: page.id
+                if (igAccount && igAccount.id) {
+                    // 7. Store in Database
+                    await prisma.connectedAccount.upsert({
+                        where: {
+                            userId_pageId: {
+                                userId: userId,
+                                pageId: page.id
+                            }
+                        },
+                        update: {
+                            instagramBusinessId: igAccount.id,
+                            username: igAccount.username || page.name,
+                            profilePictureUrl: igAccount.profile_picture_url,
+                            pageAccessToken: page.access_token, // Store the page token for IG API calls
+                            longLivedUserToken: longLivedToken,
+                            tokenExpiry: tokenExpiry,
+                            facebookUserId: fbProfile.id,
+                        },
+                        create: {
+                            userId: userId,
+                            facebookUserId: fbProfile.id,
+                            pageId: page.id,
+                            instagramBusinessId: igAccount.id,
+                            username: igAccount.username || page.name,
+                            profilePictureUrl: igAccount.profile_picture_url,
+                            pageAccessToken: page.access_token,
+                            longLivedUserToken: longLivedToken,
+                            tokenExpiry: tokenExpiry,
                         }
-                    }
-                })
-
-                if (existingPageSameUser) {
-                    errors.push(`Page "${page.name}" is already connected.`)
-                    continue
+                    })
+                    connectedCount++
                 }
-
-                const instagramBusinessId = await facebookService.getInstagramBusinessAccount(page.id, page.access_token)
-
-                if (!instagramBusinessId) {
-                    errors.push(`Page "${page.name}" does not have a linked Instagram Business Account, or permissions are missing.`)
-                    continue
-                }
-
-                await prisma.connectedAccount.upsert({
-                    where: {
-                        userId_pageId: {
-                            userId: session.user.id,
-                            pageId: page.id
-                        }
-                    },
-                    update: {
-                        facebookUserId,
-                        instagramBusinessId,
-                        pageAccessToken: page.access_token,
-                        longLivedUserToken,
-                        tokenExpiry,
-                    },
-                    create: {
-                        userId: session.user.id,
-                        facebookUserId,
-                        pageId: page.id,
-                        instagramBusinessId,
-                        pageAccessToken: page.access_token,
-                        longLivedUserToken,
-                        tokenExpiry,
-                    }
-                })
-
-                savedCount++
-            } catch (pageError: any) {
-                if (pageError instanceof FacebookApiError) {
-                    errors.push(`Error for page "${page.name}": ${pageError.message}`)
-                } else {
-                    errors.push(`Unknown error checking page "${page.name}"`)
-                }
+            } catch (pageError) {
+                console.warn(`Failed to process page ${page.id}:`, pageError)
+                // Continue to next page
             }
         }
 
-        if (savedCount === 0) {
-            const errorMsg = errors.length > 0 ? errors[0] : 'No valid Instagram Business accounts found.'
-            return NextResponse.redirect(getRedirectUrl(reqUrl, errorMsg))
+        if (connectedCount === 0) {
+            return NextResponse.redirect(new URL('/account?error=no_ig_business_found', appUrl))
         }
 
-        // Successfully linked
-        return NextResponse.redirect(getRedirectUrl(reqUrl, undefined, true))
+        return NextResponse.redirect(new URL('/account?success=true', appUrl))
 
     } catch (error: any) {
-        console.error('[FacebookCallback] General Error:', error)
-        return NextResponse.redirect(getRedirectUrl(reqUrl, 'Internal Server Error during token processing'))
+        console.error('Callback processing error:', error)
+        return NextResponse.redirect(new URL('/account?error=processing_failed', appUrl))
     }
 }
