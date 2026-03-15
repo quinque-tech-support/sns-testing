@@ -38,16 +38,17 @@ model ConnectedAccount {
 }
 
 model Post {
-  id                 String   @id @default(cuid())
+  id                 String    @id @default(cuid())
   userId             String
   connectedAccountId String
   caption            String?
   imageUrl           String
+  mediaType          MediaType @default(IMAGE)
   instagramMediaId   String?
-  views              Int      @default(0)
-  reach              Int      @default(0)
-  saves              Int      @default(0)
-  createdAt          DateTime @default(now())
+  views              Int       @default(0)
+  reach              Int       @default(0)
+  saves              Int       @default(0)
+  createdAt          DateTime  @default(now())
 
   user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   connectedAccount ConnectedAccount @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
@@ -69,4 +70,9 @@ enum ScheduleStatus {
   PROCESSING
   PUBLISHED
   FAILED
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
 }

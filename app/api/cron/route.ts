@@ -33,18 +33,28 @@ async function processSchedule(scheduleId: string) {
             throw new Error(`Schedule ${scheduleId} failed: Missing page access token or business account ID.`)
         }
 
-        console.log(`[Cron] Started processing post ${post.id} for IG account ${instagramBusinessId}...`)
+        const isVideo = post.mediaType === 'VIDEO'
+        console.log(`[Cron] Processing post ${post.id} (${isVideo ? 'VIDEO/Reel' : 'IMAGE'}) for IG account ${instagramBusinessId}...`)
 
-        // Step 1: Create Media Container
+        // Step 1: Create Media Container (image or Reel)
         const containerUrl = `https://graph.facebook.com/v19.0/${instagramBusinessId}/media`
-        const containerRes = await fetch(containerUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+        const containerBody = isVideo
+            ? {
+                video_url: post.imageUrl,
+                media_type: 'REELS',
+                caption: post.caption || '',
+                access_token: pageAccessToken
+            }
+            : {
                 image_url: post.imageUrl,
                 caption: post.caption || '',
                 access_token: pageAccessToken
-            })
+            }
+
+        const containerRes = await fetch(containerUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(containerBody)
         })
 
         const containerData = await containerRes.json()
@@ -57,7 +67,24 @@ async function processSchedule(scheduleId: string) {
         const creationId = containerData.id
         console.log(`[Cron] Created Media Container: ${creationId}`)
 
-        // Step 2: Publish the Media
+        // Step 2: For videos, poll until FINISHED
+        if (isVideo) {
+            const maxAttempts = 18 // 18 × 5s = 90s
+            let ready = false
+            for (let i = 0; i < maxAttempts; i++) {
+                await new Promise(r => setTimeout(r, 5000))
+                const statusRes = await fetch(
+                    `https://graph.facebook.com/v19.0/${creationId}?fields=status_code&access_token=${pageAccessToken}`
+                )
+                const statusData = await statusRes.json()
+                console.log(`[Cron] Container status (attempt ${i + 1}): ${statusData.status_code}`)
+                if (statusData.status_code === 'FINISHED') { ready = true; break }
+                if (statusData.status_code === 'ERROR') throw new Error('IG video container failed during processing')
+            }
+            if (!ready) throw new Error('Timed out waiting for IG video container to finish processing')
+        }
+
+        // Step 3: Publish the Media
         const publishUrl = `https://graph.facebook.com/v19.0/${instagramBusinessId}/media_publish`
         const publishRes = await fetch(publishUrl, {
             method: 'POST',
@@ -83,7 +110,6 @@ async function processSchedule(scheduleId: string) {
             data: { status: 'PUBLISHED' }
         })
 
-        // Also update the post with the returned instagramMediaId
         await prisma.post.update({
             where: { id: post.id },
             data: { instagramMediaId: publishData.id }
@@ -94,7 +120,6 @@ async function processSchedule(scheduleId: string) {
     } catch (error: any) {
         console.error(`[Cron] Error processing schedule ${scheduleId}:`, error.message)
 
-        // Mark as failed
         await prisma.schedule.update({
             where: { id: scheduleId },
             data: { status: 'FAILED' }

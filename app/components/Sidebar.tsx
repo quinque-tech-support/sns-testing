@@ -47,8 +47,8 @@ export function Sidebar({ user }: SidebarProps) {
                     <div className="w-9 h-9 rounded-xl instagram-gradient flex items-center justify-center shadow-sm">
                         <Instagram className="w-5 h-5 text-white" />
                     </div>
-                    <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent instagram-gradient">
-                        Postara
+                    <span className="font-bold text-xl tracking-tight bg-clip-text instagram-gradient">
+                        Schedlify
                     </span>
                 </Link>
             </div>

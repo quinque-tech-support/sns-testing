@@ -43,6 +43,7 @@ model Post {
   connectedAccountId String
   caption            String?
   imageUrl           String
+  mediaType          MediaType        @default(IMAGE)
   instagramMediaId   String?
   views              Int              @default(0)
   reach              Int              @default(0)
@@ -69,4 +70,9 @@ enum ScheduleStatus {
   PROCESSING
   PUBLISHED
   FAILED
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
 }

@@ -69,6 +69,7 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
     const [caption, setCaption] = useState('')
     const [mediaPreview, setMediaPreview] = useState<string | null>(null)
     const [mediaFile, setMediaFile] = useState<File | null>(null)
+    const [isVideo, setIsVideo] = useState(false)
     const [selectedAccountId, setSelectedAccountId] = useState(accounts[0]?.id || '')
     const [scheduledFor, setScheduledFor] = useState('')
     const [hashtags, setHashtags] = useState('')
@@ -84,6 +85,7 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
             const url = URL.createObjectURL(file)
             setMediaPreview(url)
             setMediaFile(file)
+            setIsVideo(file.type.startsWith('video/'))
         }
     }
 
@@ -227,12 +229,23 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
                             <label className="block text-sm font-bold text-gray-700 mb-3 uppercase tracking-wider">Media Upload</label>
                             {mediaPreview ? (
                                 <div className="relative aspect-video bg-gray-50 rounded-2xl border border-dashed border-gray-200 overflow-hidden group">
-                                    <img src={mediaPreview} alt="Preview" className="w-full h-full object-contain" />
+                                    {isVideo ? (
+                                        <video src={mediaPreview} controls className="w-full h-full object-contain" />
+                                    ) : (
+                                        <img src={mediaPreview} alt="Preview" className="w-full h-full object-contain" />
+                                    )}
+                                    {isVideo && (
+                                        <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 bg-purple-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wider">
+                                            <Video className="w-3 h-3" />
+                                            Reel
+                                        </div>
+                                    )}
                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
                                         <button
                                             onClick={() => {
                                                 setMediaPreview(null)
                                                 setMediaFile(null)
+                                                setIsVideo(false)
                                             }}
                                             className="p-3 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/40 transition-all"
                                         >
@@ -246,7 +259,7 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
                                         <Upload className="w-8 h-8 text-purple-500" />
                                     </div>
                                     <p className="text-gray-900 font-bold">Drop your image or video here</p>
-                                    <p className="text-gray-400 text-sm mt-1">Supports JPG, PNG, MP4 (max 50MB)</p>
+                                    <p className="text-gray-400 text-sm mt-1">Supports JPG, PNG, MP4, MOV (max 500MB)</p>
                                     <input type="file" className="hidden" onChange={handleMediaUpload} accept="image/*,video/*" />
                                 </label>
                             )}
@@ -439,7 +452,18 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
 
                                 <div className="aspect-square bg-gray-100 flex items-center justify-center relative overflow-hidden">
                                     {mediaPreview ? (
-                                        <img src={mediaPreview} className="w-full h-full object-cover" alt="Preview" />
+                                        isVideo ? (
+                                            <div className="w-full h-full bg-gray-900 flex items-center justify-center relative">
+                                                <video src={mediaPreview} className="w-full h-full object-cover opacity-80" />
+                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                    <div className="w-10 h-10 rounded-full bg-white/30 backdrop-blur flex items-center justify-center">
+                                                        <Video className="w-5 h-5 text-white" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <img src={mediaPreview} className="w-full h-full object-cover" alt="Preview" />
+                                        )
                                     ) : (
                                         <ImageIcon className="w-12 h-12 text-gray-300" />
                                     )}

@@ -12,11 +12,17 @@ export type ActionResult = {
     postId?: string
 }
 
+const MAX_FILE_SIZE = 500 * 1024 * 1024 // 500MB
+
 /**
  * Helper to upload a File to Supabase Storage and return its public URL.
  */
 async function uploadMediaToSupabase(file: File): Promise<string | null> {
     try {
+        if (file.size > MAX_FILE_SIZE) {
+            throw new Error('File exceeds the 500MB limit.')
+        }
+
         const fileExt = file.name.split('.').pop()
         const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`
 
@@ -49,8 +55,35 @@ async function uploadMediaToSupabase(file: File): Promise<string | null> {
 }
 
 /**
+ * Poll Instagram media container until it's FINISHED processing (for videos)
+ */
+async function waitForContainer(containerId: string, accessToken: string, maxWaitMs = 90000): Promise<boolean> {
+    const pollInterval = 5000
+    const maxAttempts = maxWaitMs / pollInterval
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        await new Promise(resolve => setTimeout(resolve, pollInterval))
+
+        const res = await fetch(
+            `https://graph.facebook.com/v19.0/${containerId}?fields=status_code&access_token=${accessToken}`
+        )
+        const data = await res.json()
+
+        console.log(`[Container Poll] Attempt ${attempt + 1}: status_code = ${data.status_code}`)
+
+        if (data.status_code === 'FINISHED') return true
+        if (data.status_code === 'ERROR' || data.error) {
+            console.error('[Container Poll] Error:', data)
+            return false
+        }
+    }
+
+    console.warn(`[Container Poll] Timed out after ${maxWaitMs / 1000}s`)
+    return false
+}
+
+/**
  * Save a post as a Draft without publishing or scheduling.
- * For this implementation we extract the mediaFile uploaded from the form data.
  */
 export async function saveDraft(formData: FormData): Promise<ActionResult> {
     const session = await auth()
@@ -66,7 +99,10 @@ export async function saveDraft(formData: FormData): Promise<ActionResult> {
 
     try {
         let finalImageUrl = 'https://placeholder.co/1080x1080'
+        const isVideo = mediaFile ? mediaFile.type.startsWith('video/') : false
+
         if (mediaFile && mediaFile.size > 0) {
+            if (mediaFile.size > MAX_FILE_SIZE) return { error: 'File exceeds the 500MB limit.' }
             const url = await uploadMediaToSupabase(mediaFile)
             if (url) finalImageUrl = url
         }
@@ -77,6 +113,7 @@ export async function saveDraft(formData: FormData): Promise<ActionResult> {
                 connectedAccountId,
                 caption: caption || '',
                 imageUrl: finalImageUrl,
+                mediaType: isVideo ? 'VIDEO' : 'IMAGE',
             }
         })
 
@@ -85,13 +122,12 @@ export async function saveDraft(formData: FormData): Promise<ActionResult> {
         return { success: true, postId: post.id }
     } catch (err: any) {
         console.error('[saveDraft]', err)
-        return { error: 'Failed to save draft. Please try again.' }
+        return { error: err.message || 'Failed to save draft. Please try again.' }
     }
 }
 
 /**
- * Publish a post immediately by creating it and marking the schedule as PUBLISHED immediately.
- * In production, this would call the Facebook Graph API to create a media container and publish.
+ * Publish a post immediately - supports both images and videos (Reels).
  */
 export async function publishNow(formData: FormData): Promise<ActionResult> {
     const session = await auth()
@@ -107,6 +143,11 @@ export async function publishNow(formData: FormData): Promise<ActionResult> {
     if (!mediaFile || mediaFile.size === 0) {
         return { error: 'Please upload an image or video before publishing.' }
     }
+    if (mediaFile.size > MAX_FILE_SIZE) {
+        return { error: 'File exceeds the 500MB limit.' }
+    }
+
+    const isVideo = mediaFile.type.startsWith('video/')
 
     try {
         const account = await prisma.connectedAccount.findUnique({
@@ -117,23 +158,28 @@ export async function publishNow(formData: FormData): Promise<ActionResult> {
             return { error: 'Instagram account implies missing access tokens. Please reconnect.' }
         }
 
-        let finalImageUrl = 'https://placeholder.co/1080x1080'
-        if (mediaFile && mediaFile.size > 0) {
-            const uploadedUrl = await uploadMediaToSupabase(mediaFile)
-            if (uploadedUrl) finalImageUrl = uploadedUrl
-            else return { error: 'Failed to upload media to storage.' }
-        }
+        const uploadedUrl = await uploadMediaToSupabase(mediaFile)
+        if (!uploadedUrl) return { error: 'Failed to upload media to storage.' }
 
-        // 1. Create Media Container
+        // 1. Create Media Container (Image or Reel)
         const containerUrl = `https://graph.facebook.com/v19.0/${account.instagramBusinessId}/media`
+        const containerBody = isVideo
+            ? {
+                video_url: uploadedUrl,
+                media_type: 'REELS',
+                caption: caption || '',
+                access_token: account.pageAccessToken
+            }
+            : {
+                image_url: uploadedUrl,
+                caption: caption || '',
+                access_token: account.pageAccessToken
+            }
+
         const containerRes = await fetch(containerUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                image_url: finalImageUrl,
-                caption: caption || '',
-                access_token: account.pageAccessToken
-            })
+            body: JSON.stringify(containerBody)
         })
 
         const containerData = await containerRes.json()
@@ -142,8 +188,17 @@ export async function publishNow(formData: FormData): Promise<ActionResult> {
         }
 
         const creationId = containerData.id
+        console.log(`[publishNow] Container created: ${creationId}, isVideo: ${isVideo}`)
 
-        // 2. Publish Media
+        // 2. For videos, wait for Instagram to finish processing the Reel
+        if (isVideo) {
+            const ready = await waitForContainer(creationId, account.pageAccessToken)
+            if (!ready) {
+                return { error: 'Instagram is taking too long to process your video. Please try again.' }
+            }
+        }
+
+        // 3. Publish Media
         const publishUrl = `https://graph.facebook.com/v19.0/${account.instagramBusinessId}/media_publish`
         const publishRes = await fetch(publishUrl, {
             method: 'POST',
@@ -159,13 +214,14 @@ export async function publishNow(formData: FormData): Promise<ActionResult> {
             return { error: `IG Publish Error: ${publishData.error?.message || 'Unknown'}` }
         }
 
-        // 3. Save to Database
+        // 4. Save to Database
         const post = await prisma.post.create({
             data: {
                 userId: session.user.id,
                 connectedAccountId,
                 caption: caption || '',
-                imageUrl: finalImageUrl,
+                imageUrl: uploadedUrl,
+                mediaType: isVideo ? 'VIDEO' : 'IMAGE',
                 instagramMediaId: publishData.id,
             }
         })
@@ -184,7 +240,7 @@ export async function publishNow(formData: FormData): Promise<ActionResult> {
         return { success: true, postId: post.id }
     } catch (err: any) {
         console.error('[publishNow]', err)
-        return { error: 'Failed to publish post. Please try again.' }
+        return { error: err.message || 'Failed to publish post. Please try again.' }
     }
 }
 
@@ -209,26 +265,28 @@ export async function schedulePost(formData: FormData): Promise<ActionResult> {
     if (!mediaFile || mediaFile.size === 0) {
         return { error: 'Please upload an image or video to schedule a post.' }
     }
+    if (mediaFile.size > MAX_FILE_SIZE) {
+        return { error: 'File exceeds the 500MB limit.' }
+    }
 
     const scheduledFor = new Date(scheduledForStr)
     if (scheduledFor <= new Date()) {
         return { error: 'Scheduled time must be in the future.' }
     }
 
+    const isVideo = mediaFile.type.startsWith('video/')
+
     try {
-        let finalImageUrl = 'https://placeholder.co/1080x1080'
-        if (mediaFile && mediaFile.size > 0) {
-            const uploadedUrl = await uploadMediaToSupabase(mediaFile)
-            if (uploadedUrl) finalImageUrl = uploadedUrl
-            else return { error: 'Failed to upload media to storage.' }
-        }
+        const uploadedUrl = await uploadMediaToSupabase(mediaFile)
+        if (!uploadedUrl) return { error: 'Failed to upload media to storage.' }
 
         const post = await prisma.post.create({
             data: {
                 userId: session.user.id,
                 connectedAccountId,
                 caption: caption || '',
-                imageUrl: finalImageUrl,
+                imageUrl: uploadedUrl,
+                mediaType: isVideo ? 'VIDEO' : 'IMAGE',
             }
         })
 
@@ -246,6 +304,6 @@ export async function schedulePost(formData: FormData): Promise<ActionResult> {
         return { success: true, postId: post.id }
     } catch (err: any) {
         console.error('[schedulePost]', err)
-        return { error: 'Failed to schedule post. Please try again.' }
+        return { error: err.message || 'Failed to schedule post. Please try again.' }
     }
 }

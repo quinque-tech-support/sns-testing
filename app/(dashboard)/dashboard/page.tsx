@@ -1,5 +1,6 @@
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
+import { facebookService } from '@/lib/facebook.service'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -27,22 +28,90 @@ export default async function DashboardPage() {
     }
 
     // Fetch dynamic stats
-    const [postsCount, scheduledCount, accountsCount] = await Promise.all([
-        prisma.post.count({ where: { userId: session.user.id } }),
+    const [accountsCount, publishedCount, connectedAccount] = await Promise.all([
+        prisma.connectedAccount.count({ where: { userId: session.user.id } }),
         prisma.schedule.count({
             where: {
                 post: { userId: session.user.id },
-                status: 'PENDING'
+                status: 'PUBLISHED'
             }
         }),
-        prisma.connectedAccount.count({ where: { userId: session.user.id } })
+        prisma.connectedAccount.findFirst({
+            where: {
+                userId: session.user.id,
+            },
+            select: {
+                instagramBusinessId: true,
+                pageAccessToken: true,
+                username: true,
+            }
+        })
     ])
 
+    // Fetch real-time Instagram account insights (last 30 days)
+    let totalImpressions = 0
+    let totalLikes = 0
+    let hasInsights = false
+
+    if (connectedAccount?.instagramBusinessId && connectedAccount?.pageAccessToken) {
+        const insights = await facebookService.getAccountInsights(
+            connectedAccount.instagramBusinessId,
+            connectedAccount.pageAccessToken
+        )
+        if (insights) {
+            totalImpressions = insights.totalImpressions
+            totalLikes = insights.totalLikes
+            hasInsights = true
+        }
+    }
+
+    function formatNum(n: number): string {
+        if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M'
+        if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K'
+        return n.toString()
+    }
+
     const kpis = [
-        { label: 'Total Posts', value: postsCount.toString(), trend: '+5%', isPositive: true, icon: Instagram, color: 'text-blue-500', bg: 'bg-blue-50' },
-        { label: 'Pending Schedules', value: scheduledCount.toString(), trend: '+2%', isPositive: true, icon: Clock, color: 'text-purple-500', bg: 'bg-purple-50' },
-        { label: 'Linked Accounts', value: accountsCount.toString(), trend: '+1', isPositive: true, icon: UserPlus, color: 'text-orange-500', bg: 'bg-orange-50' },
-        { label: 'Engagement Rate', value: '5.8%', trend: '+0.8%', isPositive: true, icon: Heart, color: 'text-pink-500', bg: 'bg-pink-50' },
+        {
+            label: 'Reach (30 days)',
+            value: hasInsights ? formatNum(totalImpressions) : '--',
+            sub: hasInsights ? 'Unique accounts reached' : 'Connect an account',
+            icon: Eye,
+            color: 'text-blue-500',
+            bg: 'bg-blue-50',
+            trend: hasInsights ? '↑ Live' : null,
+            isPositive: true,
+        },
+        {
+            label: 'Profile Views (30 days)',
+            value: hasInsights ? formatNum(totalLikes) : '--',
+            sub: hasInsights ? 'From Instagram Graph API' : 'No data yet',
+            icon: Heart,
+            color: 'text-pink-500',
+            bg: 'bg-pink-50',
+            trend: hasInsights ? '↑ Live' : null,
+            isPositive: true,
+        },
+        {
+            label: 'Published Posts',
+            value: publishedCount.toString(),
+            sub: 'All time',
+            icon: PlayCircle,
+            color: 'text-purple-500',
+            bg: 'bg-purple-50',
+            trend: publishedCount > 0 ? `+${publishedCount}` : null,
+            isPositive: true,
+        },
+        {
+            label: 'Linked Accounts',
+            value: accountsCount.toString(),
+            sub: connectedAccount ? `@${connectedAccount.username}` : 'No accounts',
+            icon: UserPlus,
+            color: 'text-orange-500',
+            bg: 'bg-orange-50',
+            trend: accountsCount > 0 ? `${accountsCount} active` : null,
+            isPositive: true,
+        },
     ]
 
     // Fetch upcoming posts
@@ -57,8 +126,8 @@ export default async function DashboardPage() {
     })
 
     const activities = [
-        { id: 1, type: 'status_change', user: 'System', detail: 'Monitoring background worker...', time: 'Live', icon: CheckCircle2, iconColor: 'text-green-500' },
-        { id: 2, type: 'post_published', user: 'Queue', detail: `Processed ${postsCount} historical posts`, time: 'Recently', icon: PlayCircle, iconColor: 'text-purple-500' },
+        { id: 1, type: 'status_change', user: 'System', detail: hasInsights ? `Synced @${connectedAccount?.username} insights` : 'Waiting for connected account...', time: 'Live', icon: CheckCircle2, iconColor: 'text-green-500' },
+        { id: 2, type: 'post_published', user: 'Queue', detail: `${publishedCount} posts published`, time: 'All time', icon: PlayCircle, iconColor: 'text-purple-500' },
     ]
 
     return (
@@ -88,13 +157,16 @@ export default async function DashboardPage() {
                                 <div className={`w-10 h-10 ${kpi.bg} rounded-xl flex items-center justify-center`}>
                                     <kpi.icon className={`w-5 h-5 ${kpi.color}`} />
                                 </div>
-                                <div className={`flex items-center gap-1 text-xs font-bold ${kpi.isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                                    {kpi.isPositive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                                    {kpi.trend}
-                                </div>
+                                {kpi.trend && (
+                                    <div className="flex items-center gap-1 text-xs font-bold text-green-600">
+                                        <ArrowUpRight className="w-3 h-3" />
+                                        {kpi.trend}
+                                    </div>
+                                )}
                             </div>
                             <h3 className="text-sm font-medium text-gray-500 truncate">{kpi.label}</h3>
                             <p className="text-2xl font-bold text-gray-900 mt-1">{kpi.value}</p>
+                            {kpi.sub && <p className="text-xs text-gray-400 mt-1 truncate">{kpi.sub}</p>}
                         </div>
                     </div>
                 ))}

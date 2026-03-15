@@ -47,11 +47,23 @@ export namespace $Enums {
 
 export type ScheduleStatus = (typeof ScheduleStatus)[keyof typeof ScheduleStatus]
 
+
+export const MediaType: {
+  IMAGE: 'IMAGE',
+  VIDEO: 'VIDEO'
+};
+
+export type MediaType = (typeof MediaType)[keyof typeof MediaType]
+
 }
 
 export type ScheduleStatus = $Enums.ScheduleStatus
 
 export const ScheduleStatus: typeof $Enums.ScheduleStatus
+
+export type MediaType = $Enums.MediaType
+
+export const MediaType: typeof $Enums.MediaType
 
 /**
  * ##  Prisma Client ʲˢ
@@ -3549,6 +3561,7 @@ export namespace Prisma {
     connectedAccountId: string | null
     caption: string | null
     imageUrl: string | null
+    mediaType: $Enums.MediaType | null
     instagramMediaId: string | null
     views: number | null
     reach: number | null
@@ -3562,6 +3575,7 @@ export namespace Prisma {
     connectedAccountId: string | null
     caption: string | null
     imageUrl: string | null
+    mediaType: $Enums.MediaType | null
     instagramMediaId: string | null
     views: number | null
     reach: number | null
@@ -3575,6 +3589,7 @@ export namespace Prisma {
     connectedAccountId: number
     caption: number
     imageUrl: number
+    mediaType: number
     instagramMediaId: number
     views: number
     reach: number
@@ -3602,6 +3617,7 @@ export namespace Prisma {
     connectedAccountId?: true
     caption?: true
     imageUrl?: true
+    mediaType?: true
     instagramMediaId?: true
     views?: true
     reach?: true
@@ -3615,6 +3631,7 @@ export namespace Prisma {
     connectedAccountId?: true
     caption?: true
     imageUrl?: true
+    mediaType?: true
     instagramMediaId?: true
     views?: true
     reach?: true
@@ -3628,6 +3645,7 @@ export namespace Prisma {
     connectedAccountId?: true
     caption?: true
     imageUrl?: true
+    mediaType?: true
     instagramMediaId?: true
     views?: true
     reach?: true
@@ -3728,6 +3746,7 @@ export namespace Prisma {
     connectedAccountId: string
     caption: string | null
     imageUrl: string
+    mediaType: $Enums.MediaType
     instagramMediaId: string | null
     views: number
     reach: number
@@ -3760,6 +3779,7 @@ export namespace Prisma {
     connectedAccountId?: boolean
     caption?: boolean
     imageUrl?: boolean
+    mediaType?: boolean
     instagramMediaId?: boolean
     views?: boolean
     reach?: boolean
@@ -3777,6 +3797,7 @@ export namespace Prisma {
     connectedAccountId?: boolean
     caption?: boolean
     imageUrl?: boolean
+    mediaType?: boolean
     instagramMediaId?: boolean
     views?: boolean
     reach?: boolean
@@ -3792,6 +3813,7 @@ export namespace Prisma {
     connectedAccountId?: boolean
     caption?: boolean
     imageUrl?: boolean
+    mediaType?: boolean
     instagramMediaId?: boolean
     views?: boolean
     reach?: boolean
@@ -3807,6 +3829,7 @@ export namespace Prisma {
     connectedAccountId?: boolean
     caption?: boolean
     imageUrl?: boolean
+    mediaType?: boolean
     instagramMediaId?: boolean
     views?: boolean
     reach?: boolean
@@ -3814,7 +3837,7 @@ export namespace Prisma {
     createdAt?: boolean
   }
 
-  export type PostOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "connectedAccountId" | "caption" | "imageUrl" | "instagramMediaId" | "views" | "reach" | "saves" | "createdAt", ExtArgs["result"]["post"]>
+  export type PostOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "connectedAccountId" | "caption" | "imageUrl" | "mediaType" | "instagramMediaId" | "views" | "reach" | "saves" | "createdAt", ExtArgs["result"]["post"]>
   export type PostInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | UserDefaultArgs<ExtArgs>
     connectedAccount?: boolean | ConnectedAccountDefaultArgs<ExtArgs>
@@ -3843,6 +3866,7 @@ export namespace Prisma {
       connectedAccountId: string
       caption: string | null
       imageUrl: string
+      mediaType: $Enums.MediaType
       instagramMediaId: string | null
       views: number
       reach: number
@@ -4279,6 +4303,7 @@ export namespace Prisma {
     readonly connectedAccountId: FieldRef<"Post", 'String'>
     readonly caption: FieldRef<"Post", 'String'>
     readonly imageUrl: FieldRef<"Post", 'String'>
+    readonly mediaType: FieldRef<"Post", 'MediaType'>
     readonly instagramMediaId: FieldRef<"Post", 'String'>
     readonly views: FieldRef<"Post", 'Int'>
     readonly reach: FieldRef<"Post", 'Int'>
@@ -5828,6 +5853,7 @@ export namespace Prisma {
     connectedAccountId: 'connectedAccountId',
     caption: 'caption',
     imageUrl: 'imageUrl',
+    mediaType: 'mediaType',
     instagramMediaId: 'instagramMediaId',
     views: 'views',
     reach: 'reach',
@@ -5903,6 +5929,20 @@ export namespace Prisma {
    * Reference to a field of type 'DateTime[]'
    */
   export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'MediaType'
+   */
+  export type EnumMediaTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MediaType'>
+    
+
+
+  /**
+   * Reference to a field of type 'MediaType[]'
+   */
+  export type ListEnumMediaTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MediaType[]'>
     
 
 
@@ -6107,6 +6147,7 @@ export namespace Prisma {
     connectedAccountId?: StringFilter<"Post"> | string
     caption?: StringNullableFilter<"Post"> | string | null
     imageUrl?: StringFilter<"Post"> | string
+    mediaType?: EnumMediaTypeFilter<"Post"> | $Enums.MediaType
     instagramMediaId?: StringNullableFilter<"Post"> | string | null
     views?: IntFilter<"Post"> | number
     reach?: IntFilter<"Post"> | number
@@ -6123,6 +6164,7 @@ export namespace Prisma {
     connectedAccountId?: SortOrder
     caption?: SortOrderInput | SortOrder
     imageUrl?: SortOrder
+    mediaType?: SortOrder
     instagramMediaId?: SortOrderInput | SortOrder
     views?: SortOrder
     reach?: SortOrder
@@ -6142,6 +6184,7 @@ export namespace Prisma {
     connectedAccountId?: StringFilter<"Post"> | string
     caption?: StringNullableFilter<"Post"> | string | null
     imageUrl?: StringFilter<"Post"> | string
+    mediaType?: EnumMediaTypeFilter<"Post"> | $Enums.MediaType
     instagramMediaId?: StringNullableFilter<"Post"> | string | null
     views?: IntFilter<"Post"> | number
     reach?: IntFilter<"Post"> | number
@@ -6158,6 +6201,7 @@ export namespace Prisma {
     connectedAccountId?: SortOrder
     caption?: SortOrderInput | SortOrder
     imageUrl?: SortOrder
+    mediaType?: SortOrder
     instagramMediaId?: SortOrderInput | SortOrder
     views?: SortOrder
     reach?: SortOrder
@@ -6179,6 +6223,7 @@ export namespace Prisma {
     connectedAccountId?: StringWithAggregatesFilter<"Post"> | string
     caption?: StringNullableWithAggregatesFilter<"Post"> | string | null
     imageUrl?: StringWithAggregatesFilter<"Post"> | string
+    mediaType?: EnumMediaTypeWithAggregatesFilter<"Post"> | $Enums.MediaType
     instagramMediaId?: StringNullableWithAggregatesFilter<"Post"> | string | null
     views?: IntWithAggregatesFilter<"Post"> | number
     reach?: IntWithAggregatesFilter<"Post"> | number
@@ -6410,6 +6455,7 @@ export namespace Prisma {
     id?: string
     caption?: string | null
     imageUrl: string
+    mediaType?: $Enums.MediaType
     instagramMediaId?: string | null
     views?: number
     reach?: number
@@ -6426,6 +6472,7 @@ export namespace Prisma {
     connectedAccountId: string
     caption?: string | null
     imageUrl: string
+    mediaType?: $Enums.MediaType
     instagramMediaId?: string | null
     views?: number
     reach?: number
@@ -6438,6 +6485,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     caption?: NullableStringFieldUpdateOperationsInput | string | null
     imageUrl?: StringFieldUpdateOperationsInput | string
+    mediaType?: EnumMediaTypeFieldUpdateOperationsInput | $Enums.MediaType
     instagramMediaId?: NullableStringFieldUpdateOperationsInput | string | null
     views?: IntFieldUpdateOperationsInput | number
     reach?: IntFieldUpdateOperationsInput | number
@@ -6454,6 +6502,7 @@ export namespace Prisma {
     connectedAccountId?: StringFieldUpdateOperationsInput | string
     caption?: NullableStringFieldUpdateOperationsInput | string | null
     imageUrl?: StringFieldUpdateOperationsInput | string
+    mediaType?: EnumMediaTypeFieldUpdateOperationsInput | $Enums.MediaType
     instagramMediaId?: NullableStringFieldUpdateOperationsInput | string | null
     views?: IntFieldUpdateOperationsInput | number
     reach?: IntFieldUpdateOperationsInput | number
@@ -6468,6 +6517,7 @@ export namespace Prisma {
     connectedAccountId: string
     caption?: string | null
     imageUrl: string
+    mediaType?: $Enums.MediaType
     instagramMediaId?: string | null
     views?: number
     reach?: number
@@ -6479,6 +6529,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     caption?: NullableStringFieldUpdateOperationsInput | string | null
     imageUrl?: StringFieldUpdateOperationsInput | string
+    mediaType?: EnumMediaTypeFieldUpdateOperationsInput | $Enums.MediaType
     instagramMediaId?: NullableStringFieldUpdateOperationsInput | string | null
     views?: IntFieldUpdateOperationsInput | number
     reach?: IntFieldUpdateOperationsInput | number
@@ -6492,6 +6543,7 @@ export namespace Prisma {
     connectedAccountId?: StringFieldUpdateOperationsInput | string
     caption?: NullableStringFieldUpdateOperationsInput | string | null
     imageUrl?: StringFieldUpdateOperationsInput | string
+    mediaType?: EnumMediaTypeFieldUpdateOperationsInput | $Enums.MediaType
     instagramMediaId?: NullableStringFieldUpdateOperationsInput | string | null
     views?: IntFieldUpdateOperationsInput | number
     reach?: IntFieldUpdateOperationsInput | number
@@ -6746,6 +6798,13 @@ export namespace Prisma {
     createdAt?: SortOrder
   }
 
+  export type EnumMediaTypeFilter<$PrismaModel = never> = {
+    equals?: $Enums.MediaType | EnumMediaTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.MediaType[] | ListEnumMediaTypeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.MediaType[] | ListEnumMediaTypeFieldRefInput<$PrismaModel>
+    not?: NestedEnumMediaTypeFilter<$PrismaModel> | $Enums.MediaType
+  }
+
   export type IntFilter<$PrismaModel = never> = {
     equals?: number | IntFieldRefInput<$PrismaModel>
     in?: number[] | ListIntFieldRefInput<$PrismaModel>
@@ -6778,6 +6837,7 @@ export namespace Prisma {
     connectedAccountId?: SortOrder
     caption?: SortOrder
     imageUrl?: SortOrder
+    mediaType?: SortOrder
     instagramMediaId?: SortOrder
     views?: SortOrder
     reach?: SortOrder
@@ -6797,6 +6857,7 @@ export namespace Prisma {
     connectedAccountId?: SortOrder
     caption?: SortOrder
     imageUrl?: SortOrder
+    mediaType?: SortOrder
     instagramMediaId?: SortOrder
     views?: SortOrder
     reach?: SortOrder
@@ -6810,6 +6871,7 @@ export namespace Prisma {
     connectedAccountId?: SortOrder
     caption?: SortOrder
     imageUrl?: SortOrder
+    mediaType?: SortOrder
     instagramMediaId?: SortOrder
     views?: SortOrder
     reach?: SortOrder
@@ -6821,6 +6883,16 @@ export namespace Prisma {
     views?: SortOrder
     reach?: SortOrder
     saves?: SortOrder
+  }
+
+  export type EnumMediaTypeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.MediaType | EnumMediaTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.MediaType[] | ListEnumMediaTypeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.MediaType[] | ListEnumMediaTypeFieldRefInput<$PrismaModel>
+    not?: NestedEnumMediaTypeWithAggregatesFilter<$PrismaModel> | $Enums.MediaType
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumMediaTypeFilter<$PrismaModel>
+    _max?: NestedEnumMediaTypeFilter<$PrismaModel>
   }
 
   export type IntWithAggregatesFilter<$PrismaModel = never> = {
@@ -7063,6 +7135,10 @@ export namespace Prisma {
     connect?: ScheduleWhereUniqueInput | ScheduleWhereUniqueInput[]
   }
 
+  export type EnumMediaTypeFieldUpdateOperationsInput = {
+    set?: $Enums.MediaType
+  }
+
   export type IntFieldUpdateOperationsInput = {
     set?: number
     increment?: number
@@ -7242,6 +7318,23 @@ export namespace Prisma {
     _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
+  export type NestedEnumMediaTypeFilter<$PrismaModel = never> = {
+    equals?: $Enums.MediaType | EnumMediaTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.MediaType[] | ListEnumMediaTypeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.MediaType[] | ListEnumMediaTypeFieldRefInput<$PrismaModel>
+    not?: NestedEnumMediaTypeFilter<$PrismaModel> | $Enums.MediaType
+  }
+
+  export type NestedEnumMediaTypeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.MediaType | EnumMediaTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.MediaType[] | ListEnumMediaTypeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.MediaType[] | ListEnumMediaTypeFieldRefInput<$PrismaModel>
+    not?: NestedEnumMediaTypeWithAggregatesFilter<$PrismaModel> | $Enums.MediaType
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumMediaTypeFilter<$PrismaModel>
+    _max?: NestedEnumMediaTypeFilter<$PrismaModel>
+  }
+
   export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {
     equals?: number | IntFieldRefInput<$PrismaModel>
     in?: number[] | ListIntFieldRefInput<$PrismaModel>
@@ -7290,6 +7383,7 @@ export namespace Prisma {
     id?: string
     caption?: string | null
     imageUrl: string
+    mediaType?: $Enums.MediaType
     instagramMediaId?: string | null
     views?: number
     reach?: number
@@ -7304,6 +7398,7 @@ export namespace Prisma {
     connectedAccountId: string
     caption?: string | null
     imageUrl: string
+    mediaType?: $Enums.MediaType
     instagramMediaId?: string | null
     views?: number
     reach?: number
@@ -7385,6 +7480,7 @@ export namespace Prisma {
     connectedAccountId?: StringFilter<"Post"> | string
     caption?: StringNullableFilter<"Post"> | string | null
     imageUrl?: StringFilter<"Post"> | string
+    mediaType?: EnumMediaTypeFilter<"Post"> | $Enums.MediaType
     instagramMediaId?: StringNullableFilter<"Post"> | string | null
     views?: IntFilter<"Post"> | number
     reach?: IntFilter<"Post"> | number
@@ -7452,6 +7548,7 @@ export namespace Prisma {
     id?: string
     caption?: string | null
     imageUrl: string
+    mediaType?: $Enums.MediaType
     instagramMediaId?: string | null
     views?: number
     reach?: number
@@ -7466,6 +7563,7 @@ export namespace Prisma {
     userId: string
     caption?: string | null
     imageUrl: string
+    mediaType?: $Enums.MediaType
     instagramMediaId?: string | null
     views?: number
     reach?: number
@@ -7708,6 +7806,7 @@ export namespace Prisma {
     id?: string
     caption?: string | null
     imageUrl: string
+    mediaType?: $Enums.MediaType
     instagramMediaId?: string | null
     views?: number
     reach?: number
@@ -7723,6 +7822,7 @@ export namespace Prisma {
     connectedAccountId: string
     caption?: string | null
     imageUrl: string
+    mediaType?: $Enums.MediaType
     instagramMediaId?: string | null
     views?: number
     reach?: number
@@ -7750,6 +7850,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     caption?: NullableStringFieldUpdateOperationsInput | string | null
     imageUrl?: StringFieldUpdateOperationsInput | string
+    mediaType?: EnumMediaTypeFieldUpdateOperationsInput | $Enums.MediaType
     instagramMediaId?: NullableStringFieldUpdateOperationsInput | string | null
     views?: IntFieldUpdateOperationsInput | number
     reach?: IntFieldUpdateOperationsInput | number
@@ -7765,6 +7866,7 @@ export namespace Prisma {
     connectedAccountId?: StringFieldUpdateOperationsInput | string
     caption?: NullableStringFieldUpdateOperationsInput | string | null
     imageUrl?: StringFieldUpdateOperationsInput | string
+    mediaType?: EnumMediaTypeFieldUpdateOperationsInput | $Enums.MediaType
     instagramMediaId?: NullableStringFieldUpdateOperationsInput | string | null
     views?: IntFieldUpdateOperationsInput | number
     reach?: IntFieldUpdateOperationsInput | number
@@ -7777,6 +7879,7 @@ export namespace Prisma {
     connectedAccountId: string
     caption?: string | null
     imageUrl: string
+    mediaType?: $Enums.MediaType
     instagramMediaId?: string | null
     views?: number
     reach?: number
@@ -7801,6 +7904,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     caption?: NullableStringFieldUpdateOperationsInput | string | null
     imageUrl?: StringFieldUpdateOperationsInput | string
+    mediaType?: EnumMediaTypeFieldUpdateOperationsInput | $Enums.MediaType
     instagramMediaId?: NullableStringFieldUpdateOperationsInput | string | null
     views?: IntFieldUpdateOperationsInput | number
     reach?: IntFieldUpdateOperationsInput | number
@@ -7815,6 +7919,7 @@ export namespace Prisma {
     connectedAccountId?: StringFieldUpdateOperationsInput | string
     caption?: NullableStringFieldUpdateOperationsInput | string | null
     imageUrl?: StringFieldUpdateOperationsInput | string
+    mediaType?: EnumMediaTypeFieldUpdateOperationsInput | $Enums.MediaType
     instagramMediaId?: NullableStringFieldUpdateOperationsInput | string | null
     views?: IntFieldUpdateOperationsInput | number
     reach?: IntFieldUpdateOperationsInput | number
@@ -7828,6 +7933,7 @@ export namespace Prisma {
     connectedAccountId?: StringFieldUpdateOperationsInput | string
     caption?: NullableStringFieldUpdateOperationsInput | string | null
     imageUrl?: StringFieldUpdateOperationsInput | string
+    mediaType?: EnumMediaTypeFieldUpdateOperationsInput | $Enums.MediaType
     instagramMediaId?: NullableStringFieldUpdateOperationsInput | string | null
     views?: IntFieldUpdateOperationsInput | number
     reach?: IntFieldUpdateOperationsInput | number
@@ -7881,6 +7987,7 @@ export namespace Prisma {
     userId: string
     caption?: string | null
     imageUrl: string
+    mediaType?: $Enums.MediaType
     instagramMediaId?: string | null
     views?: number
     reach?: number
@@ -7892,6 +7999,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     caption?: NullableStringFieldUpdateOperationsInput | string | null
     imageUrl?: StringFieldUpdateOperationsInput | string
+    mediaType?: EnumMediaTypeFieldUpdateOperationsInput | $Enums.MediaType
     instagramMediaId?: NullableStringFieldUpdateOperationsInput | string | null
     views?: IntFieldUpdateOperationsInput | number
     reach?: IntFieldUpdateOperationsInput | number
@@ -7906,6 +8014,7 @@ export namespace Prisma {
     userId?: StringFieldUpdateOperationsInput | string
     caption?: NullableStringFieldUpdateOperationsInput | string | null
     imageUrl?: StringFieldUpdateOperationsInput | string
+    mediaType?: EnumMediaTypeFieldUpdateOperationsInput | $Enums.MediaType
     instagramMediaId?: NullableStringFieldUpdateOperationsInput | string | null
     views?: IntFieldUpdateOperationsInput | number
     reach?: IntFieldUpdateOperationsInput | number
@@ -7919,6 +8028,7 @@ export namespace Prisma {
     userId?: StringFieldUpdateOperationsInput | string
     caption?: NullableStringFieldUpdateOperationsInput | string | null
     imageUrl?: StringFieldUpdateOperationsInput | string
+    mediaType?: EnumMediaTypeFieldUpdateOperationsInput | $Enums.MediaType
     instagramMediaId?: NullableStringFieldUpdateOperationsInput | string | null
     views?: IntFieldUpdateOperationsInput | number
     reach?: IntFieldUpdateOperationsInput | number

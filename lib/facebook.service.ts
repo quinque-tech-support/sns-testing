@@ -202,13 +202,14 @@ export const facebookService = {
     },
 
     /**
-     * Fetch insights (impressions, reach, saved) for a published IG Media
+     * Fetch insights for a published IG Media.
+     * NOTE: `impressions` is deprecated. Using `reach`, `saved`, `total_interactions` instead.
      */
     async getMediaInsights(mediaId: string, accessToken: string): Promise<{ views: number, reach: number, saves: number } | null> {
         try {
             const response = await graphApi.get(`/${mediaId}/insights`, {
                 params: {
-                    metric: 'impressions,reach,saved',
+                    metric: 'reach,saved,total_interactions',
                     access_token: accessToken,
                 }
             })
@@ -221,8 +222,8 @@ export const facebookService = {
             let saves = 0
 
             for (const metric of data) {
-                const value = metric.values?.[0]?.value || 0
-                if (metric.name === 'impressions') views = value
+                const value = typeof metric.value === 'number' ? metric.value : (metric.values?.[0]?.value || 0)
+                if (metric.name === 'total_interactions') views = value
                 if (metric.name === 'reach') reach = value
                 if (metric.name === 'saved') saves = value
             }
@@ -230,6 +231,44 @@ export const facebookService = {
             return { views, reach, saves }
         } catch (error: any) {
             console.error(`[FacebookService] Failed to fetch insights for media ${mediaId}:`, error.response?.data || error.message)
+            return null
+        }
+    },
+
+    /**
+     * Fetch account-level insights for an Instagram Business Account (last 30 days).
+     * NOTE: `impressions` and `likes` are deprecated. Using `reach` and `profile_views` instead.
+     */
+    async getAccountInsights(igBusinessId: string, accessToken: string): Promise<{ totalImpressions: number, totalLikes: number } | null> {
+        try {
+            const since = Math.floor((Date.now() - 30 * 24 * 60 * 60 * 1000) / 1000)
+            const until = Math.floor(Date.now() / 1000)
+
+            const response = await graphApi.get(`/${igBusinessId}/insights`, {
+                params: {
+                    metric: 'reach,profile_views',
+                    period: 'day',
+                    since,
+                    until,
+                    access_token: accessToken,
+                }
+            })
+
+            const data: { name: string; values: { value: number }[] }[] = response.data.data
+            if (!data || !Array.isArray(data)) return null
+
+            let totalImpressions = 0
+            let totalLikes = 0
+
+            for (const metric of data) {
+                const sum = metric.values.reduce((acc, v) => acc + (v.value || 0), 0)
+                if (metric.name === 'reach') totalImpressions = sum
+                if (metric.name === 'profile_views') totalLikes = sum
+            }
+
+            return { totalImpressions, totalLikes }
+        } catch (error: any) {
+            console.error(`[FacebookService] Failed to fetch account insights for ${igBusinessId}:`, error.response?.data || error.message)
             return null
         }
     }

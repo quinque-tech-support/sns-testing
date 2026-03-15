@@ -18,8 +18,8 @@ export default async function Home() {
           <div className="w-10 h-10 rounded-xl instagram-gradient flex items-center justify-center shadow-lg shadow-purple-500/20">
             <Instagram className="w-6 h-6 text-white" />
           </div>
-          <span className="font-bold text-2xl tracking-tight bg-clip-text text-transparent instagram-gradient">
-            Postara
+          <span className="font-bold text-2xl tracking-tight bg-clip-text instagram-gradient">
+            Schedlify
           </span>
         </div>
         <div className="flex items-center gap-6">
@@ -42,7 +42,7 @@ export default async function Home() {
 
         <h1 className="text-5xl md:text-7xl font-black text-gray-900 leading-[1.1] mb-8 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
           Automate Your <br />
-          <span className="bg-clip-text text-transparent instagram-gradient">Instagram Growth</span>
+          <span className="bg-clip-text instagram-gradient">Instagram Growth</span>
         </h1>
 
         <p className="text-xl text-gray-500 mb-12 max-w-2xl leading-relaxed animate-in fade-in slide-in-from-bottom-12 duration-700 delay-200">
@@ -86,7 +86,7 @@ export default async function Home() {
       </main>
 
       <footer className="py-10 border-t border-gray-100 text-center">
-        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">© 2026 Postara Automation Engine</p>
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">© 2026 Schedlify</p>
       </footer>
     </div>
   )
