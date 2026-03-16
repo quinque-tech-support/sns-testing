@@ -244,9 +244,10 @@ export const facebookService = {
             const since = Math.floor((Date.now() - 30 * 24 * 60 * 60 * 1000) / 1000)
             const until = Math.floor(Date.now() / 1000)
 
-            const response = await graphApi.get(`/${igBusinessId}/insights`, {
+            // `reach` is a time-series metric — fetched with period=day
+            const reachResponse = await graphApi.get(`/${igBusinessId}/insights`, {
                 params: {
-                    metric: 'reach,profile_views',
+                    metric: 'reach',
                     period: 'day',
                     since,
                     until,
@@ -254,16 +255,39 @@ export const facebookService = {
                 }
             })
 
-            const data: { name: string; values: { value: number }[] }[] = response.data.data
-            if (!data || !Array.isArray(data)) return null
+            // `profile_views` requires metric_type=total_value (cannot be mixed with time-series metrics)
+            const profileViewsResponse = await graphApi.get(`/${igBusinessId}/insights`, {
+                params: {
+                    metric: 'profile_views',
+                    metric_type: 'total_value',
+                    period: 'day',
+                    since,
+                    until,
+                    access_token: accessToken,
+                }
+            })
 
             let totalImpressions = 0
             let totalLikes = 0
 
-            for (const metric of data) {
-                const sum = metric.values.reduce((acc, v) => acc + (v.value || 0), 0)
-                if (metric.name === 'reach') totalImpressions = sum
-                if (metric.name === 'profile_views') totalLikes = sum
+            const reachData: { name: string; values: { value: number }[] }[] = reachResponse.data.data
+            if (Array.isArray(reachData)) {
+                for (const metric of reachData) {
+                    const sum = metric.values.reduce((acc, v) => acc + (v.value || 0), 0)
+                    if (metric.name === 'reach') totalImpressions = sum
+                }
+            }
+
+            // total_value response shape: { data: [{ name, period, title, id, total_value: { value } }] }
+            const pvData: { name: string; total_value?: { value: number }; values?: { value: number }[] }[] = profileViewsResponse.data.data
+            if (Array.isArray(pvData)) {
+                for (const metric of pvData) {
+                    if (metric.name === 'profile_views') {
+                        totalLikes = metric.total_value?.value
+                            ?? metric.values?.reduce((acc, v) => acc + (v.value || 0), 0)
+                            ?? 0
+                    }
+                }
             }
 
             return { totalImpressions, totalLikes }

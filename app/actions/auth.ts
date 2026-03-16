@@ -3,15 +3,6 @@
 import { prisma } from '@/lib/prisma'
 import { hash } from 'bcryptjs'
 import { validateEmail, validatePassword, validateName } from '@/lib/validation'
-import { PrismaClientKnownRequestError } from '@prisma/client'
-
-
-// Since we generate client to ../lib/prisma-client
-// The types should be imported from there.
-// However, PrismaClientKnownRequestError is usually exported from @prisma/client/runtime/library or similar.
-// But valid import for generated client is usually just the client itself or Prisma namespace.
-// Let's import Prisma from the client.
-
 import { Prisma } from '@/lib/prisma-client/client'
 
 export async function createUser(name: string, email: string, password: string) {

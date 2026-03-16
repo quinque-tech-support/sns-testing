@@ -26,16 +26,16 @@ async function uploadMediaToSupabase(file: File): Promise<string | null> {
         const fileExt = file.name.split('.').pop()
         const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`
 
-        const arrayBuffer = await file.arrayBuffer()
-        const buffer = Buffer.from(arrayBuffer)
-
+        // Use the File's ReadableStream directly to avoid loading the entire file into RAM.
+        // This is critical for large video uploads (100MB+).
         const { error } = await supabaseAdmin
             .storage
             .from('media-uploads')
-            .upload(fileName, buffer, {
+            .upload(fileName, file, {
                 contentType: file.type,
-                upsert: false
-            })
+                duplex: 'half',
+                upsert: false,
+            } as any)
 
         if (error) {
             console.error('[Supabase Upload Error]', error)
@@ -57,7 +57,7 @@ async function uploadMediaToSupabase(file: File): Promise<string | null> {
 /**
  * Poll Instagram media container until it's FINISHED processing (for videos)
  */
-async function waitForContainer(containerId: string, accessToken: string, maxWaitMs = 90000): Promise<boolean> {
+async function waitForContainer(containerId: string, accessToken: string, maxWaitMs = 300000): Promise<boolean> {
     const pollInterval = 5000
     const maxAttempts = maxWaitMs / pollInterval
 

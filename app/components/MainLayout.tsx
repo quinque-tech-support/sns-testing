@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Outlet, Link, useLocation } from 'react-router';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import {
     LayoutDashboard,
     PlusCircle,
@@ -25,8 +26,8 @@ const navigation = [
     { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
-export function MainLayout() {
-    const location = useLocation();
+export function MainLayout({ children }: { children: React.ReactNode }) {
+    const pathname = usePathname();
     const [selectedAccount, setSelectedAccount] = useState('@brand_official');
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -53,11 +54,11 @@ export function MainLayout() {
                 {/* Navigation */}
                 <nav className="flex-1 px-3 py-4 space-y-1">
                     {navigation.map((item) => {
-                        const isActive = location.pathname === item.href;
+                        const isActive = pathname === item.href;
                         return (
                             <Link
                                 key={item.name}
-                                to={item.href}
+                                href={item.href}
                                 onClick={() => setIsMobileMenuOpen(false)}
                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive
                                     ? 'bg-gradient-to-r from-purple-50 to-pink-50 text-purple-600'
@@ -130,7 +131,7 @@ export function MainLayout() {
 
                 {/* Page Content */}
                 <main className="flex-1 overflow-auto">
-                    <Outlet />
+                    {children}
                 </main>
             </div>
         </div>
