@@ -53,7 +53,7 @@ export default async function AccountPage(props: { searchParams: Promise<{ [key:
                     <p className="text-gray-500 mt-1">Connect and manage your Instagram Business profiles for automation.</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button className="flex items-center gap-2.5 px-6 py-3 bg-white border border-gray-200 text-gray-700 rounded-2xl font-bold shadow-sm hover:bg-gray-50 active:scale-95 transition-all">
+                    <button className="flex items-center gap-2.5 px-6 py-3 bg-white border border-gray-200 text-gray-700 rounded-2xl font-bold shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:bg-gray-50 transition-all duration-200 ease-out active:scale-95">
                         <RefreshCw className="w-5 h-5" />
                         Refresh All
                     </button>
@@ -73,7 +73,7 @@ export default async function AccountPage(props: { searchParams: Promise<{ [key:
                         <p className="text-sm text-gray-500 mt-1 max-w-md">Securely link your Instagram Business accounts by authenticating with Facebook. We automatically discover and connect your managed pages.</p>
                     </div>
                 </div>
-                <Link href="/api/auth/facebook" className="w-full md:w-auto px-8 py-3.5 bg-[#1877F2] text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:bg-[#166FE5] active:scale-95 transition-all text-center shrink-0">
+                <Link href="/api/auth/facebook" className="w-full md:w-auto px-8 py-3.5 bg-[#1877F2] text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:shadow-xl hover:-translate-y-0.5 hover:bg-[#166FE5] transition-all duration-200 ease-out active:scale-95 text-center shrink-0">
                     Connect Account
                 </Link>
             </div>
@@ -116,7 +116,7 @@ export default async function AccountPage(props: { searchParams: Promise<{ [key:
                                             </div>
                                         </div>
                                     </div>
-                                    <button className="p-2 hover:bg-gray-50 rounded-xl transition-all border border-transparent hover:border-gray-100">
+                                    <button className="p-2 hover:bg-gray-50 rounded-xl transition-all duration-200 ease-out active:scale-95 border border-transparent hover:border-gray-100">
                                         <MoreHorizontal className="w-5 h-5 text-gray-400" />
                                     </button>
                                 </div>
@@ -136,12 +136,12 @@ export default async function AccountPage(props: { searchParams: Promise<{ [key:
                                 </div>
 
                                 <div className="flex gap-4 mt-8 pt-6 border-t border-gray-50 relative z-10">
-                                    <button className="flex-1 py-3 bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-100 transition-all flex items-center justify-center gap-2">
+                                    <button className="flex-1 py-3 bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-100 transition-all duration-200 ease-out active:scale-95 flex items-center justify-center gap-2">
                                         <RefreshCw className="w-4 h-4" />
                                         Refresh
                                     </button>
                                     <form action={async () => { 'use server'; await disconnectAccount(account.id); }} className="flex-1">
-                                        <button className="w-full py-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm font-bold hover:bg-red-100 transition-all flex items-center justify-center gap-2">
+                                        <button className="w-full py-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm font-bold hover:bg-red-100 transition-all duration-200 ease-out active:scale-95 flex items-center justify-center gap-2">
                                             <LogOut className="w-4 h-4" />
                                             Disconnect
                                         </button>
@@ -157,7 +157,7 @@ export default async function AccountPage(props: { searchParams: Promise<{ [key:
                         </div>
                         <h3 className="text-2xl font-bold text-gray-900">No Instagram Accounts Connected</h3>
                         <p className="text-gray-500 mt-2 max-w-sm mx-auto leading-relaxed">Connect your first Instagram Business account to start automating your content strategy today.</p>
-                        <button className="mt-8 px-8 py-4 instagram-gradient text-white rounded-2xl font-bold shadow-lg shadow-purple-500/20 hover:scale-105 active:scale-95 transition-all inline-flex items-center gap-2">
+                        <button className="mt-8 px-8 py-4 instagram-gradient text-white rounded-2xl font-bold shadow-lg shadow-purple-500/20 hover:-translate-y-1 hover:shadow-xl transition-all duration-200 ease-out active:scale-95 inline-flex items-center gap-2">
                             Connect Now
                             <ArrowRight className="w-5 h-5" />
                         </button>
@@ -195,8 +195,8 @@ export default async function AccountPage(props: { searchParams: Promise<{ [key:
                         ))}
                     </div>
 
-                    <button className="mt-12 text-sm font-bold text-purple-600 flex items-center gap-2 hover:translate-x-1 transition-transform">
-                        Read full documentation <ChevronRight className="w-4 h-4" />
+                    <button className="mt-12 text-sm font-bold text-purple-600 flex items-center gap-2 group hover:gap-3 hover:translate-x-1 transition-all duration-200 ease-out active:scale-95">
+                        Read full documentation <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                     </button>
                 </div>
 

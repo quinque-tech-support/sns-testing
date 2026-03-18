@@ -151,12 +151,12 @@ export default async function AnalyticsPage() {
                     <p className="text-gray-500 mt-1">Deep dive into your content performance and audience growth.</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-100 rounded-xl shadow-sm text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-50 transition-all">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-0.5 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-50 transition-all duration-200 ease-out active:scale-95">
                         <Calendar className="w-4 h-4 text-gray-400" />
                         Last 30 Days
                         <ChevronDown className="w-4 h-4 text-gray-400" />
                     </div>
-                    <button className="flex items-center gap-2 px-4 py-2 instagram-gradient text-white rounded-xl text-sm font-bold shadow-lg shadow-purple-500/20 hover:opacity-90 active:scale-95 transition-all">
+                    <button className="flex items-center gap-2 px-4 py-2 instagram-gradient text-white rounded-xl text-sm font-bold shadow-lg shadow-purple-500/20 hover:shadow-xl hover:-translate-y-0.5 hover:opacity-90 transition-all duration-200 ease-out active:scale-95">
                         <Download className="w-4 h-4" />
                         Export CSV
                     </button>

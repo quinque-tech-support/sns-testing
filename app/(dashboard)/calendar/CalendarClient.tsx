@@ -131,14 +131,14 @@ export default function CalendarClient({ schedules, weekOffset: initialOffset }:
                 <div className="flex items-center gap-3 bg-white p-1 rounded-xl shadow-sm border border-gray-100">
                     <button
                         onClick={() => setWeekOffset(w => w - 1)}
-                        className="p-2 hover:bg-gray-50 rounded-lg transition-all"
+                        className="p-2 hover:bg-gray-50 rounded-lg transition-all duration-200 ease-out active:scale-95"
                     >
                         <ChevronLeft className="w-4 h-4" />
                     </button>
                     <span className="text-sm font-bold px-2 whitespace-nowrap">{weekLabel}</span>
                     <button
                         onClick={() => setWeekOffset(w => w + 1)}
-                        className="p-2 hover:bg-gray-50 rounded-lg transition-all"
+                        className="p-2 hover:bg-gray-50 rounded-lg transition-all duration-200 ease-out active:scale-95"
                     >
                         <ChevronRight className="w-4 h-4" />
                     </button>
@@ -189,7 +189,7 @@ export default function CalendarClient({ schedules, weekOffset: initialOffset }:
                                     <button
                                         key={schedule.id}
                                         onClick={() => setSelectedPost(schedule)}
-                                        className="w-full text-left bg-white rounded-xl border border-gray-100 shadow-sm p-2 hover:border-purple-300 hover:shadow-md transition-all group overflow-hidden"
+                                        className="w-full text-left bg-white rounded-xl border border-gray-100 shadow-sm p-2 hover:border-purple-300 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 ease-out active:scale-[0.98] group overflow-hidden"
                                     >
                                         <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-2 relative">
                                             <img
@@ -217,7 +217,7 @@ export default function CalendarClient({ schedules, weekOffset: initialOffset }:
 
                                 <Link
                                     href="/create"
-                                    className="w-full py-3 border-2 border-dashed border-gray-100 rounded-xl flex items-center justify-center text-gray-300 hover:border-purple-200 hover:text-purple-300 transition-all mt-auto group"
+                                    className="w-full py-3 border-2 border-dashed border-gray-100 rounded-xl flex items-center justify-center text-gray-300 hover:border-purple-200 hover:text-purple-300 transition-all duration-200 ease-out active:scale-95 mt-auto group"
                                 >
                                     <Plus className="w-5 h-5 group-hover:scale-110 transition-transform" />
                                 </Link>
@@ -239,7 +239,7 @@ export default function CalendarClient({ schedules, weekOffset: initialOffset }:
                     >
                         <div className="flex items-center justify-between mb-8">
                             <h2 className="text-xl font-bold text-gray-900">Post Details</h2>
-                            <button onClick={() => setSelectedPost(null)} className="p-2 hover:bg-gray-100 rounded-full transition-all">
+                            <button onClick={() => setSelectedPost(null)} className="p-2 hover:bg-gray-100 rounded-full transition-all duration-200 ease-out active:scale-95">
                                 <X className="w-5 h-5 text-gray-400" />
                             </button>
                         </div>
@@ -296,13 +296,13 @@ export default function CalendarClient({ schedules, weekOffset: initialOffset }:
                         <div className="pt-8 mt-auto border-t border-gray-100 grid grid-cols-2 gap-4">
                             <Link
                                 href="/create"
-                                className="py-3 bg-purple-600 text-white rounded-xl font-bold shadow-lg shadow-purple-600/20 hover:bg-purple-700 transition-all text-center text-sm"
+                                className="py-3 bg-purple-600 text-white rounded-xl font-bold shadow-lg shadow-purple-600/20 hover:shadow-xl hover:-translate-y-0.5 hover:bg-purple-700 transition-all duration-200 ease-out active:scale-95 text-center text-sm"
                             >
                                 Edit Post
                             </Link>
                             <button
                                 onClick={() => setSelectedPost(null)}
-                                className="py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-all text-sm"
+                                className="py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-all duration-200 ease-out active:scale-95 text-sm"
                             >
                                 Close
                             </button>

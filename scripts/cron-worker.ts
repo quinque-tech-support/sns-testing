@@ -1,20 +1,7 @@
-/**
- * Continuous Background Cron Worker
- * 
- * Run with: npm run worker
- * Or:       npx tsx -r dotenv/config scripts/cron-worker.ts
- *
- * This script runs the cron job in a perpetual loop — no browser refresh needed.
- * It calls the /api/cron endpoint every INTERVAL_MS milliseconds,
- * which processes due schedules and syncs Instagram insights.
- *
- * Keep this running in a terminal alongside `npm run dev`.
- */
-
 import 'dotenv/config'
 
 const CRON_SECRET = process.env.CRON_SECRET || 'test-secret'
-const BASE_URL = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+const BASE_URL = process.env.NEXTAUTH_URL || 'https://sns-deployed.vercel.app'
 const CRON_URL = `${BASE_URL}/api/cron?secret=${CRON_SECRET}`
 const INTERVAL_MS = 60_000 // Run every 60 seconds
 

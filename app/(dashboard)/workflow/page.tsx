@@ -89,7 +89,7 @@ export default async function WorkflowPage() {
                 </div>
                 <Link
                     href="/create"
-                    className="flex items-center gap-2 px-6 py-3 instagram-gradient text-white rounded-xl font-bold shadow-lg shadow-purple-500/20 hover:opacity-90 active:scale-95 transition-all w-fit"
+                    className="flex items-center gap-2 px-6 py-3 instagram-gradient text-white rounded-xl font-bold shadow-lg shadow-purple-500/20 hover:opacity-90 transition-all duration-200 ease-out active:scale-95 hover:shadow-xl hover:-translate-y-0.5 w-fit"
                 >
                     <PlusCircle className="w-4 h-4" />
                     Create New Post
@@ -119,7 +119,7 @@ export default async function WorkflowPage() {
                     </div>
                     <p className="text-base font-bold text-gray-900">Your workflow is empty</p>
                     <p className="text-sm text-gray-400 mt-1 mb-6">Create your first post to see it tracked here.</p>
-                    <Link href="/create" className="inline-flex items-center gap-2 px-6 py-3 instagram-gradient text-white rounded-xl font-bold shadow-lg shadow-purple-500/20 hover:opacity-90 transition-all">
+                    <Link href="/create" className="inline-flex items-center gap-2 px-6 py-3 instagram-gradient text-white rounded-xl font-bold shadow-lg shadow-purple-500/20 hover:opacity-90 transition-all duration-200 ease-out active:scale-95 hover:shadow-xl hover:-translate-y-0.5">
                         <PlusCircle className="w-4 h-4" />
                         Create Post
                     </Link>

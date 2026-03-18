@@ -33,7 +33,7 @@ export function Topbar({ user, accounts = [] }: TopbarProps) {
         <header className="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-6 sticky top-0 z-30 shadow-[0_1px_2px_0_rgba(0,0,0,0.03)]">
             {/* Left: Mobile Menu & Search */}
             <div className="flex items-center gap-4 flex-1">
-                <button className="lg:hidden p-2 hover:bg-gray-50 rounded-lg text-gray-500">
+                <button className="lg:hidden p-2 hover:bg-gray-50 rounded-lg text-gray-500 transition-all duration-200 ease-out active:scale-95">
                     <Menu className="w-5 h-5" />
                 </button>
 
@@ -51,7 +51,7 @@ export function Topbar({ user, accounts = [] }: TopbarProps) {
             <div className="flex items-center gap-3 lg:gap-6">
                 {/* Account Selector */}
                 <div className="relative">
-                    <button className="flex items-center gap-2.5 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-all group">
+                    <button className="flex items-center gap-2.5 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-all duration-200 ease-out active:scale-95 group">
                         <div className="w-6 h-6 rounded-full instagram-gradient flex items-center justify-center p-0.5 shadow-sm">
                             <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
                                 <Instagram className="w-3.5 h-3.5 instagram-text-gradient" />
@@ -65,7 +65,7 @@ export function Topbar({ user, accounts = [] }: TopbarProps) {
                 <div className="h-8 w-[1px] bg-gray-100 hidden sm:block" />
 
                 {/* Quick Action */}
-                <Link href="/create" className="hidden sm:flex items-center gap-2 px-4 py-2 instagram-gradient text-white rounded-xl text-sm font-semibold shadow-md shadow-purple-500/20 hover:opacity-90 transition-all active:scale-95">
+                <Link href="/create" className="hidden sm:flex items-center gap-2 px-4 py-2 instagram-gradient text-white rounded-xl text-sm font-semibold shadow-md shadow-purple-500/20 hover:shadow-lg hover:-translate-y-0.5 hover:opacity-90 transition-all duration-200 ease-out active:scale-95">
                     <Plus className="w-4 h-4" />
                     Create Post
                 </Link>
@@ -73,14 +73,14 @@ export function Topbar({ user, accounts = [] }: TopbarProps) {
                 {/* Notifications */}
                 <button
                     onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-                    className="relative p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-xl transition-all"
+                    className="relative p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-xl transition-all duration-200 ease-out active:scale-95"
                 >
                     <Bell className="w-5 h-5" />
                     <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 border-2 border-white rounded-full"></span>
                 </button>
 
                 {/* Profile Toggle (Mobile/Mini) */}
-                <button className="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-all sm:hidden">
+                <button className="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-all duration-200 ease-out active:scale-95 sm:hidden">
                     <div className="w-7 h-7 rounded-lg bg-purple-500 text-white flex items-center justify-center text-xs font-bold">
                         JD
                     </div>
