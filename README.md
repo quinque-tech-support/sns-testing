@@ -1,5 +1,5 @@
-# Insta Auto - Instagram Automation Platform
-Next.js application with authentication and user management, built for Instagram automation workflows.
+# Insta Auto - Instagram Automation Platforma 
+A Next.js application with authentication and user management, built for Instagram automation workflows.
 
 ## Tech Stack
 
