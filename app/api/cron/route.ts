@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 import { facebookService } from '@/lib/facebook.service'
+import { verifySignatureAppRouter } from '@upstash/qstash/nextjs'
 
 // Important: This route should be secured in production so that only authorized cron jobs can trigger it.
 // For now, it's open for easy testing.
@@ -129,18 +130,10 @@ async function processSchedule(scheduleId: string) {
     }
 }
 
-export async function GET(req: Request) {
+// The handler function that actually runs your logic
+async function handler(req: Request) {
     try {
-        const url = new URL(req.url)
-        const secret = url.searchParams.get('secret')
-
-        // Optional security for production
-        const CRON_SECRET = process.env.CRON_SECRET || 'test-secret'
-        if (secret !== CRON_SECRET) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-        }
-
-        console.log(`[Cron] Executing job...`)
+        console.log(`[Cron] Executing job via Upstash QStash...`)
 
         // 1. Process Pending Schedules (Max 3 to prevent timeouts)
         const pendingSchedules = await prisma.schedule.findMany({
@@ -199,3 +192,7 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: "Internal Server Error", message: e.message }, { status: 500 })
     }
 }
+
+// QStash intercepts the GET/POST request and verifies the signature securely
+export const GET = verifySignatureAppRouter(handler);
+export const POST = verifySignatureAppRouter(handler);
