@@ -126,7 +126,7 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
     const handleSchedule = () => {
         startTransition(async () => {
             const fd = buildFormData()
-            fd.set('scheduledFor', scheduledFor)
+            fd.set('scheduledFor', new Date(scheduledFor).toISOString())
             const res = await schedulePost(fd)
             setResult(res)
             if (res.success) {
