@@ -43,6 +43,7 @@ async function processSchedule(scheduleId: string) {
             ? {
                 video_url: post.imageUrl,
                 media_type: 'REELS',
+                share_to_feed: true,
                 caption: post.caption || '',
                 access_token: pageAccessToken
             }

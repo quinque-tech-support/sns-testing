@@ -88,22 +88,16 @@ export async function saveDraft(formData: FormData): Promise<ActionResult> {
     if (!session?.user?.id) return { error: 'Not authenticated' }
 
     const caption = formData.get('caption') as string
-    const mediaFile = formData.get('mediaFile') as File | null
     const connectedAccountId = formData.get('connectedAccountId') as string
+    const mediaUrl = formData.get('mediaUrl') as string
+    const isVideo = formData.get('isVideo') === 'true'
 
     if (!connectedAccountId) {
         return { error: 'Please select an Instagram account first.' }
     }
 
     try {
-        let finalImageUrl = 'https://placeholder.co/1080x1080'
-        const isVideo = mediaFile ? mediaFile.type.startsWith('video/') : false
-
-        if (mediaFile && mediaFile.size > 0) {
-            if (mediaFile.size > MAX_FILE_SIZE) return { error: 'File exceeds the 500MB limit.' }
-            const url = await uploadMediaToSupabase(mediaFile)
-            if (url) finalImageUrl = url
-        }
+        let finalImageUrl = mediaUrl || 'https://placeholder.co/1080x1080'
 
         const post = await prisma.post.create({
             data: {
@@ -132,20 +126,16 @@ export async function publishNow(formData: FormData): Promise<ActionResult> {
     if (!session?.user?.id) return { error: 'Not authenticated' }
 
     const caption = formData.get('caption') as string
-    const mediaFile = formData.get('mediaFile') as File | null
+    const mediaUrl = formData.get('mediaUrl') as string
+    const isVideo = formData.get('isVideo') === 'true'
     const connectedAccountId = formData.get('connectedAccountId') as string
 
     if (!connectedAccountId) {
         return { error: 'Please select an Instagram account first.' }
     }
-    if (!mediaFile || mediaFile.size === 0) {
+    if (!mediaUrl) {
         return { error: 'Please upload an image or video before publishing.' }
     }
-    if (mediaFile.size > MAX_FILE_SIZE) {
-        return { error: 'File exceeds the 500MB limit.' }
-    }
-
-    const isVideo = mediaFile.type.startsWith('video/')
 
     try {
         const account = await prisma.connectedAccount.findUnique({
@@ -156,20 +146,18 @@ export async function publishNow(formData: FormData): Promise<ActionResult> {
             return { error: 'Instagram account implies missing access tokens. Please reconnect.' }
         }
 
-        const uploadedUrl = await uploadMediaToSupabase(mediaFile)
-        if (!uploadedUrl) return { error: 'Failed to upload media to storage.' }
-
         // 1. Create Media Container (Image or Reel)
         const containerUrl = `https://graph.facebook.com/v19.0/${account.instagramBusinessId}/media`
         const containerBody = isVideo
             ? {
-                video_url: uploadedUrl,
+                video_url: mediaUrl,
                 media_type: 'REELS',
+                share_to_feed: true,
                 caption: caption || '',
                 access_token: account.pageAccessToken
             }
             : {
-                image_url: uploadedUrl,
+                image_url: mediaUrl,
                 caption: caption || '',
                 access_token: account.pageAccessToken
             }
@@ -227,7 +215,7 @@ export async function publishNow(formData: FormData): Promise<ActionResult> {
                 userId: session.user.id,
                 connectedAccountId,
                 caption: caption || '',
-                imageUrl: uploadedUrl,
+                imageUrl: mediaUrl,
                 mediaType: isVideo ? 'VIDEO' : 'IMAGE',
                 instagramMediaId: publishData.id,
             }
@@ -259,7 +247,8 @@ export async function schedulePost(formData: FormData): Promise<ActionResult> {
     if (!session?.user?.id) return { error: 'Not authenticated' }
 
     const caption = formData.get('caption') as string
-    const mediaFile = formData.get('mediaFile') as File | null
+    const mediaUrl = formData.get('mediaUrl') as string
+    const isVideo = formData.get('isVideo') === 'true'
     const connectedAccountId = formData.get('connectedAccountId') as string
     const scheduledForStr = formData.get('scheduledFor') as string
 
@@ -269,11 +258,8 @@ export async function schedulePost(formData: FormData): Promise<ActionResult> {
     if (!scheduledForStr) {
         return { error: 'Please select a date and time to schedule this post.' }
     }
-    if (!mediaFile || mediaFile.size === 0) {
+    if (!mediaUrl) {
         return { error: 'Please upload an image or video to schedule a post.' }
-    }
-    if (mediaFile.size > MAX_FILE_SIZE) {
-        return { error: 'File exceeds the 500MB limit.' }
     }
 
     const scheduledFor = new Date(scheduledForStr)
@@ -281,18 +267,13 @@ export async function schedulePost(formData: FormData): Promise<ActionResult> {
         return { error: 'Scheduled time must be in the future.' }
     }
 
-    const isVideo = mediaFile.type.startsWith('video/')
-
     try {
-        const uploadedUrl = await uploadMediaToSupabase(mediaFile)
-        if (!uploadedUrl) return { error: 'Failed to upload media to storage.' }
-
         const post = await prisma.post.create({
             data: {
                 userId: session.user.id,
                 connectedAccountId,
                 caption: caption || '',
-                imageUrl: uploadedUrl,
+                imageUrl: mediaUrl,
                 mediaType: isVideo ? 'VIDEO' : 'IMAGE',
             }
         })
