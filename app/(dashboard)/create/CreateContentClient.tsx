@@ -25,6 +25,12 @@ import {
     Instagram,
 } from 'lucide-react'
 import { saveDraft, publishNow, schedulePost, ActionResult } from './actions'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 interface ConnectedAccount {
     id: string
@@ -75,6 +81,7 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
     const [hashtags, setHashtags] = useState('')
     const [ctaStyle, setCtaStyle] = useState('Link in Bio')
     const [result, setResult] = useState<ActionResult | null>(null)
+    const [isUploading, setIsUploading] = useState(false)
     const [isPending, startTransition] = useTransition()
 
     const clearResult = () => setResult(null)
@@ -89,17 +96,56 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
         }
     }
 
-    const buildFormData = () => {
+    const uploadMedia = async (): Promise<string | null> => {
+        if (!mediaFile) return null
+        setIsUploading(true)
+        try {
+            const fileExt = mediaFile.name.split('.').pop()
+            const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`
+
+            const { error: uploadError } = await supabase.storage
+                .from('media-uploads')
+                .upload(fileName, mediaFile, {
+                    cacheControl: '3600',
+                    upsert: false
+                })
+
+            if (uploadError) throw uploadError
+
+            const { data } = supabase.storage
+                .from('media-uploads')
+                .getPublicUrl(fileName)
+
+            return data.publicUrl
+        } catch (error) {
+            console.error('Upload Error:', error)
+            setResult({ error: 'Failed to upload media. Please try again.' })
+            return null
+        } finally {
+            setIsUploading(false)
+        }
+    }
+
+    const buildFormData = (mediaUrl?: string | null) => {
         const fd = new FormData()
         fd.set('caption', caption)
         fd.set('connectedAccountId', selectedAccountId)
-        if (mediaFile) fd.set('mediaFile', mediaFile)
+        fd.set('isVideo', isVideo.toString())
+        if (mediaUrl) fd.set('mediaUrl', mediaUrl)
         return fd
     }
 
-    const handleSaveDraft = () => {
+    const handleSaveDraft = async () => {
+        if (isUploading || isPending) return
+        
+        let url = null
+        if (mediaFile) {
+            url = await uploadMedia()
+            if (!url) return // Upload failed, error already set
+        }
+
         startTransition(async () => {
-            const fd = buildFormData()
+            const fd = buildFormData(url)
             const res = await saveDraft(fd)
             setResult(res)
             if (res.success) {
@@ -108,13 +154,19 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
         })
     }
 
-    const handlePublishNow = () => {
-        if (!mediaPreview) {
+    const handlePublishNow = async () => {
+        if (isUploading || isPending) return
+
+        if (!mediaPreview || !mediaFile) {
             setResult({ error: 'Please upload an image or video before publishing.' })
             return
         }
+
+        const url = await uploadMedia()
+        if (!url) return
+
         startTransition(async () => {
-            const fd = buildFormData()
+            const fd = buildFormData(url)
             const res = await publishNow(fd)
             setResult(res)
             if (res.success) {
@@ -123,9 +175,23 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
         })
     }
 
-    const handleSchedule = () => {
+    const handleSchedule = async () => {
+        if (isUploading || isPending) return
+
+        if (!mediaPreview || !mediaFile) {
+            setResult({ error: 'Please upload an image or video before scheduling.' })
+            return
+        }
+        if (!scheduledFor) {
+            setResult({ error: 'Please select a date and time to schedule this post.' })
+            return
+        }
+
+        const url = await uploadMedia()
+        if (!url) return
+
         startTransition(async () => {
-            const fd = buildFormData()
+            const fd = buildFormData(url)
             fd.set('scheduledFor', new Date(scheduledFor).toISOString())
             const res = await schedulePost(fd)
             setResult(res)
@@ -194,7 +260,7 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
                         ? <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
                         : <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
                     }
-                    <span>{result.success ? 'Success! Redirecting you now...' : result.error}</span>
+                    <span>{result.success ? '成功しました！リダイレクトしています...' : result.error}</span>
                     {!result.success && (
                         <button onClick={clearResult} className="ml-auto p-1 hover:bg-red-100 rounded-lg">
                             <X className="w-4 h-4" />

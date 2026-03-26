@@ -43,6 +43,7 @@ async function processSchedule(scheduleId: string) {
             ? {
                 video_url: post.imageUrl,
                 media_type: 'REELS',
+                share_to_feed: true,
                 caption: post.caption || '',
                 access_token: pageAccessToken
             }
@@ -68,22 +69,21 @@ async function processSchedule(scheduleId: string) {
         const creationId = containerData.id
         console.log(`[Cron] Created Media Container: ${creationId}`)
 
-        // Step 2: For videos, poll until FINISHED
-        if (isVideo) {
-            const maxAttempts = 18 // 18 × 5s = 90s
-            let ready = false
-            for (let i = 0; i < maxAttempts; i++) {
-                await new Promise(r => setTimeout(r, 5000))
-                const statusRes = await fetch(
-                    `https://graph.facebook.com/v19.0/${creationId}?fields=status_code&access_token=${pageAccessToken}`
-                )
-                const statusData = await statusRes.json()
-                console.log(`[Cron] Container status (attempt ${i + 1}): ${statusData.status_code}`)
-                if (statusData.status_code === 'FINISHED') { ready = true; break }
-                if (statusData.status_code === 'ERROR') throw new Error('IG video container failed during processing')
-            }
-            if (!ready) throw new Error('Timed out waiting for IG video container to finish processing')
+        // Step 2: Poll until the container is FINISHED (required for both images and videos)
+        // Images typically finish in 1-2 polls; videos may take longer.
+        const maxAttempts = isVideo ? 18 : 12 // 18 × 5s = 90s for video, 12 × 5s = 60s for image
+        let ready = false
+        for (let i = 0; i < maxAttempts; i++) {
+            await new Promise(r => setTimeout(r, 5000))
+            const statusRes = await fetch(
+                `https://graph.facebook.com/v19.0/${creationId}?fields=status_code&access_token=${pageAccessToken}`
+            )
+            const statusData = await statusRes.json()
+            console.log(`[Cron] Container status (attempt ${i + 1}): ${statusData.status_code}`)
+            if (statusData.status_code === 'FINISHED') { ready = true; break }
+            if (statusData.status_code === 'ERROR') throw new Error(`IG ${isVideo ? 'video' : 'image'} container failed during processing`)
         }
+        if (!ready) throw new Error(`Timed out waiting for IG ${isVideo ? 'video' : 'image'} container to finish processing`)
 
         // Step 3: Publish the Media
         const publishUrl = `https://graph.facebook.com/v19.0/${instagramBusinessId}/media_publish`
