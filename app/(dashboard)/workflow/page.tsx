@@ -19,11 +19,11 @@ import {
 export const dynamic = 'force-dynamic'
 
 const statusConfig = {
-    DRAFT: { label: 'Draft', color: 'text-gray-500', bg: 'bg-gray-50', border: 'border-gray-200', dot: 'bg-gray-400', icon: FileText },
-    PENDING: { label: 'Scheduled', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100', dot: 'bg-purple-500', icon: Clock },
-    PUBLISHED: { label: 'Published', color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-100', dot: 'bg-green-500', icon: CheckCircle2 },
-    FAILED: { label: 'Failed', color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-100', dot: 'bg-red-500', icon: XCircle },
-    PROCESSING: { label: 'Processing', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', dot: 'bg-blue-500', icon: Clock },
+    DRAFT: { label: '下書き', color: 'text-gray-500', bg: 'bg-gray-50', border: 'border-gray-200', dot: 'bg-gray-400', icon: FileText },
+    PENDING: { label: '予約済み', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100', dot: 'bg-purple-500', icon: Clock },
+    PUBLISHED: { label: '公開済み', color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-100', dot: 'bg-green-500', icon: CheckCircle2 },
+    FAILED: { label: '失敗', color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-100', dot: 'bg-red-500', icon: XCircle },
+    PROCESSING: { label: '処理中', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', dot: 'bg-blue-500', icon: Clock },
 } as const
 
 type StatusKey = keyof typeof statusConfig
@@ -79,11 +79,11 @@ export default async function WorkflowPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Workflow</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">ワークフロー</h1>
                     <p className="text-gray-500 mt-1">
                         {totalPosts > 0
-                            ? `${totalPosts} post${totalPosts === 1 ? '' : 's'} across all stages`
-                            : 'No posts yet. Create your first post to get started.'
+                            ? `全ステージ合計 ${totalPosts} 件の投稿`
+                            : '投稿がありません。最初の投稿を作成してください。'
                         }
                     </p>
                 </div>
@@ -92,7 +92,7 @@ export default async function WorkflowPage() {
                     className="flex items-center gap-2 px-6 py-3 instagram-gradient text-white rounded-xl font-bold shadow-lg shadow-purple-500/20 hover:opacity-90 transition-all duration-200 ease-out active:scale-95 hover:shadow-xl hover:-translate-y-0.5 w-fit"
                 >
                     <PlusCircle className="w-4 h-4" />
-                    Create New Post
+                    新しい投稿を作成
                 </Link>
             </div>
 
@@ -117,11 +117,11 @@ export default async function WorkflowPage() {
                     <div className="w-14 h-14 instagram-gradient rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-purple-500/20">
                         <ListChecks className="w-7 h-7 text-white" />
                     </div>
-                    <p className="text-base font-bold text-gray-900">Your workflow is empty</p>
-                    <p className="text-sm text-gray-400 mt-1 mb-6">Create your first post to see it tracked here.</p>
+                    <p className="text-base font-bold text-gray-900">ワークフローが空です</p>
+                    <p className="text-sm text-gray-400 mt-1 mb-6">最初の投稿を作成してここでトラッキングしましょう。</p>
                     <Link href="/create" className="inline-flex items-center gap-2 px-6 py-3 instagram-gradient text-white rounded-xl font-bold shadow-lg shadow-purple-500/20 hover:opacity-90 transition-all duration-200 ease-out active:scale-95 hover:shadow-xl hover:-translate-y-0.5">
                         <PlusCircle className="w-4 h-4" />
-                        Create Post
+                        投稿を作成
                     </Link>
                 </div>
             ) : (
@@ -146,7 +146,7 @@ export default async function WorkflowPage() {
                                     {colPosts.length === 0 ? (
                                         <div className="flex flex-col items-center justify-center gap-2 p-8 bg-white border border-dashed border-gray-100 rounded-2xl text-center">
                                             <Icon className="w-6 h-6 text-gray-200" />
-                                            <p className="text-xs font-semibold text-gray-300">No {cfg.label.toLowerCase()} posts</p>
+                                            <p className="text-xs font-semibold text-gray-300">{cfg.label}の投稿なし</p>
                                         </div>
                                     ) : (
                                         colPosts.map((post) => {
@@ -190,7 +190,7 @@ export default async function WorkflowPage() {
                                                     {/* Card Content */}
                                                     <div className="p-3 space-y-2">
                                                         <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">
-                                                            {post.caption || <span className="text-gray-300 italic">No caption</span>}
+                                                            {post.caption || <span className="text-gray-300 italic">キャプションなし</span>}
                                                         </p>
                                                         {schedule && (
                                                             <div className="flex items-center gap-1 text-gray-400">

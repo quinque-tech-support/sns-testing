@@ -16,13 +16,13 @@ import {
 import { signOut } from 'next-auth/react'
 
 const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Create Content', href: '/create', icon: PlusCircle },
-    { name: 'Calendar', href: '/calendar', icon: Calendar },
-    { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-    { name: 'Workflow', href: '/workflow', icon: ListChecks },
-    { name: 'Accounts', href: '/account', icon: Instagram },
-    { name: 'Settings', href: '/settings', icon: Settings },
+    { name: 'ダッシュボード', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'コンテンツ作成', href: '/create', icon: PlusCircle },
+    { name: 'カレンダー', href: '/calendar', icon: Calendar },
+    { name: 'アナリティクス', href: '/analytics', icon: BarChart3 },
+    { name: 'ワークフロー', href: '/workflow', icon: ListChecks },
+    { name: 'アカウント', href: '/account', icon: Instagram },
+    { name: '設定', href: '/settings', icon: Settings },
 ]
 
 interface SidebarProps {
@@ -84,7 +84,7 @@ export function Sidebar({ user }: SidebarProps) {
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-700 transition-all duration-200 ease-out active:scale-[0.98] group"
                 >
                     <LogOut className="w-5 h-5 text-gray-400 group-hover:text-red-500 transition-colors" />
-                    Sign Out
+                    ログアウト
                 </button>
 
                 <div className="mt-4 p-3 bg-gray-50 rounded-xl border border-gray-100 cursor-pointer hover:bg-white transition-all duration-200 ease-out hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] ring-1 ring-transparent hover:ring-gray-200 active:scale-[0.98] group">

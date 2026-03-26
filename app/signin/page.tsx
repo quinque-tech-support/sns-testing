@@ -50,8 +50,8 @@ export default function SignIn() {
         <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
             <div className="max-w-md w-full bg-white border border-gray-300 p-8">
                 <div className="text-center mb-6">
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back</h1>
-                    <p className="text-gray-600">Sign in to your account</p>
+                    <h1 className="text-2xl font-bold text-gray-900 mb-2">おかえりなさい</h1>
+                    <p className="text-gray-600">アカウントにサインイン</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -63,7 +63,7 @@ export default function SignIn() {
 
                     <div>
                         <label htmlFor="email" className="block text-gray-700 font-medium mb-1">
-                            Email
+                            メールアドレス
                         </label>
                         <input
                             id="email"
@@ -78,7 +78,7 @@ export default function SignIn() {
 
                     <div>
                         <label htmlFor="password" className="block text-gray-700 font-medium mb-1">
-                            Password
+                            パスワード
                         </label>
                         <input
                             id="password"
@@ -96,22 +96,22 @@ export default function SignIn() {
                         disabled={loading}
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {loading ? 'Signing in...' : 'Sign In'}
+                        {loading ? 'サインイン中...' : 'サインイン'}
                     </button>
                 </form>
 
                 <div className="mt-4 text-center">
                     <p className="text-gray-600 text-sm">
-                        Don't have an account?{' '}
+                        アカウントがない方は{' '}
                         <Link href="/signup" className="text-blue-600 hover:text-blue-700">
-                            Sign Up
+                            新規登録
                         </Link>
                     </p>
                 </div>
 
                 <div className="mt-4 text-center">
                     <Link href="/" className="text-gray-600 hover:text-gray-800 text-sm">
-                        ← Back to Home
+                        ← ホームに戻る
                     </Link>
                 </div>
             </div>

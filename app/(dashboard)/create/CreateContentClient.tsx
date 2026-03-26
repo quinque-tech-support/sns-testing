@@ -37,16 +37,16 @@ interface CreateContentPageProps {
 }
 
 const tabs = [
-    { id: 'publish', label: 'Upload & Publish', icon: Upload },
-    { id: 'schedule', label: 'Schedule', icon: Calendar },
-    { id: 'tools', label: 'Content Tools', icon: Tag },
+    { id: 'publish', label: 'アップロード & 公開', icon: Upload },
+    { id: 'schedule', label: '予約投稿', icon: Calendar },
+    { id: 'tools', label: 'コンテンツツール', icon: Tag },
 ]
 
 const leadingSentences = [
-    { label: 'Announcement', text: '🚀 Big news! We are excited to announce...' },
-    { label: 'Story', text: '✨ Behind the scenes: Here is how we...' },
-    { label: 'Question', text: '❓ Quick question: What is your favorite...' },
-    { label: 'Tip', text: '💡 Pro tip: Have you ever tried...' },
+    { label: 'お知らせ', text: '🚀 大ニュース！お知らせがあります...' },
+    { label: 'ストーリー', text: '✨ 舞台裏：こんな経緯で...' },
+    { label: '質問', text: '❓ ひとつ質問：あなたのお気に入りは...' },
+    { label: 'ヒント', text: '💡 プロのヒント：こんなことを試したことはありますか...' },
 ]
 
 const hashtagSets: Record<string, string> = {
@@ -57,10 +57,10 @@ const hashtagSets: Record<string, string> = {
 }
 
 const ctaEndings: Record<string, string> = {
-    'Link in Bio': '\n\n👉 Link in bio for more!',
-    'Save for later': '\n\n💾 Save this post for later!',
-    'Tag a friend': '\n\n👇 Tag a friend who needs to see this!',
-    'Question for followers': '\n\n💬 Drop your thoughts in the comments below!',
+    'プロフィールのリンク': '\n\n👉 詳しくはプロフィールのリンクから！',
+    'あとで保存': '\n\n💾 この投稿をあとで保存してね！',
+    '友達をタグ付け': '\n\n👇 これを見せたい友達をタグ付けして！',
+    'フォロワーへの質問': '\n\n💬 コメント欄で感想を教えてください！',
 }
 
 export default function CreateContentClient({ accounts }: CreateContentPageProps) {
@@ -156,8 +156,8 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Create Content</h1>
-                    <p className="text-gray-500 mt-1">Design, schedule, and publish your Instagram posts.</p>
+                    <h1 className="text-2xl font-bold text-gray-900">コンテンツ作成</h1>
+                    <p className="text-gray-500 mt-1">Instagram投稿をデザイン・予約・公開しましょう。</p>
                 </div>
 
                 {/* Account Selector */}
@@ -182,7 +182,7 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
                 ) : (
                     <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-100 rounded-xl text-sm text-amber-700">
                         <AlertCircle className="w-4 h-4 shrink-0" />
-                        <span>No Instagram accounts connected. <a href="/account" className="font-bold underline">Connect one</a></span>
+                        <span>Instagram アカウントが未連携です。<a href="/account" className="font-bold underline">連携する</a></span>
                     </div>
                 )}
             </div>
@@ -226,7 +226,7 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
                     <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-6">
                         {/* Media Upload Section */}
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-3 uppercase tracking-wider">Media Upload</label>
+                            <label className="block text-sm font-bold text-gray-700 mb-3 uppercase tracking-wider">メディアアップロード</label>
                             {mediaPreview ? (
                                 <div className="relative aspect-video bg-gray-50 rounded-2xl border border-dashed border-gray-200 overflow-hidden group">
                                     {isVideo ? (
@@ -258,8 +258,8 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
                                     <div className="w-16 h-16 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                                         <Upload className="w-8 h-8 text-purple-500" />
                                     </div>
-                                    <p className="text-gray-900 font-bold">Drop your image or video here</p>
-                                    <p className="text-gray-400 text-sm mt-1">Supports JPG, PNG, MP4, MOV (max 500MB)</p>
+                                    <p className="text-gray-900 font-bold">画像または動画をここにドロップ</p>
+                                    <p className="text-gray-400 text-sm mt-1">JPG・PNG・MP4・MOV対応（最大500MB）</p>
                                     <input type="file" className="hidden" onChange={handleMediaUpload} accept="image/*,video/*" />
                                 </label>
                             )}
@@ -268,13 +268,13 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
                         {/* Caption Editor */}
                         <div>
                             <div className="flex items-center justify-between mb-3">
-                                <label className="block text-sm font-bold text-gray-700 uppercase tracking-wider">Caption</label>
+                                <label className="block text-sm font-bold text-gray-700 uppercase tracking-wider">キャプション</label>
                                 <span className="text-xs text-gray-400">{caption.length} / 2200</span>
                             </div>
                             <textarea
                                 value={caption}
                                 onChange={(e) => setCaption(e.target.value)}
-                                placeholder="Enter your caption here..."
+                                placeholder="キャプションを入力してください..."
                                 className="w-full min-h-[160px] p-4 bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/10 focus:border-purple-500 transition-all resize-none"
                                 maxLength={2200}
                             />
@@ -289,7 +289,7 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
                                     className="flex items-center gap-2 px-6 py-3 instagram-gradient text-white rounded-xl font-bold shadow-lg shadow-purple-500/20 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                                    Publish Now
+                                    今すぐ公開
                                 </button>
                                 <button
                                     onClick={handleSaveDraft}
@@ -297,7 +297,7 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
                                     className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition-all disabled:opacity-50"
                                 >
                                     {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-                                    Save as Draft
+                                    下書き保存
                                 </button>
                             </div>
                         )}
@@ -307,23 +307,23 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
                             <div className="space-y-6 pt-4 border-t border-gray-100">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Publish Date & Time</label>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">公開日時</label>
                                         <div className="flex items-center relative group">
                                             <Calendar className="absolute left-4 w-4 h-4 text-gray-400 group-focus-within:text-purple-500 transition-colors" />
                                             <input
                                                 type="datetime-local"
                                                 value={scheduledFor}
                                                 onChange={(e) => setScheduledFor(e.target.value)}
-                                                min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
+                                                min={new Date(Date.now() - new Date().getTimezoneOffset() * 60000 + 60000).toISOString().slice(0, 16)}
                                                 className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-purple-500/10 focus:border-purple-500 transition-all"
                                             />
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Estimated Reach</label>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">推定リーチ</label>
                                         <div className="px-4 py-2.5 bg-purple-50 border border-purple-100 rounded-xl">
-                                            <p className="text-sm font-bold text-purple-700">📈 Best posting windows:</p>
-                                            <p className="text-xs text-purple-600 mt-1">Tue–Fri: 9–11am, 1–3pm, 7–9pm</p>
+                                            <p className="text-sm font-bold text-purple-700">📈 最適な投稿時間帯:</p>
+                                            <p className="text-xs text-purple-600 mt-1">火〜金：9〜11時、13〜15時、19〜21時</p>
                                         </div>
                                     </div>
                                 </div>
@@ -334,14 +334,14 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
                                         className="flex items-center gap-2 px-8 py-3 bg-purple-600 text-white rounded-xl font-bold shadow-lg shadow-purple-600/20 hover:bg-purple-700 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Clock className="w-4 h-4" />}
-                                        Schedule Post
+                                        投稿を予約する
                                     </button>
                                     <button
                                         onClick={handleSaveDraft}
                                         disabled={isPending || accounts.length === 0}
                                         className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition-all disabled:opacity-50"
                                     >
-                                        Save as Draft
+                                        下書き保存
                                     </button>
                                 </div>
                             </div>
@@ -351,7 +351,7 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
                         {activeTab === 'tools' && (
                             <div className="space-y-6 pt-4 border-t border-gray-100">
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-3 uppercase tracking-wider">Leading Sentence Templates</label>
+                                    <label className="block text-sm font-bold text-gray-700 mb-3 uppercase tracking-wider">書き出しテンプレート</label>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         {leadingSentences.map((s) => (
                                             <button
@@ -368,7 +368,7 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Hashtag Set</label>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">ハッシュタグセット</label>
                                         <div className="flex gap-2">
                                             <div className="relative flex-1 group">
                                                 <select
@@ -376,7 +376,7 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
                                                     onChange={(e) => setHashtags(e.target.value)}
                                                     className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-xl py-2.5 pl-4 pr-10 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-purple-500/10 focus:border-purple-500 transition-all cursor-pointer"
                                                 >
-                                                    <option value="">Select Category</option>
+                                                    <option value="">カテゴリを選択</option>
                                                     {Object.keys(hashtagSets).map(k => <option key={k}>{k}</option>)}
                                                 </select>
                                                 <Hash className="absolute right-8 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -387,12 +387,12 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
                                                 disabled={!hashtags}
                                                 className="px-3 py-2.5 bg-purple-600 text-white rounded-xl text-sm font-bold hover:bg-purple-700 disabled:opacity-40 transition-all"
                                             >
-                                                Add
+                                                追加
                                             </button>
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Ending Style (CTA)</label>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">締めの一言 (CTA)</label>
                                         <div className="flex gap-2">
                                             <div className="relative flex-1 group">
                                                 <select
@@ -408,7 +408,7 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
                                                 onClick={applyCTA}
                                                 className="px-3 py-2.5 bg-gray-700 text-white rounded-xl text-sm font-bold hover:bg-gray-800 transition-all"
                                             >
-                                                Add
+                                                追加
                                             </button>
                                         </div>
                                     </div>
@@ -500,7 +500,7 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
                     </div>
                     <p className="text-sm font-medium text-gray-400 mt-4 flex items-center gap-2">
                         <Smartphone className="w-4 h-4" />
-                        Live Mobile Preview
+                        モバイルプレビュー
                     </p>
                 </div>
             </div>

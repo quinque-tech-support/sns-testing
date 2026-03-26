@@ -73,29 +73,29 @@ export default async function DashboardPage() {
 
     const kpis = [
         {
-            label: 'Reach (30 days)',
+            label: 'リーチ（過去30日）',
             value: hasInsights ? formatNum(totalImpressions) : '--',
-            sub: hasInsights ? 'Unique accounts reached' : 'Connect an account',
+            sub: hasInsights ? 'リーチしたユニークアカウント数' : 'アカウントを連携してください',
             icon: Eye,
             color: 'text-blue-600',
             bg: 'bg-blue-50',
-            trend: hasInsights ? '↑ Live' : null,
+            trend: hasInsights ? '↑ ライブ' : null,
             isPositive: true,
         },
         {
-            label: 'Profile Views (30 days)',
+            label: 'プロフィール閲覧（過去30日）',
             value: hasInsights ? formatNum(totalLikes) : '--',
-            sub: hasInsights ? 'From Instagram API' : 'No data yet',
+            sub: hasInsights ? 'Instagram APIより取得' : 'データなし',
             icon: Heart,
             color: 'text-pink-600',
             bg: 'bg-pink-50',
-            trend: hasInsights ? '↑ Live' : null,
+            trend: hasInsights ? '↑ ライブ' : null,
             isPositive: true,
         },
         {
-            label: 'Published Posts',
+            label: '公開済み投稿数',
             value: publishedCount.toString(),
-            sub: 'All time automatically',
+            sub: '累計・自動投稿',
             icon: PlayCircle,
             color: 'text-purple-600',
             bg: 'bg-purple-50',
@@ -103,13 +103,13 @@ export default async function DashboardPage() {
             isPositive: true,
         },
         {
-            label: 'Linked Accounts',
+            label: '連携アカウント',
             value: accountsCount.toString(),
-            sub: connectedAccount ? `@${connectedAccount.username}` : 'No accounts',
+            sub: connectedAccount ? `@${connectedAccount.username}` : 'アカウントなし',
             icon: UserPlus,
             color: 'text-orange-600',
             bg: 'bg-orange-50',
-            trend: accountsCount > 0 ? `${accountsCount} active` : null,
+            trend: accountsCount > 0 ? `${accountsCount} アクティブ` : null,
             isPositive: true,
         },
     ]
@@ -126,8 +126,8 @@ export default async function DashboardPage() {
     })
 
     const activities = [
-        { id: 1, type: 'status_change', user: 'System', detail: hasInsights ? `Synced @${connectedAccount?.username} insights` : 'Waiting for connected account...', time: 'Live', icon: CheckCircle2, iconColor: 'text-green-600' },
-        { id: 2, type: 'post_published', user: 'Queue', detail: `${publishedCount} posts published`, time: 'All time', icon: PlayCircle, iconColor: 'text-purple-600' },
+        { id: 1, type: 'status_change', user: 'システム', detail: hasInsights ? `@${connectedAccount?.username} のインサイトを同期しました` : '連携アカウントを待機中...', time: 'ライブ', icon: CheckCircle2, iconColor: 'text-green-600' },
+        { id: 2, type: 'post_published', user: 'キュー', detail: `${publishedCount} 件の投稿を公開済み`, time: '累計', icon: PlayCircle, iconColor: 'text-purple-600' },
     ]
 
     return (
@@ -135,11 +135,11 @@ export default async function DashboardPage() {
             {/* Greeting */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Dashboard Overview</h1>
-                    <p className="text-gray-500 font-medium mt-1">Welcome back, {session.user?.name || 'User'}! Here's what's happening with your accounts.</p>
+                    <h1 className="text-2xl font-semibold tracking-tight text-gray-900">ダッシュボード概要</h1>
+                    <p className="text-gray-500 font-medium mt-1">おかえりなさい、{session.user?.name || 'ユーザー'}さん！アカウントの状況をご確認ください。</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium text-gray-500">Last 7 Days</span>
+                    <span className="text-sm font-medium text-gray-500">過去7日間</span>
                     <button className="p-2 bg-white hover:bg-gray-50 rounded-lg border border-gray-200 shadow-sm transition-all duration-200 ease-out active:scale-95 group">
                         <MoreHorizontal className="w-4 h-4 text-gray-500 group-hover:text-gray-800" />
                     </button>
@@ -177,17 +177,17 @@ export default async function DashboardPage() {
                 <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_1px_3px_0_rgba(0,0,0,0.02),_0_1px_2px_0_rgba(0,0,0,0.01)]">
                     <div className="flex items-center justify-between mb-8">
                         <div>
-                            <h2 className="text-lg font-bold text-gray-900 tracking-tight">Performance Trend</h2>
-                            <p className="text-sm font-medium text-gray-500 mt-0.5">Views vs. Engagement over time</p>
+                            <h2 className="text-lg font-bold text-gray-900 tracking-tight">パフォーマンストレンド</h2>
+                            <p className="text-sm font-medium text-gray-500 mt-0.5">時系列での閲覧数 vs エンゲージメント</p>
                         </div>
                         <div className="flex items-center gap-4">
                             <div className="flex items-center gap-2">
                                 <span className="w-2.5 h-2.5 rounded bg-purple-500 shadow-sm" />
-                                <span className="text-sm font-medium text-gray-600">Views</span>
+                                <span className="text-sm font-medium text-gray-600">閲覧数</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className="w-2.5 h-2.5 rounded bg-pink-400 shadow-sm" />
-                                <span className="text-sm font-medium text-gray-600">Engagement</span>
+                                <span className="text-sm font-medium text-gray-600">エンゲージメント</span>
                             </div>
                         </div>
                     </div>
@@ -214,8 +214,8 @@ export default async function DashboardPage() {
                 {/* Upcoming Posts */}
                 <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_1px_3px_0_rgba(0,0,0,0.02),_0_1px_2px_0_rgba(0,0,0,0.01)] flex flex-col">
                     <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-lg font-bold text-gray-900 tracking-tight">Upcoming</h2>
-                        <Link href="/calendar" className="text-sm font-semibold text-purple-600 hover:text-purple-700 active:scale-95 transition-all">View Calendar</Link>
+                        <h2 className="text-lg font-bold text-gray-900 tracking-tight">予定投稿</h2>
+                        <Link href="/calendar" className="text-sm font-semibold text-purple-600 hover:text-purple-700 active:scale-95 transition-all">カレンダーを見る</Link>
                     </div>
 
                     <div className="space-y-4 flex-1">
@@ -226,7 +226,7 @@ export default async function DashboardPage() {
                                 </div>
                                 <div className="flex-1 min-w-0 flex flex-col justify-center">
                                     <div className="flex items-center gap-1.5 mb-1.5">
-                                        <span className="text-[10px] font-bold px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full uppercase tracking-widest shadow-sm">Scheduled</span>
+                                        <span className="text-[10px] font-bold px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full uppercase tracking-widest shadow-sm">予約済み</span>
                                     </div>
                                     <h4 className="text-sm font-semibold text-gray-900 truncate tracking-tight">{schedule.post.caption || 'No Caption'}</h4>
                                     <div className="flex items-center gap-1.5 mt-1 text-gray-500">
@@ -241,15 +241,15 @@ export default async function DashboardPage() {
                                     <Calendar className="w-6 h-6" />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-semibold text-gray-700">No Posts Scheduled</p>
-                                    <p className="text-xs text-gray-500 mt-1">Get ahead of your content</p>
+                                    <p className="text-sm font-semibold text-gray-700">予定投稿なし</p>
+                                    <p className="text-xs text-gray-500 mt-1">コンテンツを事前に計画しましょう</p>
                                 </div>
                             </div>
                         )}
                     </div>
 
                     <Link href="/create" className="w-full mt-6 py-3 bg-purple-600 text-white rounded-xl text-sm font-semibold hover:bg-purple-700 hover:shadow-lg hover:shadow-purple-600/20 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200 text-center">
-                        Schedule New Post
+                        新しい投稿を予約する
                     </Link>
                 </div>
             </div>
@@ -259,7 +259,7 @@ export default async function DashboardPage() {
                 {/* Activity Feed */}
                 <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_1px_3px_0_rgba(0,0,0,0.02),_0_1px_2px_0_rgba(0,0,0,0.01)]">
                     <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-lg font-bold text-gray-900 tracking-tight">Recent Activity</h2>
+                        <h2 className="text-lg font-bold text-gray-900 tracking-tight">最近のアクティビティ</h2>
                         <button className="text-gray-400 hover:text-gray-700 bg-white hover:bg-gray-50 p-2 rounded-lg transition-colors"><MoreHorizontal className="w-5 h-5" /></button>
                     </div>
 
@@ -293,22 +293,22 @@ export default async function DashboardPage() {
                                 <Instagram className="w-7 h-7 text-white" />
                             </div>
                             <span className="px-3.5 py-1.5 bg-white/20 backdrop-blur-md rounded-full text-[11px] font-bold text-white uppercase tracking-wider border border-white/30 shadow-sm">
-                                {accountsCount > 0 ? 'Connected' : 'Disconnected'}
+                                {accountsCount > 0 ? '接続済み' : '未接続'}
                             </span>
                         </div>
 
                         <div className="mt-8">
-                            <h3 className="text-3xl font-bold text-white tracking-tight">Accounts Linked</h3>
-                            <p className="text-white/80 font-medium text-sm mt-1.5">Manage from your account settings</p>
+                            <h3 className="text-3xl font-bold text-white tracking-tight">連携アカウント</h3>
+                            <p className="text-white/80 font-medium text-sm mt-1.5">アカウント設定で管理できます</p>
                         </div>
 
                         <div className="mt-auto pt-10 flex items-center justify-between">
                             <div>
-                                <p className="text-[11px] font-bold text-white/70 uppercase tracking-widest mb-1">Total Accounts</p>
+                                <p className="text-[11px] font-bold text-white/70 uppercase tracking-widest mb-1">総アカウント数</p>
                                 <p className="text-3xl font-bold text-white tracking-tight drop-shadow-sm">{accountsCount}</p>
                             </div>
                             <Link href="/account" className="px-5 py-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-xl text-sm font-semibold text-white border border-white/30 shadow-sm transition-all duration-200 active:scale-[0.98]">
-                                Manage
+                                管理する
                             </Link>
                         </div>
                     </div>

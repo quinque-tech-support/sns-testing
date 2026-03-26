@@ -14,92 +14,73 @@ export default function TermsOfService() {
             <ArrowLeft className="w-6 h-6" />
           </Link>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Terms of Service
+            利用規約
           </h1>
         </div>
 
         <div className="prose dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 space-y-6">
-          <p>Last updated: {new Date().toLocaleDateString()}</p>
+          <p>最終更新日: {new Date().toLocaleDateString('ja-JP')}</p>
 
           <section>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-              1. Agreement to Terms
+              1. 利用規約への同意
             </h2>
             <p>
-              By proceeding to use this Instagram automation tool, you agree to be
-              bound by these Terms of Service. If you disagree with any part of
-              the terms, you do not have permission to access the Service.
+              本インスタグラム自動化ツールを利用することにより、この利用規約に同意したことになります。規約の一部に同意できない場合は、本サービスへのアクセス権限は付与されません。
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-              2. Accounts and Integration
+              2. アカウントと連携
             </h2>
             <p>
-              When you create an account and connect your social media profiles
-              (Facebook/Instagram), you guarantee that you have the right and
-              authority to grant us access to those profiles. You are responsible
-              for safeguarding the password that you use to access the Service and
-              for any activities or actions under your password.
+              アカウント作成およびソーシャルメディアプロフィール（Facebook/Instagram）を連携する際、当該プロフィールへのアクセス権限を付与する権利および権限を有することを保証していただきます。サービスへのアクセスに使用するパスワードの管理およびそのパスワード下での活動に対して貿任を負うものとします。
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-              3. Meta API Usage
+              3. Meta APIの利用
             </h2>
             <p>
-              Our application uses the Meta Graph API. By using our service, you
-              must also comply with Facebook and Instagram's Terms of Service and
-              Community Guidelines. Utilizing our tool to post spam, inappropriate,
-              or illegal content will result in immediate termination of your account
-              and potentially a ban from Meta platforms.
+              本アプリケーションはMeta Graph APIを利用しています。本サービスを利用することにより、FacebookおよびInstagramの利用規約とコミュニティガイドラインにも遵守するものとします。スパム・不適切・違法なコンテンツの投稿に本ツールを使用した場合、アカウントは即時停止され、Metaプラットフォームから利用禁止となる可能性があります。
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-              4. Service Reliability
+              4. サービスの信頼性
             </h2>
             <p>
-              We strive to ensure your posts are published on time. However, our
-              Service relies on third-party APIs (Meta). We are not responsible for
-              failed posts, API rate limits, revoked tokens, or downtime caused by
-              Meta or other external factors beyond our control.
+              投稿の時間通りの公開に最善を尽くします。ただし、本サービスはMetaなどサードパーティAPIに依存しており、公開失敗・APIレート制限・トークン失効・外部要因によるダウンタイムについて責任を負いかねます。
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-              5. Termination
+              5. 解約
             </h2>
             <p>
-              We may terminate or suspend your account immediately, without prior
-              notice or liability, for any reason whatsoever, including without
-              limitation if you breach the Terms. Upon termination, your right to
-              use the Service will immediately cease.
+              当社は、利用規約違反を含むいかなる理由によっても、事前の通知または責任なく、即時にアカウントを停止または展間する権利を留保します。解約後、サービスへのアクセス権は即時消滅します。
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-              6. Changes
+              6. 変更
             </h2>
             <p>
-              We reserve the right, at our sole discretion, to modify or replace
-              these Terms at any time. By continuing to access or use our Service
-              after those revisions become effective, you agree to be bound by the
-              revised terms.
+              当社は、単独の裁量により、いつでも利用規約を変更または更新する権利を留保します。変更後も引き続きサービスを利用した場合、改訂後の視西に同意したものとみなします。
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-              7. Contact Us
+              7. お問い合わせ
             </h2>
             <p>
-              If you have any questions about these Terms, please contact us.
+              本利用規約に関するご質問は、お気軽にお問い合わせください。
             </p>
           </section>
         </div>
