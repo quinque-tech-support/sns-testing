@@ -14,6 +14,32 @@ export type ActionResult = {
 
 const MAX_FILE_SIZE = 500 * 1024 * 1024 // 500MB
 
+export async function getSignedUploadUrl(fileName: string, contentType: string) {
+    const session = await auth()
+    if (!session?.user?.id) return { error: 'Not authenticated' }
+
+    try {
+        const { data, error } = await supabaseAdmin
+            .storage
+            .from('media-uploads')
+            .createSignedUploadUrl(fileName)
+
+        if (error) {
+            console.error('[getSignedUploadUrl Error]', error)
+            return { error: error.message }
+        }
+
+        return { 
+            signedUrl: data.signedUrl, 
+            token: data.token, 
+            path: data.path 
+        }
+    } catch (e: any) {
+        console.error('[getSignedUploadUrl Exception]', e)
+        return { error: e.message }
+    }
+}
+
 /**
  * Helper to upload a File to Supabase Storage and return its public URL.
  */
