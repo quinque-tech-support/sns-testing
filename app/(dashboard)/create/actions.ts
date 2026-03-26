@@ -55,11 +55,13 @@ async function uploadMediaToSupabase(file: File): Promise<string | null> {
 }
 
 /**
- * Poll Instagram media container until it's FINISHED processing (for videos)
+ * Poll Instagram media container until it's FINISHED processing.
+ * Required for BOTH images and videos — Instagram processes asynchronously.
+ * Images typically finish in 1-2 polls (~5-10s); videos may take minutes.
  */
-async function waitForContainer(containerId: string, accessToken: string, maxWaitMs = 300000): Promise<boolean> {
+async function waitForContainer(containerId: string, accessToken: string, isVideo = false): Promise<boolean> {
     const pollInterval = 5000
-    const maxAttempts = maxWaitMs / pollInterval
+    const maxAttempts = isVideo ? 60 : 12 // 60×5s=5min for video, 12×5s=60s for image
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
         await new Promise(resolve => setTimeout(resolve, pollInterval))
@@ -78,7 +80,7 @@ async function waitForContainer(containerId: string, accessToken: string, maxWai
         }
     }
 
-    console.warn(`[Container Poll] Timed out after ${maxWaitMs / 1000}s`)
+    console.warn(`[Container Poll] Timed out waiting for container ${containerId}`)
     return false
 }
 
@@ -190,28 +192,37 @@ export async function publishNow(formData: FormData): Promise<ActionResult> {
         const creationId = containerData.id
         console.log(`[publishNow] Container created: ${creationId}, isVideo: ${isVideo}`)
 
-        // 2. For videos, wait for Instagram to finish processing the Reel
-        if (isVideo) {
-            const ready = await waitForContainer(creationId, account.pageAccessToken)
-            if (!ready) {
-                return { error: 'Instagram is taking too long to process your video. Please try again.' }
-            }
+        // 2. Wait for Instagram to finish processing (required for BOTH images and videos)
+        const ready = await waitForContainer(creationId, account.pageAccessToken, isVideo)
+        if (!ready) {
+            return { error: `Instagram is taking too long to process your ${isVideo ? 'video' : 'image'}. Please try again.` }
         }
 
-        // 3. Publish Media
+        // 3. Publish Media — retry up to 3 times with backoff for transient "not ready" errors
         const publishUrl = `https://graph.facebook.com/v19.0/${account.instagramBusinessId}/media_publish`
-        const publishRes = await fetch(publishUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                creation_id: creationId,
-                access_token: account.pageAccessToken
+        let publishData: any = null
+        const MAX_PUBLISH_RETRIES = 3
+        for (let attempt = 1; attempt <= MAX_PUBLISH_RETRIES; attempt++) {
+            const publishRes = await fetch(publishUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    creation_id: creationId,
+                    access_token: account.pageAccessToken
+                })
             })
-        })
+            publishData = await publishRes.json()
 
-        const publishData = await publishRes.json()
-        if (!publishRes.ok || publishData.error) {
-            return { error: `IG Publish Error: ${publishData.error?.message || 'Unknown'}` }
+            if (publishRes.ok && !publishData.error) break // success
+
+            const isTransient = publishData.error?.error_subcode === 2207027 // Media not ready
+            if (!isTransient || attempt === MAX_PUBLISH_RETRIES) {
+                console.error(`[publishNow] IG Publish Error (attempt ${attempt}):`, publishData.error)
+                return { error: `IG Publish Error: ${publishData.error?.message || 'Unknown'}` }
+            }
+
+            console.warn(`[publishNow] Media not ready yet, retrying in 5s (attempt ${attempt}/${MAX_PUBLISH_RETRIES})...`)
+            await new Promise(r => setTimeout(r, 5000))
         }
 
         // 4. Save to Database

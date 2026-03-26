@@ -14,117 +14,96 @@ export default function PrivacyPolicy() {
             <ArrowLeft className="w-6 h-6" />
           </Link>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Privacy Policy
+            プライバシーポリシー
           </h1>
         </div>
 
         <div className="prose dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 space-y-6">
-          <p>Last updated: {new Date().toLocaleDateString()}</p>
+          <p>最終更新日: {new Date().toLocaleDateString('ja-JP')}</p>
 
           <section>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-              1. Information We Collect
+              1. 収集する情報
             </h2>
             <p>
-              When you use our service to automate your Instagram posts, we collect
-              the following types of information:
+              本サービスを利用してInstagram投稿を自動化する際、以下の情報を収集します：
             </p>
             <ul className="list-disc pl-5 mt-2 space-y-1">
               <li>
-                <strong>Account Information:</strong> Your name, email address,
-                and authentication credentials.
+                <strong>アカウント情報：</strong>お名前、メールアドレス、認証情報。
               </li>
               <li>
-                <strong>Social Media Data:</strong> When you connect your Facebook
-                or Instagram account, we receive an access token that allows us to
-                publish posts on your behalf, fetch your profile information, and
-                read your basic page metrics.
+                <strong>ソーシャルメディアデータ：</strong>お客様がFacebookまたはInstagramアカウントを連携する際、投稿の代理公開・プロフィール情報の取得・ページメトリクスの読み取りに必要なアクセストークンを受取ります。
               </li>
               <li>
-                <strong>Usage Data:</strong> Information about how you use our
-                platform, including the posts you schedule and publish.
+                <strong>利用データ：</strong>スケジュール・公開した投稿を含む、プラットフォームの利用状況に関する情報。
               </li>
             </ul>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-              2. How We Use Your Information
+              2. 情報の利用目的
             </h2>
-            <p>We use the collected information for the following purposes:</p>
+            <p>収集した情報は以下の目的に利用します：</p>
             <ul className="list-disc pl-5 mt-2 space-y-1">
-              <li>To provide, maintain, and improve our services.</li>
+              <li>サービスの提供・維持・改善のため。</li>
               <li>
-                To authenticate your account and facilitate the connection with
-                Instagram/Facebook APIs.
+                アカウントの認証およびInstagram/Facebook APIとの連携促進のため。
               </li>
-              <li>To schedule and automatically publish your social media content.</li>
-              <li>To communicate with you regarding updates, support, and alerts.</li>
+              <li>ソーシャルメディアコンテンツのスケジューリングおよび自動公開のため。</li>
+              <li>アップデート・サポート・通知に関する連絡のため。</li>
             </ul>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-              3. Data Sharing and Third-Party Services
+              3. 情報の共有と第三者サービス
             </h2>
             <p>
-              Our application integrates with third-party services like Facebook
-              and Instagram via the Meta Graph API. By using our service, you
-              agree to the privacy policies of these third parties.
+              本アプリケーションはMeta Graph APIを通じてFacebookもしくはInstagramと連携しています。本サービスを利用することにより、これら第三者のプライバシーポリシーに同意したことになります。
             </p>
             <p className="mt-2">
-              We do not sell, trade, or rent your personal information to third
-              parties. We may share information with trusted service providers who
-              assist us in operating our application, provided those parties agree
-              to keep this information confidential.
+              お客様の個人情報を第三者に売る、市場取引、貸出することはありません。アプリケーション靈業を支援する信頼できるサービスプロバイダーとのみ情報を共有する場合がありますが、その際は機密保持を約束した場合に限られます。
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-              4. Data Retention and Deletion
+              4. データの保持と削除
             </h2>
             <p>
-              We retain your personal information and social media tokens only for
-              as long as necessary to provide you with our services. You can
-              disconnect your social media accounts at any time from your dashboard,
-              which will revoke our access to your tokens.
+              サービスの提供に必要な期間のみ、個人情報およびソーシャルメディアトークンを保持します。ダッシュボードからアカウントの連携を難除することで、いつでもトークンへのアクセスを撤回できます。
             </p>
             <p className="mt-2">
-              To request complete deletion of your account and all associated data,
-              please contact us.
+              アカウントおよび関連する全データの完全削除をご希望の場合は、お問い合わせください。
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-              5. Security
+              5. セキュリティ
             </h2>
             <p>
-              We implement industry-standard security measures to protect your
-              personal information and social media access tokens from unauthorized
-              access, alteration, or disclosure.
+              業界標準のセキュリティ対策を実施し、格許のないアクセス・改ざん・漏洩から個人情報およびソーシャルメディアアクセストークンを保護します。
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-              6. Changes to This Privacy Policy
+              6. プライバシーポリシーの変更
             </h2>
             <p>
-              We may update this Privacy Policy from time to time. We will notify
-              you of any significant changes by posting the new policy on this page
-              and updating the "Last updated" date.
+              本プライバシーポリシーは適宜更新されることがあります。重要な変更がある場合は、このページに新しいポリシーを挈載し、「最終更新日」を更新することでお知らせします。
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-              7. Contact Us
+              7. お問い合わせ
             </h2>
             <p>
-              If you have any questions or concerns about this Privacy Policy,
-              please contact support.
+              本ポリシーに関するご質問およびご不明な点は、お気軽にサポートまでお問い合わせください。
             </p>
           </section>
         </div>

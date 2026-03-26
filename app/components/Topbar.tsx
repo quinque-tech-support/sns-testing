@@ -41,7 +41,7 @@ export function Topbar({ user, accounts = [] }: TopbarProps) {
                     <Search className="absolute left-3 w-4 h-4 text-gray-400 group-focus-within:text-purple-500 transition-colors" />
                     <input
                         type="text"
-                        placeholder="Search posts, analytics, themes..."
+                        placeholder="投稿・分析・テーマを検索..."
                         className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/10 focus:border-purple-500 transition-all"
                     />
                 </div>
@@ -67,7 +67,7 @@ export function Topbar({ user, accounts = [] }: TopbarProps) {
                 {/* Quick Action */}
                 <Link href="/create" className="hidden sm:flex items-center gap-2 px-4 py-2 instagram-gradient text-white rounded-xl text-sm font-semibold shadow-md shadow-purple-500/20 hover:shadow-lg hover:-translate-y-0.5 hover:opacity-90 transition-all duration-200 ease-out active:scale-95">
                     <Plus className="w-4 h-4" />
-                    Create Post
+                    投稿を作成
                 </Link>
 
                 {/* Notifications */}

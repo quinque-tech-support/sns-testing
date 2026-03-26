@@ -82,7 +82,8 @@ export default async function AnalyticsPage() {
         publishedCount,
         pendingCount,
         accountsCount,
-        topPosts
+        topPosts,
+        activityPosts
     ] = await Promise.all([
         prisma.post.count({ where: { userId: session.user.id } }),
         prisma.schedule.count({
@@ -122,43 +123,37 @@ export default async function AnalyticsPage() {
     ])
 
     const stats = [
-        { label: 'Total Posts', value: formatNumber(postsCount), trend: postsCount > 0 ? '+' + postsCount : '0', icon: BarChart3, color: 'text-blue-600', bg: 'bg-blue-50' },
-        { label: 'Published', value: formatNumber(publishedCount), trend: publishedCount > 0 ? '+' + publishedCount : '0', icon: TrendingUp, color: 'text-purple-600', bg: 'bg-purple-50' },
-        { label: 'Scheduled', value: formatNumber(pendingCount), trend: pendingCount > 0 ? '+' + pendingCount : '0', icon: Clock, color: 'text-pink-600', bg: 'bg-pink-50' },
-        { label: 'Linked Accounts', value: formatNumber(accountsCount), trend: accountsCount > 0 ? '+' + accountsCount : '0', icon: Users, color: 'text-orange-600', bg: 'bg-orange-50' },
+        { label: '総投稿数', value: formatNumber(postsCount), trend: postsCount > 0 ? '+' + postsCount : '0', icon: BarChart3, color: 'text-blue-600', bg: 'bg-blue-50' },
+        { label: '公開済み', value: formatNumber(publishedCount), trend: publishedCount > 0 ? '+' + publishedCount : '0', icon: TrendingUp, color: 'text-purple-600', bg: 'bg-purple-50' },
+        { label: '予約済み', value: formatNumber(pendingCount), trend: pendingCount > 0 ? '+' + pendingCount : '0', icon: Clock, color: 'text-pink-600', bg: 'bg-pink-50' },
+        { label: '連携アカウント', value: formatNumber(accountsCount), trend: accountsCount > 0 ? '+' + accountsCount : '0', icon: Users, color: 'text-orange-600', bg: 'bg-orange-50' },
     ]
 
     const engagementData = [
-        { label: 'Posts Created', value: postsCount, max: Math.max(postsCount, 1), color: 'bg-pink-500', icon: Heart },
-        { label: 'Published', value: publishedCount, max: Math.max(postsCount, 1), color: 'bg-orange-500', icon: Bookmark },
-        { label: 'Scheduled', value: pendingCount, max: Math.max(postsCount, 1), color: 'bg-blue-500', icon: Share2 },
+        { label: '作成済み投稿', value: postsCount, max: Math.max(postsCount, 1), color: 'bg-pink-500', icon: Heart },
+        { label: '公開済み', value: publishedCount, max: Math.max(postsCount, 1), color: 'bg-orange-500', icon: Bookmark },
+        { label: '予約済み', value: pendingCount, max: Math.max(postsCount, 1), color: 'bg-blue-500', icon: Share2 },
     ]
 
-    const chartData = get30DayActivityData(postsCount > 0 ? (await prisma.post.findMany({
-        where: {
-            userId: session.user.id,
-            createdAt: { gte: new Date(new Date().setDate(new Date().getDate() - 30)) }
-        },
-        select: { createdAt: true, schedules: { select: { status: true } } }
-    })) : [])
+    const chartData = get30DayActivityData(activityPosts)
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Analytics Insights</h1>
-                    <p className="text-gray-500 mt-1">Deep dive into your content performance and audience growth.</p>
+                    <h1 className="text-2xl font-bold text-gray-900">アナリティクス</h1>
+                    <p className="text-gray-500 mt-1">コンテンツのパフォーマンスとオーディエンス成長を分析しましょう。</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-0.5 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-50 transition-all duration-200 ease-out active:scale-95">
                         <Calendar className="w-4 h-4 text-gray-400" />
-                        Last 30 Days
+                        過去30日間
                         <ChevronDown className="w-4 h-4 text-gray-400" />
                     </div>
                     <button className="flex items-center gap-2 px-4 py-2 instagram-gradient text-white rounded-xl text-sm font-bold shadow-lg shadow-purple-500/20 hover:shadow-xl hover:-translate-y-0.5 hover:opacity-90 transition-all duration-200 ease-out active:scale-95">
                         <Download className="w-4 h-4" />
-                        Export CSV
+                        CSVをエクスポート
                     </button>
                 </div>
             </div>
@@ -190,17 +185,17 @@ export default async function AnalyticsPage() {
                 <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm">
                     <div className="flex items-center justify-between mb-8">
                         <div>
-                            <h2 className="text-lg font-bold text-gray-900">Activity Overview</h2>
-                            <p className="text-sm text-gray-500 mt-1">Post creation activity over the last 30 days.</p>
+                            <h2 className="text-lg font-bold text-gray-900">アクティビティ概要</h2>
+                            <p className="text-sm text-gray-500 mt-1">過去30日の投稿作成アクティビティ。</p>
                         </div>
                         <div className="flex items-center gap-4">
                             <div className="flex items-center gap-2">
                                 <span className="w-3 h-3 rounded-full bg-purple-500" />
-                                <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">Posts</span>
+                                <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">投稿数</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className="w-3 h-3 rounded-full bg-blue-400" />
-                                <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">Published</span>
+                                <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">公開済み</span>
                             </div>
                         </div>
                     </div>
@@ -209,26 +204,36 @@ export default async function AnalyticsPage() {
                         <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20">
                             {[1, 2, 3, 4].map(i => <div key={i} className="border-t border-gray-400 w-full h-[1px]" />)}
                         </div>
-                        <div className="absolute inset-0 flex items-end justify-between gap-1 pb-1">
+                        <div className="absolute inset-0 flex items-end justify-between gap-[2px] pb-1">
                             {chartData.map((day, i) => (
                                 <div key={i} className="flex-1 flex flex-col items-center justify-end h-full group relative">
                                     <div className="w-full relative flex items-end justify-center h-full">
-                                        {/* Total Posts Bar */}
-                                        <div
-                                            style={{ height: `${day.height}%` }}
-                                            className="w-full bg-purple-500/10 group-hover:bg-purple-500/20 rounded-t-sm transition-all"
-                                        />
-                                        {/* Published Posts Bar (overlays) */}
-                                        <div
-                                            style={{ height: `${day.pubHeight}%` }}
-                                            className="absolute bottom-0 w-full bg-blue-500/50 group-hover:bg-blue-500 rounded-t-sm transition-all shadow-[0_0_10px_rgba(96,165,250,0.5)] group-hover:shadow-[0_0_15px_rgba(96,165,250,0.8)]"
-                                        />
+                                        {/* Total Posts Bar (background track) */}
+                                        {day.count > 0 && (
+                                            <div
+                                                style={{ height: `${day.height}%` }}
+                                                className="absolute bottom-0 w-full bg-purple-200 rounded-t-sm transition-all duration-300"
+                                            />
+                                        )}
+                                        {/* Empty track so chart always shows a baseline */}
+                                        {day.count === 0 && (
+                                            <div className="absolute bottom-0 w-full h-[2px] bg-gray-100 rounded-t-sm" />
+                                        )}
+                                        {/* Published Posts Bar (overlays on top) */}
+                                        {day.publishedCount > 0 && (
+                                            <div
+                                                style={{ height: `${day.pubHeight}%` }}
+                                                className="absolute bottom-0 w-full bg-purple-500 group-hover:bg-purple-600 rounded-t-sm transition-all duration-300"
+                                            />
+                                        )}
 
                                         {/* Tooltip */}
-                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 text-white text-[10px] font-bold py-1.5 px-3 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all shadow-xl z-20 whitespace-nowrap hidden group-hover:block">
-                                            {day.count} Posts ({day.publishedCount} Pub)
-                                            <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900" />
-                                        </div>
+                                        {day.count > 0 && (
+                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 text-white text-[10px] font-bold py-1.5 px-3 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 shadow-xl z-20 whitespace-nowrap">
+                                                {day.count} post{day.count !== 1 ? 's' : ''} ({day.publishedCount} published)
+                                                <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900" />
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}
@@ -246,11 +251,11 @@ export default async function AnalyticsPage() {
                 <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm">
                     <div className="flex items-center justify-between mb-8">
                         <div>
-                            <h2 className="text-lg font-bold text-gray-900">Content Breakdown</h2>
-                            <p className="text-sm text-gray-500 mt-1">Comparing created, published, and scheduled posts.</p>
+                            <h2 className="text-lg font-bold text-gray-900">コンテンツ内訳</h2>
+                            <p className="text-sm text-gray-500 mt-1">作成・公開・予約済みの比較。</p>
                         </div>
                         <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-gray-400 bg-gray-50 px-2 py-1 rounded">
-                            Total: {postsCount}
+                            合計: {postsCount}
                         </div>
                     </div>
 
@@ -282,11 +287,11 @@ export default async function AnalyticsPage() {
                             <TrendingUp className="w-5 h-5 text-purple-600" />
                         </div>
                         <div>
-                            <p className="text-xs font-bold text-purple-900">Account Summary</p>
+                            <p className="text-xs font-bold text-purple-900">アカウントサマリー</p>
                             <p className="text-xs text-purple-700 mt-0.5">
                                 {postsCount === 0
-                                    ? 'No posts yet. Create your first post to get started!'
-                                    : `You have ${publishedCount} published and ${pendingCount} scheduled posts across ${accountsCount} account${accountsCount !== 1 ? 's' : ''}.`
+                                    ? 'まだ投稿がありません。最初の投稿を作成して始めましょう！'
+                                    : `${accountsCount} アカウントにわたり、${publishedCount} 件公開済み・${pendingCount} 件予約済みです。`
                                 }
                             </p>
                         </div>
@@ -297,8 +302,8 @@ export default async function AnalyticsPage() {
             {/* Top Performing Posts */}
             <div id="recent-posts" className="scroll-mt-8">
                 <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-lg font-bold text-gray-900 px-1">Recent Posts</h2>
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{postsCount} total</span>
+                    <h2 className="text-lg font-bold text-gray-900 px-1">最近の投稿</h2>
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{postsCount} 件合計</span>
                 </div>
 
                 {topPosts.length > 0 ? (
@@ -373,8 +378,8 @@ export default async function AnalyticsPage() {
                         <div className="w-14 h-14 instagram-gradient rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-purple-500/20">
                             <BarChart3 className="w-7 h-7 text-white" />
                         </div>
-                        <p className="text-base font-bold text-gray-900">No posts yet</p>
-                        <p className="text-sm text-gray-400 mt-1">Create and schedule your first post to see analytics here.</p>
+                        <p className="text-base font-bold text-gray-900">投稿がまだありません</p>
+                        <p className="text-sm text-gray-400 mt-1">最初の投稿を作成・予約して、ココにパフォーマンスを表示しましょう。</p>
                     </div>
                 )}
             </div>

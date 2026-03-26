@@ -49,13 +49,13 @@ export default async function AccountPage(props: { searchParams: Promise<{ [key:
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Instagram Accounts</h1>
-                    <p className="text-gray-500 mt-1">Connect and manage your Instagram Business profiles for automation.</p>
+                    <h1 className="text-2xl font-bold text-gray-900">Instagramアカウント</h1>
+                    <p className="text-gray-500 mt-1">Instagramビジネスプロフィールを連携して自動化を開始しましょう。</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <button className="flex items-center gap-2.5 px-6 py-3 bg-white border border-gray-200 text-gray-700 rounded-2xl font-bold shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:bg-gray-50 transition-all duration-200 ease-out active:scale-95">
                         <RefreshCw className="w-5 h-5" />
-                        Refresh All
+                        全て更新
                     </button>
                 </div>
             </div>
@@ -69,22 +69,22 @@ export default async function AccountPage(props: { searchParams: Promise<{ [key:
                         </svg>
                     </div>
                     <div>
-                        <h2 className="text-xl font-bold text-gray-900">Connect with Facebook</h2>
-                        <p className="text-sm text-gray-500 mt-1 max-w-md">Securely link your Instagram Business accounts by authenticating with Facebook. We automatically discover and connect your managed pages.</p>
+                        <h2 className="text-xl font-bold text-gray-900">Facebookで連携</h2>
+                        <p className="text-sm text-gray-500 mt-1 max-w-md">Facebookで認証することで、Instagramビジネスアカウントを安全に連携できます。管理しているページを自動的に検出し接続します。</p>
                     </div>
                 </div>
                 <Link href="/api/auth/facebook" className="w-full md:w-auto px-8 py-3.5 bg-[#1877F2] text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:shadow-xl hover:-translate-y-0.5 hover:bg-[#166FE5] transition-all duration-200 ease-out active:scale-95 text-center shrink-0">
-                    Connect Account
+                    アカウントを連携する
                 </Link>
             </div>
 
             {/* Connected Accounts Grid */}
             <div className="space-y-6">
                 <div className="flex items-center justify-between px-1">
-                    <h2 className="text-lg font-bold text-gray-900">Linked Profiles ({connectedAccounts.length})</h2>
+                    <h2 className="text-lg font-bold text-gray-900">連携済みプロフィール ({connectedAccounts.length})</h2>
                     <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest">
                         <Clock className="w-3.5 h-3.5" />
-                        Last Sync: Live
+                        最終同期: ライブ
                     </div>
                 </div>
 
@@ -108,10 +108,10 @@ export default async function AccountPage(props: { searchParams: Promise<{ [key:
                                         <div>
                                             <h3 className="text-xl font-bold text-gray-900">@{account.username || 'unknown'}</h3>
                                             <div className="flex items-center gap-2 mt-1">
-                                                <span className="text-xs font-bold text-gray-500 bg-gray-50 px-2 py-0.5 rounded-lg border border-gray-100 uppercase tracking-tight">Business Account</span>
+                                                <span className="text-xs font-bold text-gray-500 bg-gray-50 px-2 py-0.5 rounded-lg border border-gray-100 uppercase tracking-tight">ビジネスアカウント</span>
                                                 <span className="flex items-center gap-1 text-[10px] font-bold text-green-600 uppercase tracking-widest">
                                                     <CheckCircle2 className="w-3 h-3" />
-                                                    Active
+                                                    アクティブ
                                                 </span>
                                             </div>
                                         </div>
@@ -123,14 +123,14 @@ export default async function AccountPage(props: { searchParams: Promise<{ [key:
 
                                 <div className="grid grid-cols-2 gap-4 mt-8 pt-6 border-t border-gray-50 relative z-10">
                                     <div className="space-y-1">
-                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Token Status</p>
+                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">トークンステータス</p>
                                         <p className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
                                             <ShieldCheck className="w-4 h-4 text-purple-500" />
-                                            {account.tokenExpiry < new Date() ? 'Expired' : `Expires in ${Math.ceil((new Date(account.tokenExpiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24))} days`}
+                                            {account.tokenExpiry < new Date() ? '期限切れ' : `あと ${Math.ceil((new Date(account.tokenExpiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24))} 日で期限切れ`}
                                         </p>
                                     </div>
                                     <div className="space-y-1 text-right">
-                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Connect Date</p>
+                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">連携日</p>
                                         <p className="text-sm font-medium text-gray-600">{new Date(account.createdAt).toLocaleDateString()}</p>
                                     </div>
                                 </div>
@@ -138,12 +138,12 @@ export default async function AccountPage(props: { searchParams: Promise<{ [key:
                                 <div className="flex gap-4 mt-8 pt-6 border-t border-gray-50 relative z-10">
                                     <button className="flex-1 py-3 bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-100 transition-all duration-200 ease-out active:scale-95 flex items-center justify-center gap-2">
                                         <RefreshCw className="w-4 h-4" />
-                                        Refresh
+                                        更新
                                     </button>
                                     <form action={async () => { 'use server'; await disconnectAccount(account.id); }} className="flex-1">
                                         <button className="w-full py-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm font-bold hover:bg-red-100 transition-all duration-200 ease-out active:scale-95 flex items-center justify-center gap-2">
                                             <LogOut className="w-4 h-4" />
-                                            Disconnect
+                                            切断する
                                         </button>
                                     </form>
                                 </div>
@@ -155,10 +155,10 @@ export default async function AccountPage(props: { searchParams: Promise<{ [key:
                         <div className="w-20 h-20 instagram-gradient rounded-[2.5rem] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-purple-500/20 rotate-12 group-hover:rotate-0 transition-transform duration-500">
                             <Instagram className="w-10 h-10 text-white" />
                         </div>
-                        <h3 className="text-2xl font-bold text-gray-900">No Instagram Accounts Connected</h3>
-                        <p className="text-gray-500 mt-2 max-w-sm mx-auto leading-relaxed">Connect your first Instagram Business account to start automating your content strategy today.</p>
+                        <h3 className="text-2xl font-bold text-gray-900">Instagramアカウント未連携</h3>
+                        <p className="text-gray-500 mt-2 max-w-sm mx-auto leading-relaxed">最初のInstagramビジネスアカウントを連携して、今日からコンテンツ戦略の自動化を始めましょう。</p>
                         <button className="mt-8 px-8 py-4 instagram-gradient text-white rounded-2xl font-bold shadow-lg shadow-purple-500/20 hover:-translate-y-1 hover:shadow-xl transition-all duration-200 ease-out active:scale-95 inline-flex items-center gap-2">
-                            Connect Now
+                            今すぐ連携する
                             <ArrowRight className="w-5 h-5" />
                         </button>
                     </div>
@@ -170,15 +170,15 @@ export default async function AccountPage(props: { searchParams: Promise<{ [key:
                 {/* Step-by-Step Guide */}
                 <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-[2.5rem] border border-purple-100 p-10 flex flex-col">
                     <div className="mb-10">
-                        <span className="text-[10px] font-black text-purple-600 uppercase tracking-[0.2em] bg-purple-100 px-3 py-1 rounded-full border border-purple-200">Guide</span>
-                        <h3 className="text-2xl font-bold text-gray-900 mt-4">Connection Workflow</h3>
+                        <span className="text-[10px] font-black text-purple-600 uppercase tracking-[0.2em] bg-purple-100 px-3 py-1 rounded-full border border-purple-200">ガイド</span>
+                        <h3 className="text-2xl font-bold text-gray-900 mt-4">接続フロー</h3>
                     </div>
 
                     <div className="space-y-8 flex-1">
                         {[
-                            { step: '01', title: 'Convert Account', desc: 'Switch your IG profile to Business or Creator in Settings.' },
-                            { step: '02', title: 'Link Facebook', desc: 'Connect your IG profile to a Facebook Page you manage.' },
-                            { step: '03', title: 'Authorize App', desc: 'Grant Postara permissions to manage your media and data.' }
+                            { step: '01', title: 'アカウント切替', desc: 'IGプロフィールをビジネスまたはクリエイターに変更してください。' },
+                            { step: '02', title: 'Facebook連携', desc: 'IGプロフィールを管理するFacebookページと連携させてください。' },
+                            { step: '03', title: 'アプリ認証', desc: 'Postaraにメディアとデータ管理の権限を付与してください。' }
                         ].map((item, idx) => (
                             <div key={item.step} className="flex gap-6 group">
                                 <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-lg font-black text-purple-600 shadow-sm border border-purple-100 group-hover:scale-110 transition-transform">
@@ -196,23 +196,23 @@ export default async function AccountPage(props: { searchParams: Promise<{ [key:
                     </div>
 
                     <button className="mt-12 text-sm font-bold text-purple-600 flex items-center gap-2 group hover:gap-3 hover:translate-x-1 transition-all duration-200 ease-out active:scale-95">
-                        Read full documentation <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                        ドキュメントを読む <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                     </button>
                 </div>
 
                 {/* Account Requirements */}
                 <div className="bg-white rounded-[2.5rem] border border-gray-100 p-10 shadow-sm">
                     <div className="mb-10">
-                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] bg-blue-50 px-3 py-1 rounded-full border border-blue-100">Prerequisites</span>
-                        <h3 className="text-2xl font-bold text-gray-900 mt-4">API Compatibility</h3>
+                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] bg-blue-50 px-3 py-1 rounded-full border border-blue-100">前提条件</span>
+                        <h3 className="text-2xl font-bold text-gray-900 mt-4">API互換性</h3>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {[
-                            { title: 'Business Category', label: 'Mandatory', icon: ShieldCheck, color: 'text-blue-500', bg: 'bg-blue-50' },
-                            { title: 'Admin Controls', label: 'Verified', icon: LinkIcon, color: 'text-purple-500', bg: 'bg-purple-50' },
-                            { title: 'Public Webhook', label: 'Active', icon: CheckCircle2, color: 'text-green-500', bg: 'bg-green-50' },
-                            { title: 'App Scopes', label: 'Approved', icon: Check, color: 'text-pink-500', bg: 'bg-pink-50' },
+                            { title: 'ビジネスカテゴリ', label: '必須', icon: ShieldCheck, color: 'text-blue-500', bg: 'bg-blue-50' },
+                            { title: '管理者権限', label: '確認済み', icon: LinkIcon, color: 'text-purple-500', bg: 'bg-purple-50' },
+                            { title: '公開Webhook', label: 'アクティブ', icon: CheckCircle2, color: 'text-green-500', bg: 'bg-green-50' },
+                            { title: 'アプリスコープ', label: '承認済み', icon: Check, color: 'text-pink-500', bg: 'bg-pink-50' },
                         ].map((req) => (
                             <div key={req.title} className="p-6 rounded-3xl border border-gray-50 bg-gray-50/50 hover:bg-white hover:shadow-md hover:border-blue-100 transition-all group">
                                 <div className={`w-10 h-10 ${req.bg} rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110`}>
@@ -227,8 +227,8 @@ export default async function AccountPage(props: { searchParams: Promise<{ [key:
                     <div className="mt-10 p-5 bg-orange-50 rounded-2xl border border-orange-100 flex items-start gap-4">
                         <AlertCircle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
                         <div>
-                            <p className="text-xs font-bold text-orange-900">Personal Accounts Not Supported</p>
-                            <p className="text-xs text-orange-700 mt-1 leading-relaxed">Meta API restricts automation to Business and Creator profiles only. Personal profiles will not appear in the connection window.</p>
+                            <p className="text-xs font-bold text-orange-900">個人アカウントは非対応</p>
+                            <p className="text-xs text-orange-700 mt-1 leading-relaxed">Meta APIはビジネスおよびクリエイタープロフィールのみ自動化に対応しています。個人プロフィールは接続ウィンドウに表示されません。</p>
                         </div>
                     </div>
                 </div>

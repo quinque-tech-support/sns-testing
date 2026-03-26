@@ -23,9 +23,9 @@ export default async function Home() {
           </span>
         </div>
         <div className="flex items-center gap-6">
-          <Link href="/signin" className="text-sm font-bold text-gray-600 hover:text-gray-900 transition-colors">Sign In</Link>
+          <Link href="/signin" className="text-sm font-bold text-gray-600 hover:text-gray-900 transition-colors">サインイン</Link>
           <Link href="/signup" className="px-6 py-2.5 instagram-gradient text-white rounded-xl text-sm font-bold shadow-lg shadow-purple-500/20 hover:opacity-90 active:scale-95 transition-all">
-            Get Started
+            无料で始める
           </Link>
         </div>
       </header>
@@ -37,25 +37,25 @@ export default async function Home() {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-500"></span>
           </span>
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-600">Now in Private Beta</span>
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-600">プライベートベータ公開中</span>
         </div>
 
         <h1 className="text-5xl md:text-7xl font-black text-gray-900 leading-[1.1] mb-8 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
-          Automate Your <br />
-          <span className="bg-clip-text instagram-gradient">Instagram Growth</span>
+          インスタグラム成長を <br />
+          <span className="bg-clip-text instagram-gradient">自動化しよう</span>
         </h1>
 
         <p className="text-xl text-gray-500 mb-12 max-w-2xl leading-relaxed animate-in fade-in slide-in-from-bottom-12 duration-700 delay-200">
-          The premium automation platform for modern content teams. Schedule posts, track deep analytics, and manage workflows with ease.
+          モダンなコンテンツチームのためのプレミアム自動化プラットフォーム。投稿の予約、詳細なアナリティクスの確認、ワークフロー管理を簡単に。
         </p>
 
         <div className="flex flex-col sm:flex-row items-center gap-4 animate-in fade-in slide-in-from-bottom-16 duration-700 delay-300">
           <Link href="/signup" className="group px-8 py-4 instagram-gradient text-white rounded-2xl font-black text-lg shadow-2xl shadow-purple-500/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-3">
-            Start for Free
+            無料で始める
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Link>
           <Link href="/signin" className="px-8 py-4 bg-white border border-gray-200 text-gray-600 rounded-2xl font-bold text-lg hover:bg-gray-50 transition-all">
-            View Demo
+            デモを見る
           </Link>
         </div>
 
@@ -65,22 +65,22 @@ export default async function Home() {
             <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center border border-blue-100">
               <Zap className="w-6 h-6 text-blue-500" />
             </div>
-            <h3 className="font-bold text-gray-900 text-lg">Instant Scheduling</h3>
-            <p className="text-gray-500 text-sm leading-relaxed">Publish single posts, carousels, and reels exactly when your audience is active.</p>
+            <h3 className="font-bold text-gray-900 text-lg">即時スケジューリング</h3>
+            <p className="text-gray-500 text-sm leading-relaxed">オーディエンスが最もアクティブな時間に、単一投稿・カルーセル・リールを正確に公開できます。</p>
           </div>
           <div className="space-y-4">
             <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center border border-purple-100">
               <BarChart3 className="w-6 h-6 text-purple-500" />
             </div>
-            <h3 className="font-bold text-gray-900 text-lg">Deep Analytics</h3>
-            <p className="text-gray-500 text-sm leading-relaxed">Go beyond likes. Track reach, saves, and conversion rates with detailed reports.</p>
+            <h3 className="font-bold text-gray-900 text-lg">詳細なアナリティクス</h3>
+            <p className="text-gray-500 text-sm leading-relaxed">「いいね」だけではありません。リーチ・保存数・コンバージョン率を詳細レポートで追跡。</p>
           </div>
           <div className="space-y-4">
             <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center border border-green-100">
               <ShieldCheck className="w-6 h-6 text-green-500" />
             </div>
-            <h3 className="font-bold text-gray-900 text-lg">Enterprise Security</h3>
-            <p className="text-gray-500 text-sm leading-relaxed">Official Meta API integration ensures your account stays safe and compliant.</p>
+            <h3 className="font-bold text-gray-900 text-lg">エンタープライズセキュリティ</h3>
+            <p className="text-gray-500 text-sm leading-relaxed">公式Meta API連携により、アカウントの安全性と規約遵守を保証します。</p>
           </div>
         </div>
       </main>
