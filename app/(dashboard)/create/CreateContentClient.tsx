@@ -24,7 +24,7 @@ import {
     Loader2,
     Instagram,
 } from 'lucide-react'
-import { saveDraft, publishNow, schedulePost, ActionResult } from './actions'
+import { saveDraft, publishNow, schedulePost, getSignedUploadUrl, ActionResult } from './actions'
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
@@ -103,18 +103,26 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
             const fileExt = mediaFile.name.split('.').pop()
             const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`
 
+            // 1. Request a secure upload URL from the server (bypasses RLS)
+            const { signedUrl, token, path, error: urlError } = await getSignedUploadUrl(fileName, mediaFile.type)
+            if (urlError || !token || !path) {
+                throw new Error(urlError || 'Failed to obtain secure upload URL.')
+            }
+
+            // 2. Upload directly to Supabase
             const { error: uploadError } = await supabase.storage
                 .from('media-uploads')
-                .upload(fileName, mediaFile, {
+                .uploadToSignedUrl(path, token, mediaFile, {
                     cacheControl: '3600',
                     upsert: false
                 })
 
             if (uploadError) throw uploadError
 
+            // 3. Return the public URL
             const { data } = supabase.storage
                 .from('media-uploads')
-                .getPublicUrl(fileName)
+                .getPublicUrl(path)
 
             return data.publicUrl
         } catch (error) {
