@@ -202,7 +202,6 @@ export const facebookService = {
 
     /**
      * Fetch insights for a published IG Media.
-     * NOTE: `impressions` is deprecated. Using `reach`, `saved`, `total_interactions` instead.
      */
     async getMediaInsights(mediaId: string, accessToken: string): Promise<{ views: number, reach: number, saves: number, likes: number } | null> {
         try {
@@ -215,10 +214,10 @@ export const facebookService = {
             })
             const likes = basicRes.data.like_count || 0
 
-            // 2. Fetch insights
+            // 2. Fetch insights (Graph API v22.0 replaces plays/impressions with unified 'views')
             const response = await graphApi.get(`/${mediaId}/insights`, {
                 params: {
-                    metric: 'reach,saved,total_interactions',
+                    metric: 'reach,saved,views',
                     access_token: accessToken,
                 }
             })
@@ -232,7 +231,7 @@ export const facebookService = {
 
             for (const metric of data) {
                 const value = typeof metric.value === 'number' ? metric.value : (metric.values?.[0]?.value || 0)
-                if (metric.name === 'total_interactions') views = value
+                if (metric.name === 'views') views = value
                 if (metric.name === 'reach') reach = value
                 if (metric.name === 'saved') saves = value
             }
