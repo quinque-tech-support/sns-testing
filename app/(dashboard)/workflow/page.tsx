@@ -1,5 +1,6 @@
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
+import { facebookService } from '@/lib/facebook.service'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -14,6 +15,8 @@ import {
     Video,
     Calendar,
     ArrowRight,
+    Eye,
+    Heart,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -35,8 +38,10 @@ interface Post {
     mediaType: string
     createdAt: Date
     instagramMediaId: string | null
-    connectedAccount: { username: string | null } | null
+    connectedAccount: { username: string | null; pageAccessToken: string | null } | null
     schedules: { status: string; scheduledFor: Date }[]
+    likes: number
+    views: number
 }
 
 function getPostStatus(post: Post): StatusKey {
@@ -53,10 +58,31 @@ export default async function WorkflowPage() {
         where: { userId: session.user.id },
         include: {
             schedules: { orderBy: { createdAt: 'desc' }, take: 1 },
-            connectedAccount: { select: { username: true } },
+            connectedAccount: { select: { username: true, pageAccessToken: true } },
         },
         orderBy: { createdAt: 'desc' },
     })
+
+    // Automatically fetch real-time likes & views for published posts
+    const publishedPostsToSync = posts.filter(p => getPostStatus(p as Post) === 'PUBLISHED' && p.instagramMediaId && p.connectedAccount?.pageAccessToken)
+    if (publishedPostsToSync.length > 0) {
+        await Promise.all(publishedPostsToSync.map(async (p) => {
+            try {
+                const insights = await facebookService.getMediaInsights(p.instagramMediaId!, p.connectedAccount!.pageAccessToken!)
+                if (insights) {
+                    p.likes = insights.likes
+                    p.views = insights.views
+                    // Update DB in background to cache the fresh metrics
+                    prisma.post.update({
+                        where: { id: p.id },
+                        data: { likes: insights.likes, views: insights.views, reach: insights.reach, saves: insights.saves }
+                    }).catch(() => {})
+                }
+            } catch (err) {
+                // Ignore silent fetch errors to avoid blocking the page load
+            }
+        }))
+    }
 
     const groups: Record<StatusKey, Post[]> = {
         DRAFT: [],
@@ -206,6 +232,18 @@ export default async function WorkflowPage() {
                                                                 <span className="text-[10px] font-semibold">
                                                                     {new Date(post.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                                                 </span>
+                                                            </div>
+                                                        )}
+                                                        {key === 'PUBLISHED' && (
+                                                            <div className="flex items-center gap-3 mt-2 border-t border-gray-100 pt-2">
+                                                                <div className="flex items-center gap-1 text-pink-600 bg-pink-50 px-2 py-0.5 rounded-md">
+                                                                    <Heart className="w-3 h-3" />
+                                                                    <span className="text-[10px] font-bold">{post.likes}</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-1 text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
+                                                                    <Eye className="w-3 h-3" />
+                                                                    <span className="text-[10px] font-bold">{post.views}</span>
+                                                                </div>
                                                             </div>
                                                         )}
                                                     </div>
