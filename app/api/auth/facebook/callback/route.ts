@@ -29,7 +29,8 @@ export async function GET(request: NextRequest) {
         }
 
         // 2. Exchange code for short-lived token
-        const shortLivedToken = await facebookService.exchangeCodeForToken(code)
+        const redirectUri = `${appUrl}/api/auth/facebook/callback`
+        const shortLivedToken = await facebookService.exchangeCodeForToken(code, redirectUri)
 
         // 3. Exchange for long-lived token
         const longLivedResponse = await facebookService.exchangeForLongLivedToken(shortLivedToken)

@@ -195,5 +195,5 @@ async function handler(req: Request) {
 }
 
 // QStash intercepts the GET/POST request and verifies the signature securely in production
-export const GET = process.env.NODE_ENV === 'production' ? verifySignatureAppRouter(handler) : handler;
-export const POST = process.env.NODE_ENV === 'production' ? verifySignatureAppRouter(handler) : handler;
+export const GET = (process.env.NODE_ENV === 'production' && process.env.QSTASH_CURRENT_SIGNING_KEY) ? verifySignatureAppRouter(handler) : handler;
+export const POST = (process.env.NODE_ENV === 'production' && process.env.QSTASH_CURRENT_SIGNING_KEY) ? verifySignatureAppRouter(handler) : handler;
