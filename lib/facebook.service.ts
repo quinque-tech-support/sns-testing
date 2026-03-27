@@ -205,26 +205,19 @@ export const facebookService = {
      */
     async getMediaInsights(mediaId: string, accessToken: string): Promise<{ views: number, reach: number, saves: number, likes: number } | null> {
         try {
-            // 1. Fetch basic media fields (likes, media_type)
+            // 1. Fetch basic media fields (likes)
             const basicRes = await graphApi.get(`/${mediaId}`, {
                 params: {
-                    fields: 'like_count,media_type',
+                    fields: 'like_count',
                     access_token: accessToken,
                 }
             })
             const likes = basicRes.data.like_count || 0
-            const mediaType = basicRes.data.media_type // 'IMAGE', 'VIDEO', or 'CAROUSEL_ALBUM'
 
-            // 2. Determine appropriate metrics for the media type
-            let metricString = 'reach,saved,impressions'
-            if (mediaType === 'VIDEO') {
-                metricString = 'reach,saved,plays' // Reels use plays
-            }
-
-            // 3. Fetch insights
+            // 2. Fetch insights (Graph API v22.0 replaces plays/impressions with unified 'views')
             const response = await graphApi.get(`/${mediaId}/insights`, {
                 params: {
-                    metric: metricString,
+                    metric: 'reach,saved,views',
                     access_token: accessToken,
                 }
             })
@@ -238,7 +231,7 @@ export const facebookService = {
 
             for (const metric of data) {
                 const value = typeof metric.value === 'number' ? metric.value : (metric.values?.[0]?.value || 0)
-                if (metric.name === 'plays' || metric.name === 'impressions') views = value
+                if (metric.name === 'views') views = value
                 if (metric.name === 'reach') reach = value
                 if (metric.name === 'saved') saves = value
             }
