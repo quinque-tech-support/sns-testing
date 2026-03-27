@@ -53,7 +53,7 @@ async function uploadMediaToSupabase(file: File): Promise<string | null> {
         const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`
 
         // Use the File's ReadableStream directly to avoid loading the entire file into RAM.
-        // This is critical for large video uploads (100MB+).
+       
         const { error } = await supabaseAdmin
             .storage
             .from('media-uploads')
@@ -80,11 +80,7 @@ async function uploadMediaToSupabase(file: File): Promise<string | null> {
     }
 }
 
-/**
- * Poll Instagram media container until it's FINISHED processing.
- * Required for BOTH images and videos — Instagram processes asynchronously.
- * Images typically finish in 1-2 polls (~5-10s); videos may take minutes.
- */
+
 async function waitForContainer(containerId: string, accessToken: string, isVideo = false): Promise<boolean> {
     const pollInterval = 5000
     const maxAttempts = isVideo ? 60 : 12 // 60×5s=5min for video, 12×5s=60s for image
