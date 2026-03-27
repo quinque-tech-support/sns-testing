@@ -202,23 +202,29 @@ export const facebookService = {
 
     /**
      * Fetch insights for a published IG Media.
-     * NOTE: `impressions` is deprecated. Using `reach`, `saved`, `total_interactions` instead.
      */
     async getMediaInsights(mediaId: string, accessToken: string): Promise<{ views: number, reach: number, saves: number, likes: number } | null> {
         try {
-            // 1. Fetch basic media fields (likes)
+            // 1. Fetch basic media fields (likes, media_type)
             const basicRes = await graphApi.get(`/${mediaId}`, {
                 params: {
-                    fields: 'like_count',
+                    fields: 'like_count,media_type',
                     access_token: accessToken,
                 }
             })
             const likes = basicRes.data.like_count || 0
+            const mediaType = basicRes.data.media_type // 'IMAGE', 'VIDEO', or 'CAROUSEL_ALBUM'
 
-            // 2. Fetch insights
+            // 2. Determine appropriate metrics for the media type
+            let metricString = 'reach,saved,impressions'
+            if (mediaType === 'VIDEO') {
+                metricString = 'reach,saved,plays' // Reels use plays
+            }
+
+            // 3. Fetch insights
             const response = await graphApi.get(`/${mediaId}/insights`, {
                 params: {
-                    metric: 'reach,saved,total_interactions',
+                    metric: metricString,
                     access_token: accessToken,
                 }
             })
@@ -232,7 +238,7 @@ export const facebookService = {
 
             for (const metric of data) {
                 const value = typeof metric.value === 'number' ? metric.value : (metric.values?.[0]?.value || 0)
-                if (metric.name === 'total_interactions') views = value
+                if (metric.name === 'plays' || metric.name === 'impressions') views = value
                 if (metric.name === 'reach') reach = value
                 if (metric.name === 'saved') saves = value
             }
