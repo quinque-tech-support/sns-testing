@@ -176,7 +176,8 @@ async function handler(req: Request) {
                     data: {
                         views: insights.views,
                         reach: insights.reach,
-                        saves: insights.saves
+                        saves: insights.saves,
+                        likes: insights.likes
                     }
                 })
                 syncedCount++
@@ -193,6 +194,6 @@ async function handler(req: Request) {
     }
 }
 
-// QStash intercepts the GET/POST request and verifies the signature securely
-export const GET = verifySignatureAppRouter(handler);
-export const POST = verifySignatureAppRouter(handler);
+// QStash intercepts the GET/POST request and verifies the signature securely in production
+export const GET = process.env.NODE_ENV === 'production' ? verifySignatureAppRouter(handler) : handler;
+export const POST = process.env.NODE_ENV === 'production' ? verifySignatureAppRouter(handler) : handler;

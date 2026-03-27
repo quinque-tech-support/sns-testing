@@ -15,7 +15,6 @@ export class FacebookApiError extends Error {
 
 const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID!
 const FACEBOOK_APP_SECRET = process.env.FACEBOOK_APP_SECRET
-const FACEBOOK_REDIRECT_URI = process.env.FACEBOOK_REDIRECT_URI
 
 const graphApi = axios.create({
     baseURL: 'https://graph.facebook.com/v19.0',
@@ -48,10 +47,10 @@ export const facebookService = {
     /**
      * Generate the Facebook OAuth Login URL
      */
-    generateAuthUrl(state: string): string {
+    generateAuthUrl(state: string, redirectUri: string): string {
         const params = new URLSearchParams({
             client_id: FACEBOOK_APP_ID,
-            redirect_uri: FACEBOOK_REDIRECT_URI!,
+            redirect_uri: redirectUri,
             state: state,
             scope: 'pages_show_list,instagram_basic,instagram_content_publish,pages_read_engagement',
             response_type: 'code',
@@ -61,13 +60,13 @@ export const facebookService = {
     /**
      * Exchange the short-lived authorization code for a short-lived access token
      */
-    async exchangeCodeForToken(code: string): Promise<string> {
+    async exchangeCodeForToken(code: string, redirectUri: string): Promise<string> {
         try {
             const response = await axios.get<AccessTokenResponse>(`https://graph.facebook.com/v19.0/oauth/access_token`, {
                 params: {
                     client_id: FACEBOOK_APP_ID,
                     client_secret: FACEBOOK_APP_SECRET,
-                    redirect_uri: FACEBOOK_REDIRECT_URI,
+                    redirect_uri: redirectUri,
                     code,
                 }
             })
@@ -205,8 +204,18 @@ export const facebookService = {
      * Fetch insights for a published IG Media.
      * NOTE: `impressions` is deprecated. Using `reach`, `saved`, `total_interactions` instead.
      */
-    async getMediaInsights(mediaId: string, accessToken: string): Promise<{ views: number, reach: number, saves: number } | null> {
+    async getMediaInsights(mediaId: string, accessToken: string): Promise<{ views: number, reach: number, saves: number, likes: number } | null> {
         try {
+            // 1. Fetch basic media fields (likes)
+            const basicRes = await graphApi.get(`/${mediaId}`, {
+                params: {
+                    fields: 'like_count',
+                    access_token: accessToken,
+                }
+            })
+            const likes = basicRes.data.like_count || 0
+
+            // 2. Fetch insights
             const response = await graphApi.get(`/${mediaId}/insights`, {
                 params: {
                     metric: 'reach,saved,total_interactions',
@@ -228,7 +237,7 @@ export const facebookService = {
                 if (metric.name === 'saved') saves = value
             }
 
-            return { views, reach, saves }
+            return { views, reach, saves, likes }
         } catch (error: any) {
             console.error(`[FacebookService] Failed to fetch insights for media ${mediaId}:`, error.response?.data || error.message)
             return null
