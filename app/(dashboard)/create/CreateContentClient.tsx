@@ -23,7 +23,18 @@ import {
     AlertCircle,
     Loader2,
     Instagram,
+    Sparkles,
+    RefreshCw,
+    Activity,
 } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { clsx, type ClassValue } from 'clsx'
+import { twMerge } from 'tailwind-merge'
+
+function cn(...inputs: ClassValue[]) {
+    return twMerge(clsx(inputs))
+}
+
 import { saveDraft, publishNow, schedulePost, getSignedUploadUrl, ActionResult } from './actions'
 import { createClient } from '@supabase/supabase-js'
 
@@ -71,7 +82,7 @@ const ctaEndings: Record<string, string> = {
 
 export default function CreateContentClient({ accounts }: CreateContentPageProps) {
     const router = useRouter()
-    const [activeTab, setActiveTab] = useState('publish')
+    const [activeTab, setActiveTab] = useState('tools')
     const [caption, setCaption] = useState('')
     const [mediaPreview, setMediaPreview] = useState<string | null>(null)
     const [mediaFile, setMediaFile] = useState<File | null>(null)
@@ -82,7 +93,13 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
     const [ctaStyle, setCtaStyle] = useState('Link in Bio')
     const [result, setResult] = useState<ActionResult | null>(null)
     const [isUploading, setIsUploading] = useState(false)
+    const [aiState, setAiState] = useState<'idle' | 'analyzing' | 'ready'>('idle')
+    const [aiUsageCount, setAiUsageCount] = useState(0)
+    const [aiData, setAiData] = useState<{ caption: string, hashtags: string[], postTime: string, estimatedLikes: string, estimatedReach: string } | null>(null)
+    const [aiMode, setAiMode] = useState<'personal' | 'similar' | 'trend'>('personal')
+    const [mediaFiles, setMediaFiles] = useState<File[]>([])
     const [isPending, startTransition] = useTransition()
+    const [isEdited, setIsEdited] = useState(false)
 
     const clearResult = () => setResult(null)
 
@@ -92,7 +109,26 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
             const url = URL.createObjectURL(file)
             setMediaPreview(url)
             setMediaFile(file)
+            setMediaFiles([file])
             setIsVideo(file.type.startsWith('video/'))
+            if (activeTab === 'tools') {
+                setTimeout(() => { generateAI(file, aiMode) }, 100)
+            }
+        }
+    }
+
+    const handleMultiFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || [])
+        if (files.length > 0) {
+            setMediaFiles(prev => [...prev, ...files])
+            if (!mediaFile) {
+                setMediaFile(files[0])
+                setMediaPreview(URL.createObjectURL(files[0]))
+                setIsVideo(files[0].type.startsWith('video/'))
+            }
+            if (activeTab === 'tools') {
+                setTimeout(() => { generateAI(files[0], aiMode) }, 100)
+            }
         }
     }
 
@@ -160,6 +196,67 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
                 setTimeout(() => { router.push('/workflow') }, 1500)
             }
         })
+    }
+
+    const generateAI = async (fileToUse?: File | null, mode: string = aiMode) => {
+        setAiState('analyzing')
+        setResult(null)
+        setIsEdited(false)
+        try {
+            let imageBase64 = null
+            let mimeType = null
+            
+            const targetFile = fileToUse || mediaFiles[0] || mediaFile
+            if (targetFile && !targetFile.type.startsWith('video/')) {
+                const reader = new FileReader()
+                const dataUrl = await new Promise<string>((resolve, reject) => {
+                    reader.onload = () => resolve(reader.result as string)
+                    reader.onerror = reject
+                    reader.readAsDataURL(targetFile)
+                })
+                imageBase64 = dataUrl
+                mimeType = targetFile.type
+            }
+
+            const res = await fetch('/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imageBase64, mimeType, aiMode: mode })
+            })
+
+            const json = await res.json()
+            if (!res.ok) throw new Error(json.error || 'AIコンテンツの生成に失敗しました。')
+            
+            setAiData({
+                caption: json.caption || '',
+                hashtags: Array.isArray(json.hashtags) ? json.hashtags : [],
+                postTime: json.optimalTime || '19:00',
+                estimatedLikes: json.expectedLikes || '100〜150',
+                estimatedReach: json.expectedReach || '中'
+            })
+            setAiState('ready')
+            setAiUsageCount(prev => prev + 1)
+        } catch (error: any) {
+            console.error('AI Gen error', error)
+            setResult({ error: error.message || 'AI生成に失敗しました。' })
+            setAiState('idle')
+        }
+    }
+
+    const handleGenerateAI = () => generateAI()
+
+    const handleModeChange = (mode: 'personal'|'similar'|'trend') => {
+        setAiMode(mode)
+        if (mediaFiles.length > 0 || mediaFile || caption) {
+            generateAI(mediaFiles[0] || mediaFile, mode)
+        }
+    }
+
+    const handleCaptionEdit = (value: string) => {
+        if (aiData) {
+            setAiData({ ...aiData, caption: value })
+            setIsEdited(true)
+        }
     }
 
     const handlePublishNow = async () => {
@@ -297,6 +394,8 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
                 {/* Left: Editor Area */}
                 <div className="xl:col-span-2 space-y-6">
+                    {/* ONLY RENDER MAIN WHITE BOX IF WE ARE NOT IN TOOLS TAB */}
+                    {activeTab !== 'tools' && (
                     <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-6">
                         {/* Media Upload Section */}
                         <div>
@@ -319,6 +418,7 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
                                             onClick={() => {
                                                 setMediaPreview(null)
                                                 setMediaFile(null)
+                                                setMediaFiles([])
                                                 setIsVideo(false)
                                             }}
                                             className="p-3 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/40 transition-all"
@@ -420,76 +520,192 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
                                 </div>
                             </div>
                         )}
+                    </div>
+                    )} {/* <-- This closes activeTab !== 'tools' */}
 
-                        {/* --- CONTENT TOOLS TAB --- */}
-                        {activeTab === 'tools' && (
-                            <div className="space-y-6 pt-4 border-t border-gray-100">
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-3 uppercase tracking-wider">書き出しテンプレート</label>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        {leadingSentences.map((s) => (
-                                            <button
-                                                key={s.label}
-                                                onClick={() => appendToCaption(s.text)}
-                                                className="text-left p-3 rounded-xl border border-gray-100 bg-gray-50 hover:border-purple-200 hover:bg-purple-50 transition-all group"
+                    {/* --- NEW CONTENT TOOLS LAYOUT (2-COLUMN) --- */}
+                    {activeTab === 'tools' && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                            
+                            {/* LEFT SIDE: MULTI IMAGE UPLOAD */}
+                            <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm flex flex-col h-full min-h-[500px]">
+                                <h2 className="text-sm font-bold text-zinc-900 mb-6">メディアアップロード</h2>
+                                {mediaFiles.length > 0 ? (
+                                    <div className="flex-1 flex flex-col">
+                                        <div className="flex overflow-x-auto gap-3 pb-4 snap-x">
+                                            {mediaFiles.map((file, i) => (
+                                                <div key={i} className="relative shrink-0 snap-start">
+                                                    <img src={URL.createObjectURL(file)} className="w-[140px] h-[140px] rounded-xl object-cover border border-zinc-200 shadow-sm" />
+                                                    <button onClick={() => {
+                                                        const newArray = mediaFiles.filter((_, idx) => idx !== i);
+                                                        setMediaFiles(newArray);
+                                                        if (newArray.length === 0) {
+                                                            setMediaFile(null);
+                                                            setMediaPreview(null);
+                                                            setIsVideo(false);
+                                                        } else if (i === 0) {
+                                                            setMediaFile(newArray[0]);
+                                                            setMediaPreview(URL.createObjectURL(newArray[0]));
+                                                            setIsVideo(newArray[0].type.startsWith('video/'));
+                                                        }
+                                                    }} className="absolute top-2 right-2 w-6 h-6 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white backdrop-blur z-10">
+                                                        <X className="w-3 h-3" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                            <label className="shrink-0 w-[140px] h-[140px] rounded-xl border border-dashed border-zinc-300 hover:border-zinc-400 bg-zinc-50 hover:bg-zinc-100 flex items-center justify-center cursor-pointer transition-colors">
+                                                <Plus className="w-8 h-8 text-zinc-400" />
+                                                <input type="file" multiple className="hidden" onChange={handleMultiFileUpload} accept="image/*,video/*" />
+                                            </label>
+                                        </div>
+                                        <div className="mt-auto pt-6 border-t border-zinc-100 flex items-center gap-2">
+                                            <Sparkles className="w-4 h-4 text-zinc-400" />
+                                            <p className="text-xs font-bold text-zinc-500">カルーセル投稿として公開されます</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <label className="flex-1 flex flex-col items-center justify-center bg-zinc-50 rounded-xl border border-dashed border-zinc-300 hover:border-zinc-400 hover:bg-zinc-100 transition-all cursor-pointer group">
+                                        <div className="w-12 h-12 rounded-full bg-white shadow-sm border border-zinc-100 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+                                            <Upload className="w-5 h-5 text-zinc-500" />
+                                        </div>
+                                        <p className="text-zinc-800 text-sm font-bold">画像をドラッグ＆ドロップ</p>
+                                        <p className="text-zinc-400 text-xs mt-1">またはクリックでファイルを選択</p>
+                                        <input type="file" multiple className="hidden" onChange={handleMultiFileUpload} accept="image/*,video/*" />
+                                    </label>
+                                )}
+                            </div>
+
+                            {/* RIGHT SIDE: AI PROPOSALS */}
+                            <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm flex flex-col h-full min-h-[500px]">
+                                <div className="px-5 py-4 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50 rounded-t-2xl">
+                                    <div className="flex flex-col">
+                                        <h2 className="text-sm font-bold text-zinc-900">AI提案</h2>
+                                        <p className="text-[10px] text-zinc-500 font-medium mt-0.5">ワンクリックで最適な構成を提案します</p>
+                                    </div>
+                                    <button onClick={handleGenerateAI} disabled={aiState === 'analyzing' || mediaFiles.length === 0} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm border transition-all flex items-center gap-2", aiState === 'analyzing' || mediaFiles.length === 0 ? "bg-white border-zinc-200 text-zinc-400 cursor-not-allowed" : "bg-white border-zinc-200 text-zinc-800 hover:bg-zinc-50 active:scale-95")}>
+                                        <RefreshCw className={cn("w-3 h-3 text-zinc-600", aiState === 'analyzing' && "animate-spin")} />
+                                        再生成
+                                    </button>
+                                </div>
+                                <div className="p-5 flex-1 flex flex-col relative">
+                                    
+                                    {/* Mode Selector */}
+                                    <div className="grid grid-cols-3 gap-2 mb-6">
+                                        {[
+                                            { id: 'personal', label: '自分の投稿', detail: '過去データを参考に提案' },
+                                            { id: 'similar', label: '類似投稿', detail: '同ジャンルを参考に提案' },
+                                            { id: 'trend', label: 'トレンド', detail: '現在の人気スタイル' }
+                                        ].map(m => (
+                                            <button 
+                                                key={m.id} 
+                                                onClick={() => handleModeChange(m.id as any)} 
+                                                className={cn("flex flex-col items-start p-2.5 rounded-xl border transition-all text-left shadow-sm active:scale-95", aiMode === m.id ? "bg-zinc-900 border-zinc-900 text-white" : "border-zinc-200 bg-white hover:bg-zinc-50")}
                                             >
-                                                <p className="text-xs font-bold text-purple-600 uppercase tracking-tight mb-1">{s.label}</p>
-                                                <p className="text-sm text-gray-600 line-clamp-1 group-hover:text-gray-900">{s.text}</p>
+                                                <span className={cn("text-[11px] font-bold block", aiMode === m.id ? "text-white" : "text-zinc-800")}>{m.label}</span>
+                                                <span className={cn("text-[8px] sm:text-[9px] mt-1 line-clamp-2 leading-tight", aiMode === m.id ? "text-zinc-300" : "text-zinc-500")}>{m.detail}</span>
                                             </button>
                                         ))}
                                     </div>
-                                </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">ハッシュタグセット</label>
-                                        <div className="flex gap-2">
-                                            <div className="relative flex-1 group">
-                                                <select
-                                                    value={hashtags}
-                                                    onChange={(e) => setHashtags(e.target.value)}
-                                                    className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-xl py-2.5 pl-4 pr-10 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-purple-500/10 focus:border-purple-500 transition-all cursor-pointer"
-                                                >
-                                                    <option value="">カテゴリを選択</option>
-                                                    {Object.keys(hashtagSets).map(k => <option key={k}>{k}</option>)}
-                                                </select>
-                                                <Hash className="absolute right-8 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                                            </div>
-                                            <button
-                                                onClick={applyHashtags}
-                                                disabled={!hashtags}
-                                                className="px-3 py-2.5 bg-purple-600 text-white rounded-xl text-sm font-bold hover:bg-purple-700 disabled:opacity-40 transition-all"
-                                            >
-                                                追加
-                                            </button>
+                                    {aiState === 'analyzing' && (
+                                        <div className="absolute inset-x-0 bottom-0 top-[120px] bg-white/95 backdrop-blur-sm z-20 flex flex-col items-center justify-center rounded-b-2xl">
+                                            <Loader2 className="w-8 h-8 text-zinc-900 animate-spin mb-4" />
+                                            <p className="text-sm font-bold text-zinc-800">分析中…</p>
                                         </div>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">締めの一言 (CTA)</label>
-                                        <div className="flex gap-2">
-                                            <div className="relative flex-1 group">
-                                                <select
-                                                    value={ctaStyle}
-                                                    onChange={(e) => setCtaStyle(e.target.value)}
-                                                    className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-xl py-2.5 pl-4 pr-10 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-purple-500/10 focus:border-purple-500 transition-all cursor-pointer"
-                                                >
-                                                    {Object.keys(ctaEndings).map(k => <option key={k}>{k}</option>)}
-                                                </select>
-                                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                                    )}
+
+                                    {/* AI Content Area */}
+                                    {aiData ? (
+                                        <div className="space-y-6 flex-1 flex flex-col">
+                                            <div className="space-y-2">
+                                                <div className="flex items-center gap-2">
+                                                    <label className="text-xs font-bold text-zinc-500">キャプション</label>
+                                                    {!isEdited && <span className="text-[9px] font-bold px-1.5 py-0.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded flex items-center gap-0.5"><Sparkles className="w-2.5 h-2.5" />AI</span>}
+                                                </div>
+                                                <textarea 
+                                                    value={aiData.caption}
+                                                    onChange={(e) => handleCaptionEdit(e.target.value)}
+                                                    className="w-full min-h-[140px] text-sm text-zinc-800 bg-white border border-zinc-300 p-3.5 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 transition-all resize-y"
+                                                />
                                             </div>
-                                            <button
-                                                onClick={applyCTA}
-                                                className="px-3 py-2.5 bg-gray-700 text-white rounded-xl text-sm font-bold hover:bg-gray-800 transition-all"
-                                            >
-                                                追加
-                                            </button>
+
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-bold text-zinc-500">ハッシュタグ</label>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {aiData.hashtags.map((tag, i) => (
+                                                        <span key={i} className="px-2 py-1 bg-zinc-100 text-zinc-700 text-[10px] font-bold rounded-md border border-zinc-200">{tag}</span>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* AI Insights Read Only */}
+                                            <div className="bg-zinc-50 border border-zinc-200 shadow-sm rounded-xl p-4 mt-auto">
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <div className="w-6 h-6 rounded-md bg-zinc-200 flex items-center justify-center">
+                                                        <Activity className="w-3.5 h-3.5 text-zinc-600" />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-xs font-bold text-zinc-900">AIインサイト</h3>
+                                                        <p className="text-[9px] text-zinc-500">類似データと傾向に基づく予測</p>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs bg-white p-3 rounded-lg border border-zinc-100">
+                                                    <div>
+                                                        <span className="block text-zinc-500 mb-1 text-[10px] font-medium flex items-center gap-1"><Clock className="w-3 h-3" />最適な投稿時間</span>
+                                                        <span className="font-bold text-zinc-900">{aiData.postTime}</span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="block text-zinc-500 mb-1 text-[10px] font-medium flex items-center gap-1"><Heart className="w-3 h-3" />予想いいね数</span>
+                                                        <span className="font-bold text-zinc-900">{aiData.estimatedLikes}</span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="block text-zinc-500 mb-1 text-[10px] font-medium flex items-center gap-1"><Activity className="w-3 h-3" />予想到達度</span>
+                                                        <span className="font-bold text-zinc-900">{aiData.estimatedReach}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
                                         </div>
-                                    </div>
+                                    ) : (
+                                        <div className="flex-1 flex flex-col items-center justify-center text-zinc-400">
+                                            <div className="w-16 h-16 bg-zinc-50 border-2 border-dashed border-zinc-200 rounded-full flex items-center justify-center mb-4">
+                                                <Sparkles className="w-6 h-6 text-zinc-300" />
+                                            </div>
+                                            <p className="text-sm font-bold text-zinc-500">AI提案の準備ができています</p>
+                                            <p className="text-xs mt-1 max-w-[200px] text-center">メディアをアップロードして、AIによる最適な提案を生成しましょう。</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
+                    
+                    {/* BOTTOM SHARED ACTIONS FOR TOOLS TAB */}
+                    {activeTab === 'tools' && (
+                        <div className="pt-6 border-t border-zinc-100 flex flex-col sm:flex-row gap-3">
+                            <button
+                                onClick={() => {
+                                    if(aiData) setCaption(aiData.caption + '\n\n' + aiData.hashtags.join(' '));
+                                    handlePublishNow();
+                                }}
+                                disabled={isPending || accounts.length === 0 || mediaFiles.length === 0}
+                                className="flex-1 py-4 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-sm font-bold shadow-md active:scale-[0.98] transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            >
+                                <Send className="w-4 h-4" />今すぐ投稿
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if(aiData) setCaption(aiData.caption + '\n\n' + aiData.hashtags.join(' '));
+                                    setActiveTab('schedule');
+                                }}
+                                disabled={isPending || accounts.length === 0 || mediaFiles.length === 0}
+                                className="flex-1 py-4 bg-white border border-zinc-200 text-zinc-900 hover:bg-zinc-50 rounded-xl text-sm font-bold shadow-sm active:scale-[0.98] transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            >
+                                <Calendar className="w-4 h-4" />予約投稿に進む
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Right: Mobile Mockup Preview */}

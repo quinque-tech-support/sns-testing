@@ -125,6 +125,49 @@ export default async function DashboardPage() {
         take: 3
     })
 
+    // Fetch recently published posts for the Performance Chart (last 12 days)
+    const recentPosts = await prisma.post.findMany({
+        where: {
+            userId: session.user.id,
+            schedules: { some: { status: 'PUBLISHED' } }
+        },
+        include: { schedules: true },
+        orderBy: { createdAt: 'desc' },
+        take: 50
+    })
+
+    const chartDays = 12;
+    const chartData = Array.from({ length: chartDays }).map((_, i) => {
+        const d = new Date()
+        d.setDate(d.getDate() - (chartDays - 1 - i))
+        d.setHours(0, 0, 0, 0)
+        return {
+            date: d,
+            label: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()],
+            views: 0,
+            engagement: 0
+        }
+    })
+
+    recentPosts.forEach(post => {
+        const pubSchedule = post.schedules.find(s => s.status === 'PUBLISHED')
+        if (pubSchedule) {
+            const pubDate = new Date(pubSchedule.scheduledFor)
+            pubDate.setHours(0, 0, 0, 0)
+            const dayObj = chartData.find(d => d.date.getTime() === pubDate.getTime())
+            if (dayObj) {
+                // If views is 0 but reach is present, use reach as fallback for images
+                const postViews = post.views > 0 ? post.views : post.reach
+                dayObj.views += postViews
+                dayObj.engagement += (post.likes + post.saves)
+            }
+        }
+    })
+
+    const totalChartViews = chartData.reduce((acc, d) => acc + d.views, 0)
+    const maxViews = Math.max(...chartData.map(d => d.views), 10) // Minimum scale of 10 to avoid 0 div
+    const useRealData = totalChartViews > 0
+
     const activities = [
         { id: 1, type: 'status_change', user: 'システム', detail: hasInsights ? `@${connectedAccount?.username} のインサイトを同期しました` : '連携アカウントを待機中...', time: 'ライブ', icon: CheckCircle2, iconColor: 'text-green-600' },
         { id: 2, type: 'post_published', user: 'キュー', detail: `${publishedCount} 件の投稿を公開済み`, time: '累計', icon: PlayCircle, iconColor: 'text-purple-600' },
@@ -192,22 +235,41 @@ export default async function DashboardPage() {
                         </div>
                     </div>
 
-                    <div className="h-[300px] w-full flex items-end justify-between gap-1.5 mt-4 px-2">
-                        {[40, 60, 45, 90, 65, 80, 50, 75, 40, 95, 70, 85].map((val, i) => (
-                            <div key={i} className="flex-1 flex flex-col items-center gap-3 group">
-                                <div className="w-full relative flex items-end">
-                                    <div
-                                        style={{ height: `${val}%` }}
-                                        className="w-full bg-purple-500/10 group-hover:bg-purple-500/20 rounded-md transition-colors duration-300"
-                                    />
-                                    <div
-                                        style={{ height: `${val * 0.4}%` }}
-                                        className="absolute bottom-0 w-full bg-purple-500/50 group-hover:bg-purple-500 rounded-md shadow-sm transition-colors duration-300"
-                                    />
-                                </div>
-                                <span className="text-xs text-gray-400 font-semibold uppercase">{['M', 'T', 'W', 'T', 'F', 'S', 'S'][i % 7]}</span>
+                    <div className="h-[300px] w-full flex items-end justify-between gap-1.5 mt-4 px-2 relative">
+                        {!useRealData && (
+                            <div className="absolute inset-0 z-10 bg-white/60 backdrop-blur-[2px] rounded-2xl flex flex-col items-center justify-center border border-white/50">
+                                <p className="text-sm font-bold text-gray-900 bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-100">データがありません</p>
+                                <p className="text-xs font-medium text-gray-500 mt-2">投稿を公開するとここにグラフが表示されます</p>
                             </div>
-                        ))}
+                        )}
+                        {(useRealData ? chartData : chartData.map((d, i) => ({ ...d, views: [40, 60, 45, 90, 65, 80, 50, 75, 40, 95, 70, 85][i], engagement: [40, 60, 45, 90, 65, 80, 50, 75, 40, 95, 70, 85][i] * 0.4 }))).map((data, i) => {
+                            const val = useRealData ? Math.max((data.views / maxViews) * 100, 2) : data.views // Min 2% height for visibility if real data
+                            const engRatio = data.views > 0 ? (data.engagement / data.views) : 0
+                            const engHeight = useRealData ? Math.max(val * Math.min(engRatio, 1), 1) : data.engagement // Cap engagement height to views height
+
+                            return (
+                                <div key={i} className="flex-1 flex flex-col items-center gap-3 group relative">
+                                    {/* Tooltip */}
+                                    {useRealData && data.views > 0 && (
+                                        <div className="absolute -top-12 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-[10px] font-bold px-2 py-1.5 rounded-lg whitespace-nowrap z-20 pointer-events-none after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-4 after:border-transparent after:border-t-gray-900">
+                                            {data.views} 閲覧<br/>
+                                            {data.engagement} エンゲージ
+                                        </div>
+                                    )}
+                                    <div className="w-full relative flex items-end h-[240px]">
+                                        <div
+                                            style={{ height: `${val}%` }}
+                                            className="w-full bg-purple-500/10 group-hover:bg-purple-500/20 rounded-md transition-all duration-300"
+                                        />
+                                        <div
+                                            style={{ height: `${engHeight}%` }}
+                                            className="absolute bottom-0 w-full bg-purple-500/50 group-hover:bg-purple-500 rounded-md shadow-sm transition-all duration-300"
+                                        />
+                                    </div>
+                                    <span className="text-xs text-gray-400 font-semibold uppercase">{data.label.substring(0, 1)}</span>
+                                </div>
+                            )
+                        })}
                     </div>
                 </div>
 
