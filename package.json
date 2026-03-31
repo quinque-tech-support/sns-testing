@@ -13,18 +13,22 @@
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
     "@auth/supabase-adapter": "^1.11.1",
+    "@google/generative-ai": "^0.24.1",
     "@prisma/adapter-pg": "^7.4.0",
     "@prisma/client": "^7.4.0",
     "@supabase/supabase-js": "^2.99.3",
     "@upstash/qstash": "^2.10.1",
     "axios": "^1.13.6",
     "bcryptjs": "^3.0.3",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.38.0",
     "lucide-react": "^0.577.0",
     "next": "16.1.6",
     "next-auth": "^5.0.0-beta.30",
     "pg": "^8.18.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "tailwind-merge": "^3.5.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
