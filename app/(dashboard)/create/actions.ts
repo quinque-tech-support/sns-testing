@@ -152,9 +152,11 @@ export async function publishNow(formData: FormData): Promise<ActionResult> {
     if (!session?.user?.id) return { error: 'Not authenticated' }
 
     const caption = formData.get('caption') as string
-    const mediaUrl = formData.get('mediaUrl') as string
+    const mediaUrls = formData.getAll('mediaUrls[]') as string[]
+    const mediaUrl = mediaUrls[0] || (formData.get('mediaUrl') as string)
     const isVideo = formData.get('isVideo') === 'true'
     const connectedAccountId = formData.get('connectedAccountId') as string
+    const isCarousel = !isVideo && mediaUrls.length > 1
 
     if (!connectedAccountId) {
         return { error: 'Please select an Instagram account first.' }
@@ -172,7 +174,94 @@ export async function publishNow(formData: FormData): Promise<ActionResult> {
             return { error: 'Instagram account implies missing access tokens. Please reconnect.' }
         }
 
-        // 1. Create Media Container (Image or Reel)
+        // ── Carousel path (multiple images) ──────────────────────────
+        if (isCarousel) {
+            // 1a. Create one item container per image
+            const itemIds: string[] = []
+            for (const imgUrl of mediaUrls) {
+                const itemRes = await fetch(
+                    `https://graph.facebook.com/v19.0/${account.instagramBusinessId}/media`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            image_url: imgUrl,
+                            is_carousel_item: true,
+                            access_token: account.pageAccessToken,
+                        }),
+                    }
+                )
+                const itemData = await itemRes.json()
+                if (!itemRes.ok || itemData.error) {
+                    return { error: `IG Carousel Item Error: ${itemData.error?.message || 'Unknown'}` }
+                }
+                itemIds.push(itemData.id)
+            }
+
+            // 1b. Create the carousel container
+            const carouselRes = await fetch(
+                `https://graph.facebook.com/v19.0/${account.instagramBusinessId}/media`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        media_type: 'CAROUSEL',
+                        children: itemIds.join(','),
+                        caption: caption || '',
+                        access_token: account.pageAccessToken,
+                    }),
+                }
+            )
+            const carouselData = await carouselRes.json()
+            if (!carouselRes.ok || carouselData.error) {
+                return { error: `IG Carousel Container Error: ${carouselData.error?.message || 'Unknown'}` }
+            }
+
+            const carouselCreationId = carouselData.id
+            console.log(`[publishNow] Carousel container created: ${carouselCreationId}`)
+
+            // 1c. Wait for carousel to be ready
+            const carouselReady = await waitForContainer(carouselCreationId, account.pageAccessToken, false)
+            if (!carouselReady) {
+                return { error: 'Instagram took too long to process your carousel. Please try again.' }
+            }
+
+            // 1d. Publish carousel
+            const publishRes = await fetch(
+                `https://graph.facebook.com/v19.0/${account.instagramBusinessId}/media_publish`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        creation_id: carouselCreationId,
+                        access_token: account.pageAccessToken,
+                    }),
+                }
+            )
+            const publishData = await publishRes.json()
+            if (!publishRes.ok || publishData.error) {
+                return { error: `IG Publish Error: ${publishData.error?.message || 'Unknown'}` }
+            }
+
+            const post = await prisma.post.create({
+                data: {
+                    userId: session.user.id,
+                    connectedAccountId,
+                    caption: caption || '',
+                    imageUrl: mediaUrls[0],
+                    mediaType: 'IMAGE',
+                    instagramMediaId: publishData.id,
+                }
+            })
+            await prisma.schedule.create({
+                data: { postId: post.id, scheduledFor: new Date(), status: 'PUBLISHED' }
+            })
+            revalidatePath('/dashboard')
+            revalidatePath('/workflow')
+            return { success: true, postId: post.id }
+        }
+
+        // ── Single image / video path (existing flow) ────────────────
         const containerUrl = `https://graph.facebook.com/v19.0/${account.instagramBusinessId}/media`
         const containerBody = isVideo
             ? {
@@ -273,7 +362,8 @@ export async function schedulePost(formData: FormData): Promise<ActionResult> {
     if (!session?.user?.id) return { error: 'Not authenticated' }
 
     const caption = formData.get('caption') as string
-    const mediaUrl = formData.get('mediaUrl') as string
+    const mediaUrls = formData.getAll('mediaUrls[]') as string[]
+    const mediaUrl = mediaUrls[0] || (formData.get('mediaUrl') as string)
     const isVideo = formData.get('isVideo') === 'true'
     const connectedAccountId = formData.get('connectedAccountId') as string
     const scheduledForStr = formData.get('scheduledFor') as string
@@ -299,7 +389,8 @@ export async function schedulePost(formData: FormData): Promise<ActionResult> {
                 userId: session.user.id,
                 connectedAccountId,
                 caption: caption || '',
-                imageUrl: mediaUrl,
+                // Store all URLs as JSON array when carousel, otherwise just the single URL
+                imageUrl: mediaUrls.length > 1 ? JSON.stringify(mediaUrls) : mediaUrl,
                 mediaType: isVideo ? 'VIDEO' : 'IMAGE',
             }
         })
