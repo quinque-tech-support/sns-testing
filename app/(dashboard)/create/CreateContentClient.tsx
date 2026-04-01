@@ -9,16 +9,11 @@ import {
     Calendar,
     Tag,
     Send,
-    Smartphone,
     Clock,
     Hash,
     ChevronDown,
     Plus,
     X,
-    MessageCircle,
-    Heart,
-    Bookmark,
-    MoreHorizontal,
     CheckCircle2,
     AlertCircle,
     Loader2,
@@ -27,8 +22,10 @@ import {
     RefreshCw,
     Activity,
     Images,
+    ArrowRight,
+    FileImage,
+    Zap,
 } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
@@ -55,9 +52,9 @@ interface CreateContentPageProps {
 }
 
 const tabs = [
+    { id: 'tools', label: 'AI コンテンツツール', icon: Sparkles },
     { id: 'publish', label: 'アップロード & 公開', icon: Upload },
     { id: 'schedule', label: '予約投稿', icon: Calendar },
-    { id: 'tools', label: 'コンテンツツール', icon: Tag },
 ]
 
 const leadingSentences = [
@@ -79,6 +76,65 @@ const ctaEndings: Record<string, string> = {
     'あとで保存': '\n\n💾 この投稿をあとで保存してね！',
     '友達をタグ付け': '\n\n👇 これを見せたい友達をタグ付けして！',
     'フォロワーへの質問': '\n\n💬 コメント欄で感想を教えてください！',
+}
+
+// ─────────────────────────────────────────────
+// Step indicator
+// ─────────────────────────────────────────────
+function StepIndicator({ step, hasMedia, hasAI }: { step: number; hasMedia: boolean; hasAI: boolean }) {
+    const steps = [
+        { num: 1, label: 'メディアをアップロード', done: hasMedia },
+        { num: 2, label: 'AIが提案を生成', done: hasAI },
+        { num: 3, label: '投稿または予約', done: false },
+    ]
+    return (
+        <div className="flex items-center gap-2">
+            {steps.map((s, i) => (
+                <div key={s.num} className="flex items-center gap-2">
+                    <div className={cn(
+                        'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all',
+                        s.done
+                            ? 'bg-violet-600 text-white'
+                            : step === s.num
+                                ? 'bg-violet-50 text-violet-700 border border-violet-200'
+                                : 'bg-gray-100 text-gray-400'
+                    )}>
+                        {s.done ? (
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                        ) : (
+                            <span className={cn(
+                                'w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold border',
+                                step === s.num ? 'border-violet-400 text-violet-600' : 'border-gray-300 text-gray-400'
+                            )}>{s.num}</span>
+                        )}
+                        <span className="hidden sm:inline">{s.label}</span>
+                    </div>
+                    {i < steps.length - 1 && (
+                        <ArrowRight className="w-3.5 h-3.5 text-gray-300 shrink-0" />
+                    )}
+                </div>
+            ))}
+        </div>
+    )
+}
+
+// ─────────────────────────────────────────────
+// Section header
+// ─────────────────────────────────────────────
+function SectionLabel({ step, label, description }: { step?: number; label: string; description?: string }) {
+    return (
+        <div className="flex items-start gap-3 mb-4">
+            {step && (
+                <div className="w-6 h-6 rounded-full bg-violet-600 text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                    {step}
+                </div>
+            )}
+            <div>
+                <p className="text-sm font-bold text-gray-900">{label}</p>
+                {description && <p className="text-xs text-gray-500 mt-0.5">{description}</p>}
+            </div>
+        </div>
+    )
 }
 
 // ─────────────────────────────────────────────
@@ -107,14 +163,12 @@ function MediaUploadStrip({
         const firstIsVideo = first.type.startsWith('video/')
 
         if (firstIsVideo) {
-            // Video → single file only (reel behaviour)
             setMediaFiles([first])
             setMediaFile(first)
             setMediaPreview(URL.createObjectURL(first))
             setIsVideo(true)
             onNewFile?.(first)
         } else {
-            // Images → allow multiple, but if there's already a video clear it
             setMediaFiles(prev => {
                 const filtered = prev.filter(f => !f.type.startsWith('video/'))
                 return [...filtered, ...incoming.filter(f => !f.type.startsWith('video/'))]
@@ -144,12 +198,15 @@ function MediaUploadStrip({
 
     if (mediaFiles.length === 0) {
         return (
-            <label className="flex flex-col items-center justify-center min-h-[180px] bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 hover:border-purple-400 hover:bg-purple-50 transition-all cursor-pointer group">
-                <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                    <Upload className="w-7 h-7 text-purple-500" />
+            <label className="group flex flex-col items-center justify-center min-h-[220px] bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 hover:border-violet-400 hover:bg-violet-50/40 transition-all duration-200 cursor-pointer">
+                <div className="w-16 h-16 rounded-2xl bg-white shadow-md border border-gray-100 flex items-center justify-center mb-4 group-hover:scale-105 group-hover:shadow-violet-200/60 group-hover:border-violet-200 transition-all duration-200">
+                    <FileImage className="w-7 h-7 text-violet-500" />
                 </div>
-                <p className="text-gray-900 font-bold text-sm">画像または動画をドロップ</p>
-                <p className="text-gray-400 text-xs mt-1">画像は複数可・動画は1本（リール）</p>
+                <p className="text-gray-900 font-semibold text-sm">クリックまたはドラッグ＆ドロップ</p>
+                <p className="text-gray-400 text-xs mt-1.5">画像（複数可）または動画・リール（1本）</p>
+                <div className="mt-4 px-4 py-1.5 bg-white border border-gray-200 rounded-full text-xs font-semibold text-gray-600 group-hover:border-violet-300 group-hover:text-violet-600 transition-all">
+                    ファイルを選択
+                </div>
                 <input
                     type="file"
                     multiple
@@ -163,14 +220,13 @@ function MediaUploadStrip({
 
     return (
         <div className="space-y-3">
-            {/* Preview strip */}
             <div className="flex gap-3 overflow-x-auto pb-2 snap-x">
                 {mediaFiles.map((file, i) => (
                     <div key={i} className="relative shrink-0 snap-start">
                         {file.type.startsWith('video/') ? (
                             <div className="w-[130px] h-[130px] rounded-xl bg-gray-900 flex items-center justify-center border border-gray-200 shadow-sm">
                                 <Video className="w-8 h-8 text-white/60" />
-                                <span className="absolute bottom-1 left-1 text-[9px] bg-purple-600 text-white px-1.5 py-0.5 rounded font-bold">REEL</span>
+                                <span className="absolute bottom-1 left-1 text-[9px] bg-violet-600 text-white px-1.5 py-0.5 rounded font-bold">REEL</span>
                             </div>
                         ) : (
                             <img
@@ -181,7 +237,7 @@ function MediaUploadStrip({
                         )}
                         <button
                             onClick={() => removeFile(i)}
-                            className="absolute top-1.5 right-1.5 w-5 h-5 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center text-white backdrop-blur z-10"
+                            className="absolute top-1.5 right-1.5 w-5 h-5 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center text-white backdrop-blur z-10 transition-colors"
                         >
                             <X className="w-3 h-3" />
                         </button>
@@ -191,11 +247,10 @@ function MediaUploadStrip({
                     </div>
                 ))}
 
-                {/* Add more — only if current files are images */}
                 {!isVideo && (
-                    <label className="shrink-0 w-[130px] h-[130px] rounded-xl border border-dashed border-gray-300 hover:border-purple-400 bg-gray-50 hover:bg-purple-50 flex flex-col items-center justify-center cursor-pointer transition-colors gap-1">
-                        <Plus className="w-7 h-7 text-gray-400" />
-                        <span className="text-[10px] text-gray-400 font-medium">追加</span>
+                    <label className="shrink-0 w-[130px] h-[130px] rounded-xl border-2 border-dashed border-gray-200 hover:border-violet-400 bg-gray-50 hover:bg-violet-50/40 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 gap-1.5">
+                        <Plus className="w-6 h-6 text-gray-400" />
+                        <span className="text-[10px] text-gray-500 font-semibold">追加</span>
                         <input
                             type="file"
                             multiple
@@ -208,11 +263,42 @@ function MediaUploadStrip({
             </div>
 
             {mediaFiles.length > 1 && (
-                <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                <div className="flex items-center gap-1.5 px-3 py-2 bg-violet-50 border border-violet-100 rounded-lg text-xs text-violet-700">
                     <Images className="w-3.5 h-3.5" />
-                    <span className="font-medium">{mediaFiles.length}枚のカルーセル投稿として公開されます</span>
+                    <span className="font-semibold">{mediaFiles.length}枚のカルーセル投稿として公開されます</span>
                 </div>
             )}
+        </div>
+    )
+}
+
+// ─────────────────────────────────────────────
+// Caption field (shared)
+// ─────────────────────────────────────────────
+function CaptionField({
+    value,
+    onChange,
+    placeholder = 'キャプションを入力してください...',
+}: {
+    value: string
+    onChange: (v: string) => void
+    placeholder?: string
+}) {
+    return (
+        <div>
+            <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-bold text-gray-900">キャプション</label>
+                <span className={cn('text-xs font-medium tabular-nums', value.length > 2000 ? 'text-red-500' : 'text-gray-400')}>
+                    {value.length} / 2200
+                </span>
+            </div>
+            <textarea
+                value={value}
+                onChange={e => onChange(e.target.value)}
+                placeholder={placeholder}
+                className="w-full min-h-[160px] p-4 bg-white border border-gray-200 rounded-xl text-gray-900 text-sm leading-relaxed placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 transition-all resize-none"
+                maxLength={2200}
+            />
         </div>
     )
 }
@@ -224,13 +310,11 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
     const router = useRouter()
     const [activeTab, setActiveTab] = useState('tools')
 
-    // Shared media state
     const [mediaPreview, setMediaPreview] = useState<string | null>(null)
     const [mediaFile, setMediaFile] = useState<File | null>(null)
     const [mediaFiles, setMediaFiles] = useState<File[]>([])
     const [isVideo, setIsVideo] = useState(false)
 
-    // Shared caption state — single source of truth
     const [caption, setCaption] = useState('')
 
     const [selectedAccountId, setSelectedAccountId] = useState(accounts[0]?.id || '')
@@ -241,7 +325,6 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
     const [isUploading, setIsUploading] = useState(false)
     const [isPending, startTransition] = useTransition()
 
-    // AI state
     const [aiState, setAiState] = useState<'idle' | 'analyzing' | 'ready'>('idle')
     const [aiUsageCount, setAiUsageCount] = useState(0)
     const [aiData, setAiData] = useState<{
@@ -256,34 +339,40 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
 
     const clearResult = () => setResult(null)
 
-    // ── Upload helpers ────────────────────────
-    const uploadMedia = async (): Promise<string | null> => {
-        if (!mediaFile) return null
+    // Upload a single file and return its public URL
+    const uploadSingleFile = async (file: File): Promise<string | null> => {
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`
+        const { token, path, error: urlError } = await getSignedUploadUrl(fileName, file.type)
+        if (urlError || !token || !path) throw new Error(urlError || 'Failed to obtain secure upload URL.')
+
+        const { error: uploadError } = await supabase.storage
+            .from('media-uploads')
+            .uploadToSignedUrl(path, token, file, { cacheControl: '3600', upsert: false })
+
+        if (uploadError) throw uploadError
+
+        const { data } = supabase.storage.from('media-uploads').getPublicUrl(path)
+        return data.publicUrl
+    }
+
+    // Upload ALL selected files and return their public URLs (preserves order)
+    const uploadAllMedia = async (): Promise<string[] | null> => {
+        if (mediaFiles.length === 0) return null
         setIsUploading(true)
         try {
-            const fileExt = mediaFile.name.split('.').pop()
-            const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`
-            const { token, path, error: urlError } = await getSignedUploadUrl(fileName, mediaFile.type)
-            if (urlError || !token || !path) throw new Error(urlError || 'Failed to obtain secure upload URL.')
-
-            const { error: uploadError } = await supabase.storage
-                .from('media-uploads')
-                .uploadToSignedUrl(path, token, mediaFile, { cacheControl: '3600', upsert: false })
-
-            if (uploadError) throw uploadError
-
-            const { data } = supabase.storage.from('media-uploads').getPublicUrl(path)
-            return data.publicUrl
+            const urls = await Promise.all(mediaFiles.map(f => uploadSingleFile(f)))
+            if (urls.some(u => u === null)) throw new Error('One or more files failed to upload.')
+            return urls as string[]
         } catch (error) {
             console.error('Upload Error:', error)
-            setResult({ error: 'Failed to upload media. Please try again.' })
+            setResult({ error: 'メディアのアップロードに失敗しました。もう一度お試しください。' })
             return null
         } finally {
             setIsUploading(false)
         }
     }
 
-    /** Merge AI caption+hashtags into the shared caption state */
     const flushAiToCaption = useCallback(() => {
         if (aiData) {
             const merged = (aiData.caption + '\n\n' + aiData.hashtags.join(' ')).trim()
@@ -293,25 +382,28 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
         return caption
     }, [aiData, caption])
 
-    const buildFormData = (mediaUrl?: string | null, captionOverride?: string) => {
+    const buildFormData = (mediaUrls: string[], captionOverride?: string) => {
         const fd = new FormData()
         fd.set('caption', captionOverride ?? caption)
         fd.set('connectedAccountId', selectedAccountId)
         fd.set('isVideo', isVideo.toString())
-        if (mediaUrl) fd.set('mediaUrl', mediaUrl)
+        // Send all URLs — server reads getAll('mediaUrls[]')
+        mediaUrls.forEach(url => fd.append('mediaUrls[]', url))
+        // Keep legacy field for saveDraft (uses only first)
+        if (mediaUrls.length > 0) fd.set('mediaUrl', mediaUrls[0])
         return fd
     }
 
-    // ── Actions ───────────────────────────────
     const handleSaveDraft = async () => {
         if (isUploading || isPending) return
-        let url = null
-        if (mediaFile) {
-            url = await uploadMedia()
-            if (!url) return
+        let urls: string[] = []
+        if (mediaFiles.length > 0) {
+            const result = await uploadAllMedia()
+            if (!result) return
+            urls = result
         }
         startTransition(async () => {
-            const fd = buildFormData(url)
+            const fd = buildFormData(urls)
             const res = await saveDraft(fd)
             setResult(res)
             if (res.success) setTimeout(() => router.push('/workflow'), 1500)
@@ -320,14 +412,14 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
 
     const handlePublishNow = async (captionToUse?: string) => {
         if (isUploading || isPending) return
-        if (!mediaFile) {
+        if (mediaFiles.length === 0) {
             setResult({ error: '画像または動画をアップロードしてください。' })
             return
         }
-        const url = await uploadMedia()
-        if (!url) return
+        const urls = await uploadAllMedia()
+        if (!urls) return
         startTransition(async () => {
-            const fd = buildFormData(url, captionToUse)
+            const fd = buildFormData(urls, captionToUse)
             const res = await publishNow(fd)
             setResult(res)
             if (res.success) setTimeout(() => router.push('/dashboard'), 1500)
@@ -336,7 +428,7 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
 
     const handleSchedule = async (captionToUse?: string) => {
         if (isUploading || isPending) return
-        if (!mediaFile) {
+        if (mediaFiles.length === 0) {
             setResult({ error: '画像または動画をアップロードしてください。' })
             return
         }
@@ -344,10 +436,10 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
             setResult({ error: '公開日時を選択してください。' })
             return
         }
-        const url = await uploadMedia()
-        if (!url) return
+        const urls = await uploadAllMedia()
+        if (!urls) return
         startTransition(async () => {
-            const fd = buildFormData(url, captionToUse)
+            const fd = buildFormData(urls, captionToUse)
             fd.set('scheduledFor', new Date(scheduledFor).toISOString())
             const res = await schedulePost(fd)
             setResult(res)
@@ -355,7 +447,6 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
         })
     }
 
-    // ── AI generation ─────────────────────────
     const generateAI = async (fileToUse?: File | null, mode: string = aiMode) => {
         setAiState('analyzing')
         setResult(null)
@@ -413,7 +504,6 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
         }
     }
 
-    // ── Helpers ───────────────────────────────
     const appendToCaption = (text: string) => {
         setCaption(prev => text + (prev ? '\n\n' + prev : ''))
         clearResult()
@@ -430,30 +520,34 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
     }
 
     const selectedAccount = accounts.find(a => a.id === selectedAccountId)
+    const isWorking = isPending || isUploading
 
-    // Caption shown in the right side preview
-    const previewCaption = activeTab === 'tools' && aiData ? aiData.caption : caption
+    // Compute which step user is on for the tools tab
+    const currentStep = mediaFiles.length === 0 ? 1 : aiState !== 'ready' ? 2 : 3
 
     // ─────────────────────────────────────────
     // Render
     // ─────────────────────────────────────────
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* Header */}
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-6xl">
+
+            {/* ── Page Header ── */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">コンテンツ作成</h1>
-                    <p className="text-gray-500 mt-1">Instagram投稿をデザイン・予約・公開しましょう。</p>
+                    <h1 className="text-xl font-bold text-gray-900 tracking-tight">コンテンツ作成</h1>
+                    <p className="text-sm text-gray-500 mt-0.5">投稿を作成・AIで最適化・公開または予約しましょう</p>
                 </div>
+
+                {/* Account selector */}
                 {accounts.length > 0 ? (
                     <div className="relative w-full md:w-auto">
-                        <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                            <Instagram className="w-4 h-4 text-purple-500" />
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                            <Instagram className="w-4 h-4 text-violet-500" />
                         </div>
                         <select
                             value={selectedAccountId}
                             onChange={e => setSelectedAccountId(e.target.value)}
-                            className="appearance-none w-full md:w-64 bg-white border border-gray-200 rounded-xl py-2.5 pl-9 pr-9 text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500/10 focus:border-purple-500 transition-all shadow-sm cursor-pointer"
+                            className="appearance-none w-full md:w-60 bg-white border border-gray-200 rounded-xl py-2.5 pl-9 pr-9 text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 transition-all shadow-sm cursor-pointer hover:border-gray-300"
                         >
                             {accounts.map(a => (
                                 <option key={a.id} value={a.id}>
@@ -464,54 +558,78 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
                         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                     </div>
                 ) : (
-                    <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-100 rounded-xl text-sm text-amber-700">
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
                         <AlertCircle className="w-4 h-4 shrink-0" />
                         <span>Instagram アカウントが未連携です。<a href="/account" className="font-bold underline">連携する</a></span>
                     </div>
                 )}
             </div>
 
-            {/* Feedback Banner */}
+            {/* ── Feedback Banner ── */}
             {result && (
-                <div className={`flex items-center gap-3 px-5 py-4 rounded-2xl border text-sm font-medium ${result.success ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
+                <div className={cn(
+                    'flex items-center gap-3 px-4 py-3.5 rounded-xl border text-sm font-medium',
+                    result.success
+                        ? 'bg-green-50 border-green-200 text-green-800'
+                        : 'bg-red-50 border-red-200 text-red-800'
+                )}>
                     {result.success
                         ? <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
                         : <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
                     }
                     <span>{result.success ? '成功しました！リダイレクトしています...' : result.error}</span>
                     {!result.success && (
-                        <button onClick={clearResult} className="ml-auto p-1 hover:bg-red-100 rounded-lg">
+                        <button onClick={clearResult} className="ml-auto p-1 hover:bg-red-100 rounded-lg transition-colors">
                             <X className="w-4 h-4" />
                         </button>
                     )}
                 </div>
             )}
 
-            {/* Tabs */}
-            <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-2xl w-fit">
+            {/* ── Tabs ── */}
+            <div className="flex items-center gap-0 border-b border-gray-200">
                 {tabs.map(tab => (
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeTab === tab.id ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                        className={cn(
+                            'flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 -mb-px transition-all',
+                            activeTab === tab.id
+                                ? 'border-violet-600 text-violet-700'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        )}
                     >
-                        <tab.icon className="w-4 h-4" />
+                        <tab.icon className={cn('w-4 h-4', activeTab === tab.id ? 'text-violet-600' : 'text-gray-400')} />
                         {tab.label}
                     </button>
                 ))}
             </div>
 
-            {/* ── Content Grid ── */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                <div className="xl:col-span-2 space-y-6">
+            {/* ════════════════════════════════════════
+                TOOLS TAB — AI-first workflow
+            ════════════════════════════════════════ */}
+            {activeTab === 'tools' && (
+                <div className="space-y-6">
+                    {/* Step progress */}
+                    <StepIndicator
+                        step={currentStep}
+                        hasMedia={mediaFiles.length > 0}
+                        hasAI={aiState === 'ready'}
+                    />
 
-                    {/* ══════════════════════════════
-                        PUBLISH TAB
-                    ══════════════════════════════ */}
-                    {activeTab === 'publish' && (
-                        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-6">
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-3 uppercase tracking-wider">メディアアップロード</label>
+                    {/* Two-column editor */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+                        {/* LEFT — Upload */}
+                        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                            <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/60 flex items-center gap-2.5">
+                                <div className="w-6 h-6 rounded-full bg-violet-600 text-white flex items-center justify-center text-xs font-bold shrink-0">1</div>
+                                <div>
+                                    <p className="text-sm font-bold text-gray-900">メディアをアップロード</p>
+                                    <p className="text-xs text-gray-500">画像または動画を選択してください</p>
+                                </div>
+                            </div>
+                            <div className="p-5">
                                 <MediaUploadStrip
                                     mediaFiles={mediaFiles}
                                     setMediaFiles={setMediaFiles}
@@ -519,423 +637,387 @@ export default function CreateContentClient({ accounts }: CreateContentPageProps
                                     setMediaPreview={setMediaPreview}
                                     setIsVideo={setIsVideo}
                                     isVideo={isVideo}
+                                    onNewFile={f => setTimeout(() => generateAI(f, aiMode), 100)}
                                 />
-                            </div>
-
-                            <div>
-                                <div className="flex items-center justify-between mb-3">
-                                    <label className="block text-sm font-bold text-gray-700 uppercase tracking-wider">キャプション</label>
-                                    <span className="text-xs text-gray-400">{caption.length} / 2200</span>
-                                </div>
-                                <textarea
-                                    value={caption}
-                                    onChange={e => setCaption(e.target.value)}
-                                    placeholder="キャプションを入力してください..."
-                                    className="w-full min-h-[160px] p-4 bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/10 focus:border-purple-500 transition-all resize-none"
-                                    maxLength={2200}
-                                />
-                            </div>
-
-                            <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-100">
-                                <button
-                                    onClick={() => handlePublishNow()}
-                                    disabled={isPending || isUploading || accounts.length === 0 || mediaFiles.length === 0}
-                                    className="flex items-center gap-2 px-6 py-3 instagram-gradient text-white rounded-xl font-bold shadow-lg shadow-purple-500/20 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {isPending || isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                                    今すぐ公開
-                                </button>
-                                <button
-                                    onClick={handleSaveDraft}
-                                    disabled={isPending || isUploading || accounts.length === 0}
-                                    className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition-all disabled:opacity-50"
-                                >
-                                    {(isPending || isUploading) && <Loader2 className="w-4 h-4 animate-spin" />}
-                                    下書き保存
-                                </button>
                             </div>
                         </div>
-                    )}
 
-                    {/* ══════════════════════════════
-                        SCHEDULE TAB
-                    ══════════════════════════════ */}
-                    {activeTab === 'schedule' && (
-                        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-6">
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-3 uppercase tracking-wider">メディアアップロード</label>
-                                <MediaUploadStrip
-                                    mediaFiles={mediaFiles}
-                                    setMediaFiles={setMediaFiles}
-                                    setMediaFile={setMediaFile}
-                                    setMediaPreview={setMediaPreview}
-                                    setIsVideo={setIsVideo}
-                                    isVideo={isVideo}
-                                />
-                            </div>
-
-                            <div>
-                                <div className="flex items-center justify-between mb-3">
-                                    <label className="block text-sm font-bold text-gray-700 uppercase tracking-wider">キャプション</label>
-                                    <span className="text-xs text-gray-400">{caption.length} / 2200</span>
-                                </div>
-                                <textarea
-                                    value={caption}
-                                    onChange={e => setCaption(e.target.value)}
-                                    placeholder="キャプションを入力してください..."
-                                    className="w-full min-h-[160px] p-4 bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/10 focus:border-purple-500 transition-all resize-none"
-                                    maxLength={2200}
-                                />
-                            </div>
-
-                            <div className="pt-4 border-t border-gray-100 space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">公開日時</label>
-                                        <div className="flex items-center relative group">
-                                            <Calendar className="absolute left-4 w-4 h-4 text-gray-400 group-focus-within:text-purple-500 transition-colors" />
-                                            <input
-                                                type="datetime-local"
-                                                value={scheduledFor}
-                                                onChange={e => setScheduledFor(e.target.value)}
-                                                min={new Date(Date.now() - new Date().getTimezoneOffset() * 60000 + 60000).toISOString().slice(0, 16)}
-                                                className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-purple-500/10 focus:border-purple-500 transition-all"
-                                            />
-                                        </div>
+                        {/* RIGHT — AI Suggestions */}
+                        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
+                            <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/60 flex items-center justify-between">
+                                <div className="flex items-center gap-2.5">
+                                    <div className={cn(
+                                        'w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-all',
+                                        aiState === 'ready' ? 'bg-violet-600 text-white' : 'bg-gray-200 text-gray-500'
+                                    )}>
+                                        {aiState === 'ready' ? <CheckCircle2 className="w-3.5 h-3.5" /> : '2'}
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">推定リーチ</label>
-                                        <div className="px-4 py-2.5 bg-purple-50 border border-purple-100 rounded-xl h-[42px] flex flex-col justify-center">
-                                            <p className="text-xs font-bold text-purple-700">📈 火〜金：9〜11時、13〜15時、19〜21時</p>
-                                        </div>
+                                        <p className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
+                                            AI キャプション提案
+                                            {aiState === 'ready' && !isEdited && (
+                                                <span className="text-[10px] font-bold px-1.5 py-0.5 bg-violet-100 text-violet-700 rounded-full flex items-center gap-0.5">
+                                                    <Sparkles className="w-2.5 h-2.5" /> AI生成済み
+                                                </span>
+                                            )}
+                                        </p>
+                                        <p className="text-xs text-gray-500">画像をアップして自動で最適化</p>
                                     </div>
                                 </div>
-                                <div className="flex flex-wrap gap-3">
-                                    <button
-                                        onClick={() => handleSchedule()}
-                                        disabled={isPending || isUploading || !scheduledFor || accounts.length === 0 || mediaFiles.length === 0}
-                                        className="flex items-center gap-2 px-8 py-3 bg-purple-600 text-white rounded-xl font-bold shadow-lg shadow-purple-600/20 hover:bg-purple-700 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        {isPending || isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Clock className="w-4 h-4" />}
-                                        投稿を予約する
-                                    </button>
-                                    <button
-                                        onClick={handleSaveDraft}
-                                        disabled={isPending || isUploading || accounts.length === 0}
-                                        className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition-all disabled:opacity-50"
-                                    >
-                                        下書き保存
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ══════════════════════════════
-                        TOOLS TAB — 2-column AI layout
-                    ══════════════════════════════ */}
-                    {activeTab === 'tools' && (
-                        <>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-
-                                {/* LEFT: multi-image upload */}
-                                <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm flex flex-col min-h-[480px]">
-                                    <h2 className="text-sm font-bold text-zinc-900 mb-4">メディアアップロード</h2>
-                                    <div className="flex-1 flex flex-col">
-                                        <MediaUploadStrip
-                                            mediaFiles={mediaFiles}
-                                            setMediaFiles={setMediaFiles}
-                                            setMediaFile={setMediaFile}
-                                            setMediaPreview={setMediaPreview}
-                                            setIsVideo={setIsVideo}
-                                            isVideo={isVideo}
-                                            onNewFile={f => setTimeout(() => generateAI(f, aiMode), 100)}
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* RIGHT: AI Proposals */}
-                                <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm flex flex-col min-h-[480px]">
-                                    <div className="px-5 py-4 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50 rounded-t-2xl">
-                                        <div>
-                                            <h2 className="text-sm font-bold text-zinc-900">AI提案</h2>
-                                            <p className="text-[10px] text-zinc-500 font-medium mt-0.5">ワンクリックで最適な構成を提案します</p>
-                                        </div>
-                                        <button
-                                            onClick={handleGenerateAI}
-                                            disabled={aiState === 'analyzing' || mediaFiles.length === 0}
-                                            className={cn('px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm border transition-all flex items-center gap-2',
-                                                aiState === 'analyzing' || mediaFiles.length === 0
-                                                    ? 'bg-white border-zinc-200 text-zinc-400 cursor-not-allowed'
-                                                    : 'bg-white border-zinc-200 text-zinc-800 hover:bg-zinc-50 active:scale-95')}
-                                        >
-                                            <RefreshCw className={cn('w-3 h-3 text-zinc-600', aiState === 'analyzing' && 'animate-spin')} />
-                                            再生成
-                                        </button>
-                                    </div>
-
-                                    <div className="p-5 flex-1 flex flex-col relative">
-                                        {/* Mode selector */}
-                                        <div className="grid grid-cols-3 gap-2 mb-5">
-                                            {[
-                                                { id: 'personal', label: '自分の投稿', detail: '過去データを参考に提案' },
-                                                { id: 'similar', label: '類似投稿', detail: '同ジャンルを参考に提案' },
-                                                { id: 'trend', label: 'トレンド', detail: '現在の人気スタイル' },
-                                            ].map(m => (
-                                                <button
-                                                    key={m.id}
-                                                    onClick={() => handleModeChange(m.id as any)}
-                                                    className={cn('flex flex-col items-start p-2.5 rounded-xl border transition-all text-left shadow-sm active:scale-95',
-                                                        aiMode === m.id ? 'bg-zinc-900 border-zinc-900' : 'border-zinc-200 bg-white hover:bg-zinc-50')}
-                                                >
-                                                    <span className={cn('text-[11px] font-bold block', aiMode === m.id ? 'text-white' : 'text-zinc-800')}>{m.label}</span>
-                                                    <span className={cn('text-[8px] sm:text-[9px] mt-1 line-clamp-2 leading-tight', aiMode === m.id ? 'text-zinc-300' : 'text-zinc-500')}>{m.detail}</span>
-                                                </button>
-                                            ))}
-                                        </div>
-
-                                        {/* Analyzing overlay */}
-                                        {aiState === 'analyzing' && (
-                                            <div className="absolute inset-x-0 bottom-0 top-[130px] bg-white/95 backdrop-blur-sm z-20 flex flex-col items-center justify-center rounded-b-2xl">
-                                                <Loader2 className="w-8 h-8 text-zinc-900 animate-spin mb-3" />
-                                                <p className="text-sm font-bold text-zinc-800">分析中…</p>
-                                            </div>
-                                        )}
-
-                                        {/* AI results */}
-                                        {aiData ? (
-                                            <div className="space-y-4 flex-1 flex flex-col">
-                                                <div className="space-y-1.5">
-                                                    <div className="flex items-center gap-2">
-                                                        <label className="text-xs font-bold text-zinc-500">キャプション</label>
-                                                        {!isEdited && (
-                                                            <span className="text-[9px] font-bold px-1.5 py-0.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded flex items-center gap-0.5">
-                                                                <Sparkles className="w-2.5 h-2.5" />AI
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    <textarea
-                                                        value={aiData.caption}
-                                                        onChange={e => handleCaptionEdit(e.target.value)}
-                                                        className="w-full min-h-[120px] text-sm text-zinc-800 bg-white border border-zinc-300 p-3.5 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 transition-all resize-y"
-                                                    />
-                                                </div>
-
-                                                <div className="space-y-1.5">
-                                                    <label className="text-xs font-bold text-zinc-500">ハッシュタグ</label>
-                                                    <div className="flex flex-wrap gap-1.5">
-                                                        {aiData.hashtags.map((tag, i) => (
-                                                            <span key={i} className="px-2 py-1 bg-zinc-100 text-zinc-700 text-[10px] font-bold rounded-md border border-zinc-200">{tag}</span>
-                                                        ))}
-                                                    </div>
-                                                </div>
-
-                                                {/* Insights */}
-                                                <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3.5 mt-auto">
-                                                    <div className="flex items-center gap-2 mb-2.5">
-                                                        <div className="w-5 h-5 rounded-md bg-zinc-200 flex items-center justify-center">
-                                                            <Activity className="w-3 h-3 text-zinc-600" />
-                                                        </div>
-                                                        <div>
-                                                            <h3 className="text-xs font-bold text-zinc-900">AIインサイト</h3>
-                                                            <p className="text-[9px] text-zinc-500">類似データと傾向に基づく予測</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="grid grid-cols-3 gap-2 text-xs bg-white p-2.5 rounded-lg border border-zinc-100">
-                                                        <div>
-                                                            <span className="block text-zinc-500 mb-1 text-[10px] font-medium">⏰ 最適時間</span>
-                                                            <span className="font-bold text-zinc-900">{aiData.postTime}</span>
-                                                        </div>
-                                                        <div>
-                                                            <span className="block text-zinc-500 mb-1 text-[10px] font-medium">❤️ いいね</span>
-                                                            <span className="font-bold text-zinc-900">{aiData.estimatedLikes}</span>
-                                                        </div>
-                                                        <div>
-                                                            <span className="block text-zinc-500 mb-1 text-[10px] font-medium">📈 リーチ</span>
-                                                            <span className="font-bold text-zinc-900">{aiData.estimatedReach}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="flex-1 flex flex-col items-center justify-center text-zinc-400">
-                                                <div className="w-14 h-14 bg-zinc-50 border-2 border-dashed border-zinc-200 rounded-full flex items-center justify-center mb-3">
-                                                    <Sparkles className="w-5 h-5 text-zinc-300" />
-                                                </div>
-                                                <p className="text-sm font-bold text-zinc-500">AI提案の準備ができています</p>
-                                                <p className="text-xs mt-1 max-w-[200px] text-center text-zinc-400">メディアをアップロードして最適な提案を生成しましょう。</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Bottom action buttons */}
-                            <div className="pt-4 border-t border-zinc-100 flex flex-col sm:flex-row gap-3">
                                 <button
-                                    onClick={() => {
-                                        const merged = flushAiToCaption()
-                                        handlePublishNow(merged)
-                                    }}
-                                    disabled={isPending || isUploading || accounts.length === 0 || mediaFiles.length === 0}
-                                    className="flex-1 py-4 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-sm font-bold shadow-md active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    onClick={handleGenerateAI}
+                                    disabled={aiState === 'analyzing' || mediaFiles.length === 0}
+                                    className={cn(
+                                        'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all',
+                                        aiState === 'analyzing' || mediaFiles.length === 0
+                                            ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed'
+                                            : 'bg-white border-gray-200 text-gray-700 hover:border-violet-300 hover:text-violet-700 hover:bg-violet-50 active:scale-95'
+                                    )}
                                 >
-                                    {isPending || isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                                    今すぐ投稿
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        flushAiToCaption()
-                                        setActiveTab('schedule')
-                                    }}
-                                    disabled={isPending || accounts.length === 0 || mediaFiles.length === 0}
-                                    className="flex-1 py-4 bg-white border border-zinc-200 text-zinc-900 hover:bg-zinc-50 rounded-xl text-sm font-bold shadow-sm active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    <Calendar className="w-4 h-4" />予約投稿に進む
+                                    <RefreshCw className={cn('w-3.5 h-3.5', aiState === 'analyzing' && 'animate-spin')} />
+                                    再生成
                                 </button>
                             </div>
-                        </>
-                    )}
 
-                    {/* TOOLS TAB — template helpers below the two columns */}
-                    {activeTab === 'tools' && (
-                        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-6">
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-3 uppercase tracking-wider">書き出しテンプレート</label>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    {leadingSentences.map(s => (
+                            <div className="p-5 flex-1 flex flex-col relative min-h-[380px]">
+                                {/* AI Mode pills */}
+                                <div className="flex items-center gap-2 mb-5 flex-wrap">
+                                    {[
+                                        { id: 'personal', label: '自分の投稿スタイル' },
+                                        { id: 'similar', label: '類似コンテンツ' },
+                                        { id: 'trend', label: 'トレンド' },
+                                    ].map(m => (
                                         <button
-                                            key={s.label}
-                                            onClick={() => appendToCaption(s.text)}
-                                            className="text-left p-3 rounded-xl border border-gray-100 bg-gray-50 hover:border-purple-200 hover:bg-purple-50 transition-all group"
+                                            key={m.id}
+                                            onClick={() => handleModeChange(m.id as any)}
+                                            className={cn(
+                                                'px-3 py-1.5 rounded-full text-xs font-semibold border transition-all',
+                                                aiMode === m.id
+                                                    ? 'bg-violet-600 border-violet-600 text-white shadow-sm'
+                                                    : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                                            )}
                                         >
-                                            <p className="text-xs font-bold text-purple-600 uppercase tracking-tight mb-1">{s.label}</p>
-                                            <p className="text-sm text-gray-600 line-clamp-1 group-hover:text-gray-900">{s.text}</p>
+                                            {m.label}
                                         </button>
                                     ))}
                                 </div>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">ハッシュタグセット</label>
-                                    <div className="flex gap-2">
-                                        <div className="relative flex-1">
-                                            <select value={hashtags} onChange={e => setHashtags(e.target.value)} className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-xl py-2.5 pl-4 pr-10 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-purple-500/10 focus:border-purple-500 transition-all cursor-pointer">
-                                                <option value="">カテゴリを選択</option>
-                                                {Object.keys(hashtagSets).map(k => <option key={k}>{k}</option>)}
-                                            </select>
-                                            <Hash className="absolute right-8 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                                        </div>
-                                        <button onClick={applyHashtags} disabled={!hashtags} className="px-3 py-2.5 bg-purple-600 text-white rounded-xl text-sm font-bold hover:bg-purple-700 disabled:opacity-40 transition-all">追加</button>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">締めの一言 (CTA)</label>
-                                    <div className="flex gap-2">
-                                        <div className="relative flex-1">
-                                            <select value={ctaStyle} onChange={e => setCtaStyle(e.target.value)} className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-xl py-2.5 pl-4 pr-10 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-purple-500/10 focus:border-purple-500 transition-all cursor-pointer">
-                                                {Object.keys(ctaEndings).map(k => <option key={k}>{k}</option>)}
-                                            </select>
-                                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                                        </div>
-                                        <button onClick={applyCTA} className="px-3 py-2.5 bg-gray-700 text-white rounded-xl text-sm font-bold hover:bg-gray-800 transition-all">追加</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
 
-                {/* ── Right: Phone preview ── */}
-                <div className="flex flex-col items-center">
-                    <div className="sticky top-24 w-full max-w-[320px] aspect-[9/18.5] bg-gray-900 rounded-[40px] border-[6px] border-gray-800 p-2 shadow-2xl relative overflow-hidden">
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-6 bg-gray-800 rounded-b-2xl z-20 flex items-center justify-center">
-                            <div className="w-8 h-1 bg-gray-700 rounded-full" />
-                        </div>
-                        <div className="w-full h-full bg-white rounded-[32px] overflow-hidden flex flex-col relative">
-                            <div className="h-10 px-4 flex items-center justify-between border-b border-gray-100 mt-2 shrink-0">
-                                <span className="font-bold text-sm tracking-tight instagram-text-gradient">Postara</span>
-                                <div className="flex gap-3">
-                                    <Plus className="w-5 h-5" />
-                                    <Heart className="w-5 h-5" />
-                                    <MessageCircle className="w-5 h-5 text-gray-900" />
-                                </div>
-                            </div>
-                            <div className="flex-1 overflow-y-auto no-scrollbar">
-                                <div className="p-3 flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-8 h-8 rounded-full instagram-gradient p-0.5">
-                                            <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
-                                                <div className="w-full h-full bg-purple-500" />
-                                            </div>
+                                {/* Analyzing overlay */}
+                                {aiState === 'analyzing' && (
+                                    <div className="absolute inset-x-0 bottom-0 top-[90px] bg-white/95 backdrop-blur-sm z-20 flex flex-col items-center justify-center rounded-b-2xl">
+                                        <div className="w-12 h-12 rounded-2xl bg-violet-50 border border-violet-100 flex items-center justify-center mb-3">
+                                            <Loader2 className="w-6 h-6 text-violet-600 animate-spin" />
                                         </div>
-                                        <span className="text-xs font-bold">{selectedAccount?.username ? `@${selectedAccount.username}` : 'your_account'}</span>
+                                        <p className="text-sm font-bold text-gray-800">AIが分析中…</p>
+                                        <p className="text-xs text-gray-500 mt-1">最適なキャプションを生成しています</p>
                                     </div>
-                                    <MoreHorizontal className="w-4 h-4" />
-                                </div>
+                                )}
 
-                                <div className="aspect-square bg-gray-100 flex items-center justify-center relative overflow-hidden">
-                                    {mediaPreview ? (
-                                        isVideo ? (
-                                            <div className="w-full h-full bg-gray-900 flex items-center justify-center relative">
-                                                <video src={mediaPreview} className="w-full h-full object-cover opacity-80" />
-                                                <div className="absolute inset-0 flex items-center justify-center">
-                                                    <div className="w-10 h-10 rounded-full bg-white/30 backdrop-blur flex items-center justify-center">
-                                                        <Video className="w-5 h-5 text-white" />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <img src={mediaPreview} className="w-full h-full object-cover" alt="Preview" />
-                                                {mediaFiles.length > 1 && (
-                                                    <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] font-bold px-2 py-1 rounded-full">
-                                                        1/{mediaFiles.length}
-                                                    </div>
-                                                )}
-                                            </>
-                                        )
-                                    ) : (
-                                        <ImageIcon className="w-12 h-12 text-gray-300" />
-                                    )}
-                                </div>
-
-                                <div className="p-3">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <div className="flex gap-3">
-                                            <Heart className="w-5 h-5" />
-                                            <MessageCircle className="w-5 h-5" />
-                                            <Send className="w-5 h-5" />
+                                {/* Empty state */}
+                                {aiState === 'idle' && !aiData && (
+                                    <div className="flex-1 flex flex-col items-center justify-center text-center py-8">
+                                        <div className="w-16 h-16 rounded-2xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center mb-4">
+                                            <Sparkles className="w-7 h-7 text-gray-300" />
                                         </div>
-                                        <Bookmark className="w-5 h-5" />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="text-xs font-bold">1,248 likes</p>
-                                        <p className="text-xs leading-relaxed">
-                                            <span className="font-bold mr-1">{selectedAccount?.username || 'brand_official'}</span>
-                                            <span className="text-gray-600 whitespace-pre-wrap">
-                                                {previewCaption || 'Your caption will appear here...'}
-                                            </span>
+                                        <p className="text-sm font-bold text-gray-700">AI提案の準備ができています</p>
+                                        <p className="text-xs text-gray-400 mt-1.5 max-w-[220px] leading-relaxed">
+                                            ← まず左側から画像をアップロードしてください。自動でキャプションが生成されます。
                                         </p>
-                                        {scheduledFor && activeTab === 'schedule' && (
-                                            <p className="text-[10px] text-purple-500 font-semibold flex items-center gap-1">
-                                                <Clock className="w-3 h-3" />
-                                                Scheduled for {new Date(scheduledFor).toLocaleString()}
-                                            </p>
-                                        )}
-                                        {!scheduledFor && <p className="text-[10px] text-gray-400 uppercase mt-2">Just now</p>}
                                     </div>
+                                )}
+
+                                {/* AI Results */}
+                                {aiData && (
+                                    <div className="space-y-4 flex-1 flex flex-col">
+                                        {/* Caption editor */}
+                                        <div className="space-y-1.5">
+                                            <div className="flex items-center justify-between">
+                                                <label className="text-xs font-bold text-gray-700">キャプション</label>
+                                                {!isEdited ? (
+                                                    <span className="text-[10px] text-violet-600 font-semibold flex items-center gap-0.5">
+                                                        <Sparkles className="w-2.5 h-2.5" /> AI生成
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-[10px] text-gray-400 font-medium">編集済み</span>
+                                                )}
+                                            </div>
+                                            <textarea
+                                                value={aiData.caption}
+                                                onChange={e => handleCaptionEdit(e.target.value)}
+                                                className="w-full min-h-[110px] text-sm text-gray-800 bg-gray-50 border border-gray-200 p-3.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 transition-all resize-y leading-relaxed"
+                                            />
+                                        </div>
+
+                                        {/* Hashtags */}
+                                        <div className="space-y-1.5">
+                                            <label className="text-xs font-bold text-gray-700">ハッシュタグ</label>
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {aiData.hashtags.map((tag, i) => (
+                                                    <span key={i} className="px-2.5 py-1 bg-violet-50 text-violet-700 text-xs font-semibold rounded-full border border-violet-100">
+                                                        {tag}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Insights card */}
+                                        <div className="mt-auto bg-gradient-to-br from-gray-50 to-gray-50/50 border border-gray-200 rounded-xl p-4">
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <div className="w-5 h-5 rounded-md bg-violet-100 flex items-center justify-center">
+                                                    <Activity className="w-3 h-3 text-violet-600" />
+                                                </div>
+                                                <p className="text-xs font-bold text-gray-800">AIインサイト</p>
+                                                <p className="text-[10px] text-gray-500">類似データに基づく予測</p>
+                                            </div>
+                                            <div className="grid grid-cols-3 gap-3">
+                                                {[
+                                                    { emoji: '⏰', label: '最適時間', value: aiData.postTime },
+                                                    { emoji: '❤️', label: 'いいね予測', value: aiData.estimatedLikes },
+                                                    { emoji: '📈', label: 'リーチ', value: aiData.estimatedReach },
+                                                ].map(item => (
+                                                    <div key={item.label} className="bg-white rounded-lg p-2.5 border border-gray-100 text-center">
+                                                        <p className="text-base mb-0.5">{item.emoji}</p>
+                                                        <p className="text-[10px] text-gray-500 font-medium">{item.label}</p>
+                                                        <p className="text-xs font-bold text-gray-900 mt-0.5">{item.value}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ── Step 3: Action Bar ── */}
+                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+                        <div className="flex items-center gap-2.5 mb-4">
+                            <div className={cn(
+                                'w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0',
+                                mediaFiles.length > 0 && aiState === 'ready'
+                                    ? 'bg-violet-600 text-white'
+                                    : 'bg-gray-200 text-gray-500'
+                            )}>3</div>
+                            <div>
+                                <p className="text-sm font-bold text-gray-900">投稿する</p>
+                                <p className="text-xs text-gray-500">今すぐ公開するか、日時を指定して予約できます</p>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            {/* Primary CTA */}
+                            <button
+                                onClick={() => {
+                                    const merged = flushAiToCaption()
+                                    handlePublishNow(merged)
+                                }}
+                                disabled={isWorking || accounts.length === 0 || mediaFiles.length === 0}
+                                className="flex-1 py-3.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-violet-500/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                            >
+                                {isWorking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                                今すぐ投稿する
+                            </button>
+
+                            {/* Secondary CTA */}
+                            <button
+                                onClick={() => {
+                                    flushAiToCaption()
+                                    setActiveTab('schedule')
+                                }}
+                                disabled={isWorking || accounts.length === 0 || mediaFiles.length === 0}
+                                className="flex-1 py-3.5 bg-white border-2 border-gray-200 text-gray-700 hover:border-violet-300 hover:text-violet-700 hover:bg-violet-50 rounded-xl text-sm font-bold active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <Calendar className="w-4 h-4" />
+                                予約投稿に進む
+                            </button>
+                        </div>
+
+                        {accounts.length === 0 && (
+                            <p className="text-xs text-amber-600 mt-3 flex items-center gap-1.5">
+                                <AlertCircle className="w-3.5 h-3.5" />
+                                投稿するにはInstagramアカウントを<a href="/account" className="font-bold underline">連携</a>してください
+                            </p>
+                        )}
+                    </div>
+
+                    {/* ── Caption Templates & Hashtag helpers ── */}
+                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-5">
+                        <div>
+                            <p className="text-sm font-bold text-gray-900 mb-1">書き出しテンプレート</p>
+                            <p className="text-xs text-gray-500 mb-3">クリックしてキャプションに追加</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                {leadingSentences.map(s => (
+                                    <button
+                                        key={s.label}
+                                        onClick={() => appendToCaption(s.text)}
+                                        className="text-left p-3.5 rounded-xl border border-gray-100 bg-gray-50 hover:border-violet-200 hover:bg-violet-50/50 transition-all group"
+                                    >
+                                        <p className="text-[11px] font-bold text-violet-600 uppercase tracking-wide mb-1">{s.label}</p>
+                                        <p className="text-sm text-gray-600 line-clamp-1 group-hover:text-gray-900 transition-colors">{s.text}</p>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="pt-4 border-t border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label className="block text-sm font-bold text-gray-900 mb-2">ハッシュタグセット</label>
+                                <div className="flex gap-2">
+                                    <div className="relative flex-1">
+                                        <select
+                                            value={hashtags}
+                                            onChange={e => setHashtags(e.target.value)}
+                                            className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-xl py-2.5 pl-4 pr-10 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 transition-all cursor-pointer"
+                                        >
+                                            <option value="">カテゴリを選択</option>
+                                            {Object.keys(hashtagSets).map(k => <option key={k}>{k}</option>)}
+                                        </select>
+                                        <Hash className="absolute right-8 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                                    </div>
+                                    <button onClick={applyHashtags} disabled={!hashtags} className="px-4 py-2.5 bg-violet-600 text-white rounded-xl text-sm font-bold hover:bg-violet-700 disabled:opacity-40 transition-all">追加</button>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-900 mb-2">締めの一言 (CTA)</label>
+                                <div className="flex gap-2">
+                                    <div className="relative flex-1">
+                                        <select
+                                            value={ctaStyle}
+                                            onChange={e => setCtaStyle(e.target.value)}
+                                            className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-xl py-2.5 pl-4 pr-10 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 transition-all cursor-pointer"
+                                        >
+                                            {Object.keys(ctaEndings).map(k => <option key={k}>{k}</option>)}
+                                        </select>
+                                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                                    </div>
+                                    <button onClick={applyCTA} className="px-4 py-2.5 bg-gray-800 text-white rounded-xl text-sm font-bold hover:bg-gray-900 transition-all">追加</button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <p className="text-sm font-medium text-gray-400 mt-4 flex items-center gap-2">
-                        <Smartphone className="w-4 h-4" />
-                        モバイルプレビュー
-                    </p>
                 </div>
-            </div>
+            )}
+
+            {/* ════════════════════════════════════════
+                PUBLISH TAB
+            ════════════════════════════════════════ */}
+            {activeTab === 'publish' && (
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/60">
+                        <p className="text-sm font-bold text-gray-900">アップロード & 今すぐ公開</p>
+                        <p className="text-xs text-gray-500 mt-0.5">メディアとキャプションを設定して即時公開できます</p>
+                    </div>
+                    <div className="p-6 space-y-6">
+                        <div>
+                            <SectionLabel label="メディア" description="画像（複数）または動画を選択" />
+                            <MediaUploadStrip
+                                mediaFiles={mediaFiles}
+                                setMediaFiles={setMediaFiles}
+                                setMediaFile={setMediaFile}
+                                setMediaPreview={setMediaPreview}
+                                setIsVideo={setIsVideo}
+                                isVideo={isVideo}
+                            />
+                        </div>
+
+                        <div className="pt-4 border-t border-gray-100">
+                            <CaptionField value={caption} onChange={setCaption} />
+                        </div>
+
+                        <div className="pt-4 border-t border-gray-100 flex flex-wrap gap-3">
+                            <button
+                                onClick={() => handlePublishNow()}
+                                disabled={isWorking || accounts.length === 0 || mediaFiles.length === 0}
+                                className="flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-violet-500/25 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                            >
+                                {isWorking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                                今すぐ公開する
+                            </button>
+                            <button
+                                onClick={handleSaveDraft}
+                                disabled={isWorking || accounts.length === 0}
+                                className="flex items-center gap-2 px-5 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-50"
+                            >
+                                {isWorking && <Loader2 className="w-4 h-4 animate-spin" />}
+                                下書き保存
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ════════════════════════════════════════
+                SCHEDULE TAB
+            ════════════════════════════════════════ */}
+            {activeTab === 'schedule' && (
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/60">
+                        <p className="text-sm font-bold text-gray-900">予約投稿</p>
+                        <p className="text-xs text-gray-500 mt-0.5">投稿日時を指定して自動公開できます</p>
+                    </div>
+                    <div className="p-6 space-y-6">
+                        <div>
+                            <SectionLabel label="メディア" description="画像（複数）または動画を選択" />
+                            <MediaUploadStrip
+                                mediaFiles={mediaFiles}
+                                setMediaFiles={setMediaFiles}
+                                setMediaFile={setMediaFile}
+                                setMediaPreview={setMediaPreview}
+                                setIsVideo={setIsVideo}
+                                isVideo={isVideo}
+                            />
+                        </div>
+
+                        <div className="pt-4 border-t border-gray-100">
+                            <CaptionField value={caption} onChange={setCaption} />
+                        </div>
+
+                        <div className="pt-4 border-t border-gray-100 space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-900 mb-2">公開日時</label>
+                                    <div className="relative group">
+                                        <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-violet-500 transition-colors pointer-events-none" />
+                                        <input
+                                            type="datetime-local"
+                                            value={scheduledFor}
+                                            onChange={e => setScheduledFor(e.target.value)}
+                                            min={new Date(Date.now() - new Date().getTimezoneOffset() * 60000 + 60000).toISOString().slice(0, 16)}
+                                            className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 pl-10 pr-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 transition-all"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-900 mb-2">ベスト投稿タイム</label>
+                                    <div className="flex items-center gap-2 px-4 py-2.5 bg-violet-50 border border-violet-100 rounded-xl h-[42px]">
+                                        <Activity className="w-4 h-4 text-violet-500 shrink-0" />
+                                        <p className="text-xs font-semibold text-violet-700">火〜金：9〜11時、13〜15時、19〜21時</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-wrap gap-3">
+                                <button
+                                    onClick={() => handleSchedule()}
+                                    disabled={isWorking || !scheduledFor || accounts.length === 0 || mediaFiles.length === 0}
+                                    className="flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-violet-500/25 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                                >
+                                    {isWorking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Clock className="w-4 h-4" />}
+                                    予約を確定する
+                                </button>
+                                <button
+                                    onClick={handleSaveDraft}
+                                    disabled={isWorking || accounts.length === 0}
+                                    className="flex items-center gap-2 px-5 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-50"
+                                >
+                                    下書き保存
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
