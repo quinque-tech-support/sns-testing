@@ -91,7 +91,7 @@ export function Sidebar({ user }: SidebarProps) {
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white font-bold shadow-sm overflow-hidden group-hover:shadow-md transition-shadow">
                             {user?.image ? (
-                                <img src={user.image} alt="" className="w-full h-full object-cover" />
+                                <img src={user.image} alt="User avatar" className="w-full h-full object-cover" />
                             ) : (
                                 initials
                             )}
