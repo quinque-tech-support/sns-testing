@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import {
     Bell,
     ChevronDown,
@@ -10,8 +11,11 @@ import {
     Menu,
     Plus,
     X,
-    Filter
+    Filter,
+    Send,
+    Calendar
 } from 'lucide-react'
+import { useAccount } from './AccountContext'
 
 interface TopbarProps {
     user?: {
@@ -19,12 +23,16 @@ interface TopbarProps {
         email?: string | null
         image?: string | null
     }
-    accounts?: any[]
 }
 
-export function Topbar({ user, accounts = [] }: TopbarProps) {
-    const [selectedAccount, setSelectedAccount] = useState(accounts[0]?.username || '@no_account')
+export function Topbar({ user }: TopbarProps) {
+    const { accounts, selectedAccountId, setSelectedAccountId, activeAccount } = useAccount()
     const [isNotificationOpen, setIsNotificationOpen] = useState(false)
+    const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false)
+    
+    const pathname = usePathname()
+    const isCreatePage = pathname === '/create'
+
     const initials = user?.name
         ? user.name.split(' ').map(n => n[0]).join('').toUpperCase()
         : user?.email?.substring(0, 2).toUpperCase() || 'JD'
@@ -50,17 +58,52 @@ export function Topbar({ user, accounts = [] }: TopbarProps) {
             {/* Right: Actions */}
             <div className="flex items-center gap-3 lg:gap-6">
                 {/* Account Selector */}
-                <div className="relative">
-                    <button className="flex items-center gap-2.5 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-all duration-200 ease-out active:scale-95 group">
-                        <div className="w-6 h-6 rounded-full instagram-gradient flex items-center justify-center p-0.5 shadow-sm">
-                            <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
-                                <Instagram className="w-3.5 h-3.5 instagram-text-gradient" />
+                {accounts.length > 0 && (
+                    <div className="relative">
+                        <button 
+                            onClick={() => setIsAccountMenuOpen(!isAccountMenuOpen)}
+                            className="flex items-center gap-2.5 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-all duration-200 ease-out active:scale-95 group"
+                        >
+                            <div className="w-6 h-6 rounded-full instagram-gradient flex items-center justify-center p-0.5 shadow-sm">
+                                <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
+                                    <Instagram className="w-3.5 h-3.5 instagram-text-gradient" />
+                                </div>
                             </div>
-                        </div>
-                        <span className="text-sm font-semibold text-gray-800 hidden sm:inline">{selectedAccount}</span>
-                        <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" />
-                    </button>
-                </div>
+                            <span className="text-sm font-semibold text-gray-800 hidden sm:inline">
+                                @{activeAccount?.username || activeAccount?.pageId || 'no_account'}
+                            </span>
+                            <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                        </button>
+                        
+                        {isAccountMenuOpen && (
+                            <>
+                                <div className="fixed inset-0 z-10" onClick={() => setIsAccountMenuOpen(false)}></div>
+                                <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-lg z-20 py-2 top-full">
+                                    <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                                        アカウント切り替え
+                                    </div>
+                                    <div className="max-h-60 overflow-y-auto">
+                                        {accounts.map(acc => (
+                                            <button
+                                                key={acc.id}
+                                                onClick={() => {
+                                                    setSelectedAccountId(acc.id)
+                                                    setIsAccountMenuOpen(false)
+                                                }}
+                                                className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 hover:bg-gray-50 transition-colors ${selectedAccountId === acc.id ? 'bg-purple-50/50 text-purple-700 font-medium' : 'text-gray-700'}`}
+                                            >
+                                                <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200 shrink-0">
+                                                    <Instagram className="w-3.5 h-3.5 text-gray-500" />
+                                                </div>
+                                                <span className="truncate">@{acc.username || acc.pageId}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                )}
 
                 <div className="h-8 w-[1px] bg-gray-100 hidden sm:block" />
 
@@ -82,7 +125,7 @@ export function Topbar({ user, accounts = [] }: TopbarProps) {
                 {/* Profile Toggle (Mobile/Mini) */}
                 <button className="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-all duration-200 ease-out active:scale-95 sm:hidden">
                     <div className="w-7 h-7 rounded-lg bg-purple-500 text-white flex items-center justify-center text-xs font-bold">
-                        JD
+                        {initials}
                     </div>
                 </button>
             </div>
