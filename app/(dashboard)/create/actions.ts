@@ -41,6 +41,86 @@ export async function getSignedUploadUrl(fileName: string, contentType: string) 
 }
 
 /**
+ * Returns a signed upload URL scoped to a project folder:
+ * projects/{projectId}/{uuid}_{fileName}
+ * Also returns the storagePath for later deletion and the public URL.
+ */
+export async function getProjectImageUploadUrl(
+    projectId: string,
+    fileName: string,
+    contentType: string
+) {
+    const session = await auth()
+    if (!session?.user?.id) return { error: 'Not authenticated' }
+ 
+    // Verify the project belongs to this user
+    const project = await prisma.project.findUnique({
+        where: { id: projectId, userId: session.user.id },
+        select: { id: true }
+    })
+    if (!project) return { error: 'Project not found' }
+
+    try {
+        const ext = fileName.split('.').pop() || 'jpg'
+        const safeName = `${Math.random().toString(36).substring(2, 10)}_${Date.now()}.${ext}`
+        const storagePath = `projects/${projectId}/${safeName}`
+
+        const { data, error } = await supabaseAdmin
+            .storage
+            .from('media-uploads')
+            .createSignedUploadUrl(storagePath)
+
+        if (error) {
+            console.error('[getProjectImageUploadUrl Error]', error)
+            return { error: error.message }
+        }
+
+        const { data: urlData } = supabaseAdmin
+            .storage
+            .from('media-uploads')
+            .getPublicUrl(storagePath)
+
+        return {
+            signedUrl: data.signedUrl,
+            token: data.token,
+            path: data.path,
+            storagePath,
+            publicUrl: urlData.publicUrl,
+        }
+    } catch (e: any) {
+        console.error('[getProjectImageUploadUrl Exception]', e)
+        return { error: e.message }
+    }
+}
+
+/**
+ * Bulk-registers ProjectImage rows after the client has uploaded files.
+ */
+export async function registerProjectImages(
+    projectId: string,
+    images: { url: string; storagePath: string; fileName: string }[]
+) {
+    const session = await auth()
+    if (!session?.user?.id) return { error: 'Not authenticated' }
+
+    try {
+        const result = await prisma.projectImage.createMany({
+            data: images.map(img => ({
+                projectId,
+                userId: session.user.id,
+                url: img.url,
+                storagePath: img.storagePath,
+                fileName: img.fileName,
+            }))
+        })
+        return { count: result.count }
+    } catch (e: any) {
+        console.error('[registerProjectImages]', e)
+        return { error: e.message }
+    }
+}
+
+/**
  * Helper to upload a File to Supabase Storage and return its public URL.
  */
 async function uploadMediaToSupabase(file: File): Promise<string | null> {
@@ -117,6 +197,8 @@ export async function saveDraft(formData: FormData): Promise<ActionResult> {
     const connectedAccountId = formData.get('connectedAccountId') as string
     const mediaUrl = formData.get('mediaUrl') as string
     const isVideo = formData.get('isVideo') === 'true'
+    const projectId = formData.get('projectId') as string | null
+    const libraryImageId = formData.get('libraryImageId') as string | null
 
     if (!connectedAccountId) {
         return { error: 'Please select an Instagram account first.' }
@@ -132,8 +214,14 @@ export async function saveDraft(formData: FormData): Promise<ActionResult> {
                 caption: caption || '',
                 imageUrl: finalImageUrl,
                 mediaType: isVideo ? 'VIDEO' : 'IMAGE',
+                projectId: projectId || null,
             }
         })
+
+        // Consume the library image — it's now part of a post, remove from library
+        if (libraryImageId) {
+            await prisma.projectImage.delete({ where: { id: libraryImageId } }).catch(() => {})
+        }
 
         revalidatePath('/dashboard')
         revalidatePath('/workflow')
@@ -156,6 +244,8 @@ export async function publishNow(formData: FormData): Promise<ActionResult> {
     const mediaUrl = mediaUrls[0] || (formData.get('mediaUrl') as string)
     const isVideo = formData.get('isVideo') === 'true'
     const connectedAccountId = formData.get('connectedAccountId') as string
+    const projectId = formData.get('projectId') as string | null
+    const libraryImageId = formData.get('libraryImageId') as string | null
     const isCarousel = !isVideo && mediaUrls.length > 1
 
     if (!connectedAccountId) {
@@ -251,11 +341,16 @@ export async function publishNow(formData: FormData): Promise<ActionResult> {
                     imageUrl: mediaUrls[0],
                     mediaType: 'IMAGE',
                     instagramMediaId: publishData.id,
+                    projectId: projectId || null,
                 }
             })
             await prisma.schedule.create({
                 data: { postId: post.id, scheduledFor: new Date(), status: 'PUBLISHED' }
             })
+            // Consume the library image
+            if (libraryImageId) {
+                await prisma.projectImage.delete({ where: { id: libraryImageId } }).catch(() => {})
+            }
             revalidatePath('/dashboard')
             revalidatePath('/workflow')
             return { success: true, postId: post.id }
@@ -333,6 +428,7 @@ export async function publishNow(formData: FormData): Promise<ActionResult> {
                 imageUrl: mediaUrl,
                 mediaType: isVideo ? 'VIDEO' : 'IMAGE',
                 instagramMediaId: publishData.id,
+                projectId: projectId || null,
             }
         })
 
@@ -344,6 +440,11 @@ export async function publishNow(formData: FormData): Promise<ActionResult> {
                 status: 'PUBLISHED',
             }
         })
+
+        // Consume the library image
+        if (libraryImageId) {
+            await prisma.projectImage.delete({ where: { id: libraryImageId } }).catch(() => {})
+        }
 
         revalidatePath('/dashboard')
         revalidatePath('/workflow')
@@ -366,6 +467,8 @@ export async function schedulePost(formData: FormData): Promise<ActionResult> {
     const mediaUrl = mediaUrls[0] || (formData.get('mediaUrl') as string)
     const isVideo = formData.get('isVideo') === 'true'
     const connectedAccountId = formData.get('connectedAccountId') as string
+    const projectId = formData.get('projectId') as string | null
+    const libraryImageId = formData.get('libraryImageId') as string | null
     const scheduledForStr = formData.get('scheduledFor') as string
 
     if (!connectedAccountId) {
@@ -392,6 +495,7 @@ export async function schedulePost(formData: FormData): Promise<ActionResult> {
                 // Store all URLs as JSON array when carousel, otherwise just the single URL
                 imageUrl: mediaUrls.length > 1 ? JSON.stringify(mediaUrls) : mediaUrl,
                 mediaType: isVideo ? 'VIDEO' : 'IMAGE',
+                projectId: projectId || null,
             }
         })
 
@@ -402,6 +506,11 @@ export async function schedulePost(formData: FormData): Promise<ActionResult> {
                 status: 'PENDING',
             }
         })
+
+        // Consume the library image
+        if (libraryImageId) {
+            await prisma.projectImage.delete({ where: { id: libraryImageId } }).catch(() => {})
+        }
 
         revalidatePath('/dashboard')
         revalidatePath('/calendar')
