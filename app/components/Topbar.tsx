@@ -51,7 +51,7 @@ export function Topbar({ user }: TopbarProps) {
                     <Menu className="w-5 h-5" />
                 </button>
 
-                <Link href="/dashboard" className="flex items-center gap-2 group transition-transform duration-200 ease-out active:scale-[0.98] mr-2">
+                <Link href="/dashboard" className="flex items-center gap-1 group transition-transform duration-200 ease-out active:scale-[0.98] mr-2">
                     <div className="w-8 h-8 rounded-lg bg-gray-900 flex items-center justify-center shadow-sm">
                         <Instagram className="w-4 h-4 text-white" />
                     </div>
@@ -122,11 +122,7 @@ export function Topbar({ user }: TopbarProps) {
 
                 <div className="h-8 w-[1px] bg-gray-100 hidden sm:block" />
 
-                {/* Quick Action */}
-                <Link href="/create" className="hidden sm:flex items-center gap-2 px-4 py-2 instagram-gradient text-white rounded-xl text-sm font-semibold shadow-md shadow-purple-500/20 hover:shadow-lg hover:-translate-y-0.5 hover:opacity-90 transition-all duration-200 ease-out active:scale-95">
-                    <Plus className="w-4 h-4" />
-                    コンテンツ作成
-                </Link>
+
 
                 {/* Notifications */}
                 <button
