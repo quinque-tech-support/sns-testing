@@ -27,7 +27,8 @@ import {
     MessageSquare,
     Heart,
     Bookmark,
-    Settings
+    Settings,
+    Upload
 } from 'lucide-react'
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
@@ -106,7 +107,8 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
     const [isLoadingHistory, setIsLoadingHistory] = useState(false)
     const [projectImages, setProjectImages] = useState<ProjectImage[]>([])
     const [isLoadingProjectImages, setIsLoadingProjectImages] = useState(false)
-    const [mediaTab, setMediaTab] = useState<'device' | 'library' | 'history'>('device')
+    const [isLibraryExpanded, setIsLibraryExpanded] = useState(false)
+    const [showHistoryModal, setShowHistoryModal] = useState(false)
     const [libraryUploadFiles, setLibraryUploadFiles] = useState<File[]>([])
     const [isLibraryUploading, setIsLibraryUploading] = useState(false)
     const [libraryUploadProgress, setLibraryUploadProgress] = useState(0)
@@ -133,7 +135,7 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
         if (!selectedProjectId) {
             setHistory([])
             setProjectImages([])
-            setMediaTab('device')
+            setIsLibraryExpanded(false)
             return
         }
         const fetchHistory = async () => {
@@ -162,7 +164,7 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
         }
         fetchHistory()
         fetchLibrary()
-        setMediaTab('library')
+        setIsLibraryExpanded(true)
     }, [selectedProjectId])
 
     const handleSaveProject = async (e: React.FormEvent) => {
@@ -264,7 +266,7 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
             setIsLibraryUploading(false)
             setLibraryUploadProgress(0)
             setLibraryUploadFiles([])
-            setMediaTab('library')
+            setIsLibraryExpanded(true)
         }
     }
 
@@ -499,46 +501,56 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
         }
     }
 
-    const isWorking = isPending || isUploading || isGeneratingAI
+    const isPublishing = isPending || isUploading
+    const isWorking = isPublishing || isGeneratingAI
     const actAccount = accounts?.find(a => a.id === selectedAccountId)
 
     return (
         <div className="w-full max-w-full h-full flex flex-col space-y-6 pb-32 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">コンテンツ作成</h1>
-                {/* Project Selector */}
-                {!isProjectsLoading && (
-                    <div className="flex items-center gap-2">
-                        <select
-                            value={selectedProjectId}
-                            onChange={(e) => setSelectedProjectId(e.target.value)}
-                            className="bg-white border border-gray-200 text-sm rounded-xl px-4 py-2 focus:ring-2 focus:ring-black/5"
-                        >
-                            {projects.map(p => (
-                                <option key={p.id} value={p.id}>{p.name}</option>
-                            ))}
-                        </select>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setEditingProject(null); setProjName(''); setProjDesc(''); setProjKeywords('');
-                                setShowProjectModal(true)
-                            }}
-                            className="p-2 border border-gray-200 bg-white rounded-xl hover:bg-gray-50 transition-colors"
-                        >
-                            <Plus className="w-4 h-4 text-gray-600" />
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setShowManageProjectsModal(true)}
-                            className="p-2 border border-gray-200 bg-white rounded-xl hover:bg-gray-50 transition-colors"
-                            title="プロジェクトを管理"
-                        >
-                            <Settings className="w-4 h-4 text-gray-600" />
-                        </button>
-                    </div>
-                )}
+            <div className="flex flex-col sm:flex-row sm:items-start sm:items-center justify-between gap-6 pb-2">
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
+                        コンテンツ作成
+                    </h1>
+                </div>
+                {/* Controls right */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+                    {/* Project Selector */}
+                    {!isProjectsLoading && (
+                        <div className="flex items-center gap-2 bg-gray-50 p-1.5 rounded-xl border border-gray-100">
+                            <select
+                                value={selectedProjectId}
+                                onChange={(e) => setSelectedProjectId(e.target.value)}
+                                className="bg-white border border-gray-200 text-sm font-bold text-gray-700 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 min-w-[150px] shadow-sm cursor-pointer outline-none transition-all"
+                            >
+                                {projects.length === 0 && <option value="" disabled>プロジェクトがありません</option>}
+                                {projects.map(p => (
+                                    <option key={p.id} value={p.id}>{p.name}</option>
+                                ))}
+                            </select>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setEditingProject(null); setProjName(''); setProjDesc(''); setProjKeywords('');
+                                    setShowProjectModal(true)
+                                }}
+                                className="p-2.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm text-gray-600 hover:text-indigo-600"
+                                title="新規プロジェクト"
+                            >
+                                <Plus className="w-4 h-4" />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setShowManageProjectsModal(true)}
+                                className="p-2.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm text-gray-600 hover:text-indigo-600"
+                                title="プロジェクトを管理"
+                            >
+                                <Settings className="w-4 h-4" />
+                            </button>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Error / Success Banner */}
@@ -583,6 +595,13 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <label className="block text-sm font-bold text-gray-900">メディア</label>
+                            <button
+                                type="button"
+                                onClick={() => setShowHistoryModal(true)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-600 hover:text-indigo-600 font-bold rounded-xl shadow-sm hover:bg-gray-50 hover:border-indigo-200 transition-all text-xs"
+                            >
+                                <History className="w-3.5 h-3.5" />履歴から再利用
+                            </button>
                         </div>
                         
                         {/* Currently Selected Media Strip */}
@@ -621,154 +640,106 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
                             </div>
                         )}
 
-                        {/* Upload Target / Gallery */}
-                        {mediaItems.length === 0 && (
-                            <div className="space-y-4">
-                                {/* Tabs */}
+                        {/* ──────── 新デザインのメディアアップロード UI ──────── */}
+                        <div className="space-y-4">
+                                
+                                {/* 1. デバイスからアップロード（メインカード） */}
+                                {mediaItems.length === 0 && (
+                                    <div className="bg-white border border-gray-200 rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors shadow-sm relative group overflow-hidden h-40 md:h-56">
+                                        <input type="file" multiple className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" accept="image/*,video/*" onChange={e => handleFiles(Array.from(e.target.files || []))} />
+                                        <div className="w-16 h-16 bg-blue-50/50 rounded-3xl flex items-center justify-center mb-4 group-hover:scale-105 group-hover:-translate-y-1 transition-all duration-300">
+                                            <Upload className="w-6 h-6 text-blue-500" />
+                                        </div>
+                                        <h3 className="text-base font-bold text-gray-900 mb-1">デバイスからアップロード</h3>
+                                        <p className="text-sm text-gray-400 mb-4">ドラッグ＆ドロップ、またはクリックして参照</p>
+                                        <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400">
+                                            <span>JPG</span> • <span>PNG</span> • <span>WebP</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* 2. ライブラリ（アコーディオン） */}
                                 {selectedProjectId && (
-                                    <div className="flex bg-gray-100 p-1 rounded-lg">
+                                    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
                                         <button 
                                             type="button" 
-                                            onClick={() => setMediaTab('library')}
-                                            className={cn("flex-1 text-xs font-medium py-1.5 rounded-md transition-all", mediaTab === 'library' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700')}
+                                            onClick={() => setIsLibraryExpanded(!isLibraryExpanded)}
+                                            className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
                                         >
-                                            📁 ライブラリ
-                                        </button>
-                                        <button 
-                                            type="button" 
-                                            onClick={() => setMediaTab('device')}
-                                            className={cn("flex-1 text-xs font-medium py-1.5 rounded-md transition-all", mediaTab === 'device' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700')}
-                                        >
-                                            💻 デバイス
-                                        </button>
-                                        <button 
-                                            type="button" 
-                                            onClick={() => setMediaTab('history')}
-                                            className={cn("flex-1 text-xs font-medium py-1.5 rounded-md transition-all", mediaTab === 'history' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700')}
-                                        >
-                                            📜 履歴
-                                        </button>
-                                    </div>
-                                )}
-
-                                {(!selectedProjectId || mediaTab === 'device') && (
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <label className="aspect-square relative rounded-xl border border-dashed border-gray-300 hover:border-gray-400 hover:bg-gray-50 flex flex-col items-center justify-center cursor-pointer transition-all bg-white shadow-sm overflow-hidden group">
-                                            <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                                                <Plus className="w-5 h-5 text-blue-500" />
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center">
+                                                    <FolderPlus className="w-4 h-4 text-orange-500" />
+                                                </div>
+                                                <span className="font-bold text-gray-800">ライブラリ</span>
                                             </div>
-                                            <span className="text-sm font-semibold text-gray-700">デバイスから</span>
-                                            <span className="text-[10px] text-gray-400 mt-1">画像 / 動画を選択</span>
-                                            <input type="file" multiple className="hidden" accept="image/*,video/*" onChange={e => handleFiles(Array.from(e.target.files || []))} />
-                                        </label>
-                                    </div>
-                                )}
-
-                                {selectedProjectId && mediaTab === 'library' && (
-                                    <div className="space-y-4">
-                                        {/* Dropzone for Library */}
-                                        <div className="border border-dashed border-gray-300 rounded-xl p-4 bg-gray-50 flex flex-col items-center justify-center gap-2">
-                                            {isLibraryUploading ? (
-                                                <div className="flex flex-col items-center gap-2 w-full max-w-xs">
-                                                    <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
-                                                    <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2 overflow-hidden">
-                                                        <div className="bg-indigo-600 h-full rounded-full transition-all duration-300" style={{ width: `${libraryUploadProgress}%` }}></div>
-                                                    </div>
-                                                    <span className="text-xs text-gray-500">{libraryUploadProgress}%</span>
-                                                </div>
-                                            ) : (
-                                                <>
-                                                <label className="flex items-center justify-center gap-2 bg-white px-4 py-2.5 border border-gray-200 rounded-lg shadow-sm cursor-pointer hover:bg-gray-50 transition-colors">
-                                                    <FolderPlus className="w-4 h-4 text-indigo-500"/>
-                                                    <span className="text-xs font-bold text-gray-700">ライブラリに追加...</span>
-                                                    <input type="file" multiple className="hidden" accept="image/*" onChange={e => {
-                                                        setLibraryUploadFiles(Array.from(e.target.files || []));
-                                                    }} />
-                                                </label>
-                                                {libraryUploadFiles.length > 0 && (
-                                                    <div className="flex flex-col items-center gap-2 mt-2">
-                                                        <span className="text-xs font-medium text-gray-600">{libraryUploadFiles.length} files selected</span>
-                                                        <button type="button" onClick={handleLibraryUpload} className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 transition-colors text-white rounded-md text-xs font-bold shadow-sm">
-                                                            アップロード開始
-                                                        </button>
-                                                    </div>
-                                                )}
-                                                </>
-                                            )}
-                                        </div>
-
-                                        {/* Library Grid */}
-                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                            {isLoadingProjectImages ? (
-                                                <div className="col-span-2 sm:col-span-3 flex justify-center py-6">
-                                                    <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
-                                                </div>
-                                            ) : projectImages.length > 0 ? (
-                                                projectImages.map(img => (
-                                                    <div key={img.id} className="aspect-square relative rounded-lg border border-gray-200 overflow-hidden cursor-pointer group shadow-sm bg-gray-100" onClick={() => handleSelectLibraryImage(img)}>
-                                                        <img src={img.url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                            <span className="text-[10px] font-bold text-white bg-black/50 px-2 py-1 rounded-full border border-white/20">これを使う</span>
+                                            <ChevronDown className={cn("w-5 h-5 text-gray-400 transition-transform duration-300", isLibraryExpanded && "rotate-180")} />
+                                        </button>
+                                        
+                                        <div className={cn("grid transition-[grid-template-rows] duration-300 ease-in-out", isLibraryExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
+                                            <div className="overflow-hidden">
+                                                <div className="p-6 pt-0 border-t border-gray-100">
+                                                    {isLibraryUploading ? (
+                                                        <div className="flex flex-col items-center justify-center py-8 gap-2">
+                                                            <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
+                                                            <div className="w-full max-w-xs bg-gray-200 rounded-full h-1.5 mt-2 overflow-hidden">
+                                                                <div className="bg-indigo-600 h-full rounded-full transition-all duration-300" style={{ width: `${libraryUploadProgress}%` }}></div>
+                                                            </div>
+                                                            <span className="text-xs text-gray-500 font-bold">{libraryUploadProgress}%</span>
                                                         </div>
-                                                        <button type="button" onClick={(e) => handleDeleteProjectImage(img.id, e)} className="absolute top-2 right-2 w-6 h-6 bg-red-500 border border-red-400 hover:bg-red-600 rounded flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <Trash2 className="w-3 h-3" />
-                                                        </button>
-                                                    </div>
-                                                ))
-                                            ) : (
-                                                <div className="col-span-2 sm:col-span-3 flex flex-col items-center justify-center bg-gray-50 py-8 rounded-xl border border-dashed border-gray-200 text-gray-400 text-xs">
-                                                    <FolderPlus className="w-6 h-6 mb-2 opacity-50" />
-                                                    <span>ライブラリに画像がありません</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
+                                                    ) : (
+                                                        <div className="flex flex-col gap-4 mt-2">
+                                                            <div className="flex items-center justify-between">
+                                                                <span className="text-xs font-bold text-gray-400">{projectImages.length} 項目</span>
+                                                                <label className="text-xs font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-lg cursor-pointer transition-colors flex items-center gap-1.5">
+                                                                    <Plus className="w-3 h-3"/>追加
+                                                                    <input type="file" multiple className="hidden" accept="image/*" onChange={e => setLibraryUploadFiles(Array.from(e.target.files || []))} />
+                                                                </label>
+                                                            </div>
+                                                            
+                                                            {libraryUploadFiles.length > 0 && (
+                                                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-blue-50 px-4 py-3 sm:py-2 rounded-lg border border-blue-100 gap-3">
+                                                                    <span className="text-xs font-bold text-blue-700">{libraryUploadFiles.length} ファイルを選択中</span>
+                                                                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                                                                        <button type="button" onClick={() => setLibraryUploadFiles([])} className="text-xs font-bold text-gray-500 hover:text-gray-700 px-2 flex-1 sm:flex-none">キャンセル</button>
+                                                                        <button type="button" onClick={handleLibraryUpload} className="w-full sm:w-auto px-4 py-1.5 bg-blue-600 hover:bg-blue-700 transition-colors text-white rounded-md text-xs font-bold shadow-sm">アップロード</button>
+                                                                    </div>
+                                                                </div>
+                                                            )}
 
-                                {selectedProjectId && mediaTab === 'history' && (
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                        {isLoadingHistory ? (
-                                            <div className="col-span-2 sm:col-span-3 aspect-square flex items-center justify-center bg-gray-50 rounded-xl border border-gray-100">
-                                                <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
-                                            </div>
-                                        ) : history.length > 0 ? (
-                                            history.map((hist, idx) => (
-                                                <div 
-                                                    key={hist.id} 
-                                                    onClick={() => handleSelectHistorical(hist)}
-                                                    className={cn("aspect-square relative rounded-xl border border-gray-200 overflow-hidden cursor-pointer group shadow-sm bg-gray-100", idx >= 5 && "opacity-80 grayscale-[50%]")}
-                                                >
-                                                    <img src={hist.imageUrl} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                        <span className="text-[10px] font-bold text-white bg-black/50 px-2 py-1 rounded-full border border-white/20">再利用する</span>
-                                                    </div>
-                                                    {hist.mediaType === 'VIDEO' && (
-                                                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                                            <Video className="w-6 h-6 text-white drop-shadow-lg" />
+                                                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                                                                {isLoadingProjectImages ? (
+                                                                    <div className="col-span-full flex justify-center py-6">
+                                                                        <Loader2 className="w-6 h-6 animate-spin text-gray-300" />
+                                                                    </div>
+                                                                ) : projectImages.length > 0 ? (
+                                                                    projectImages.map(img => (
+                                                                        <div key={img.id} className="aspect-square relative rounded-xl border border-gray-200 overflow-hidden cursor-pointer group shadow-sm bg-gray-50" onClick={() => handleSelectLibraryImage(img)}>
+                                                                            <img src={img.url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[1px]">
+                                                                                <span className="text-[10px] font-bold text-white bg-black/60 px-2 py-1 rounded-full border border-white/20">使う</span>
+                                                                            </div>
+                                                                            <button type="button" onClick={(e) => handleDeleteProjectImage(img.id, e)} className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/50 hover:bg-red-500 rounded flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all border border-white/20">
+                                                                                <Trash2 className="w-3 h-3" />
+                                                                            </button>
+                                                                        </div>
+                                                                    ))
+                                                                ) : (
+                                                                    <div className="col-span-full py-8 flex flex-col items-center justify-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                                                                        <FolderPlus className="w-6 h-6 text-gray-300 mb-2" />
+                                                                        <span className="text-xs text-gray-400 font-medium">画像がありません</span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     )}
-                                                    {idx < 5 && (
-                                                        <div className="absolute top-2 left-2 w-6 h-6 rounded-full bg-white font-bold flex items-center justify-center text-[10px] shadow-sm border border-gray-100">
-                                                            {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx+1}`}
-                                                        </div>
-                                                    )}
-                                                    <div className="absolute bottom-2 right-2 text-[9px] bg-black/60 text-white px-1.5 py-0.5 rounded backdrop-blur border border-white/10 font-medium tracking-wide">
-                                                        {new Date(hist.createdAt).toLocaleDateString()}
-                                                    </div>
                                                 </div>
-                                            ))
-                                        ) : (
-                                            <div className="col-span-2 sm:col-span-3 flex flex-col items-center justify-center bg-gray-50 rounded-xl border border-dashed border-gray-200 text-gray-400 text-xs py-8">
-                                                <History className="w-6 h-6 mb-2 opacity-50" />
-                                                <span>履歴データなし</span>
                                             </div>
-                                        )}
+                                        </div>
                                     </div>
                                 )}
                             </div>
-                        )}
                         {!selectedProjectId && mediaItems.length === 0 && (
-                            <p className="text-xs text-gray-400 italic">※ プロジェクトを選択すると、過去の成功画像ギャラリーが表示されます。</p>
+                            <p className="text-xs text-gray-400 italic">※ プロジェクトを選択すると、ライブラリと履歴ギャラリーが有効になります。</p>
                         )}
                         {mediaItems.length > 1 && (
                             <div className="flex items-center gap-2 px-3 py-2 bg-blue-50/50 border border-blue-100 rounded-lg text-xs text-blue-700 w-fit">
@@ -799,7 +770,7 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
                                     className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all border shrink-0 bg-white border-gray-200 text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 hover:shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {isGeneratingAI ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                                    自動生成
+                                    <span>自動生成</span>
                                 </button>
                             </div>
 
@@ -822,7 +793,7 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
                                             >
                                                 <div className="flex items-start justify-between mb-3 border-b border-gray-50 pb-2">
                                                     <span className="text-sm font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-md">オプション {idx + 1}</span>
-                                                    {opt.rationale && <span className="text-xs text-gray-500 italic max-w-[60%] text-right bg-blue-50/50 px-2.5 py-1 rounded-md">{opt.rationale}</span>}
+                                                    {opt.rationale && <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md flex items-center gap-1"><Sparkles className="w-3 h-3"/> スコア: {opt.rationale.match(/Score: (\d+\/\d+)/)?.[1] || '評価済'}</span>}
                                                 </div>
                                                 <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">{opt.caption}</p>
                                                 {opt.hashtags && opt.hashtags.length > 0 && (
@@ -837,12 +808,17 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
                             )}
 
                         </div>
-                        <div className="relative flex-1 flex flex-col group">
+                        <div className="relative flex-1 flex flex-col group min-h-[250px]">
                             <textarea
                                 value={caption}
                                 onChange={e => setCaption(e.target.value)}
                                 placeholder="キャプションを入力、またはAIで自動生成..."
-                                className="w-full h-full min-h-[200px] p-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm leading-relaxed placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-gray-400 focus:bg-white transition-all resize-none shadow-sm flex-1 peer group-focus-within:bg-white group-focus-within:shadow-md"
+                                className={cn(
+                                    "w-full h-full p-4 rounded-xl text-gray-900 text-sm leading-relaxed placeholder:text-gray-400 focus:outline-none transition-all resize-none shadow-sm flex-1 peer",
+                                    caption.length > 0 
+                                        ? "bg-blue-50/30 border-2 border-indigo-400 focus:ring-4 focus:ring-indigo-500/20" 
+                                        : "bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-black/5 focus:border-gray-400 focus:bg-white min-h-[200px]"
+                                )}
                                 maxLength={2200}
                             />
                             <div className="absolute bottom-3 right-3 flex items-center gap-2">
@@ -933,8 +909,8 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
                             disabled={isWorking || !selectedAccountId || mediaItems.length === 0}
                             className="flex items-center justify-center gap-2 px-8 py-3 rounded-xl text-sm font-bold transition-all shadow-xl shadow-black/10 active:scale-95 bg-black text-white hover:bg-gray-900 border border-black disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {isWorking ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-4 h-4" />}
-                            今すぐ公開
+                            {isPublishing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-4 h-4" />}
+                            <span>今すぐ公開</span>
                         </button>
                     </div>
                 </div>
@@ -944,6 +920,88 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
             {/* ─────────────────────────────────────────────
                 Modals
             ───────────────────────────────────────────── */}
+
+            {/* History Modal */}
+            {showHistoryModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-in fade-in zoom-in-95" onClick={() => setShowHistoryModal(false)}>
+                    <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[85vh] shadow-2xl flex flex-col overflow-hidden relative" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-gray-50/50">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-center leading-none">
+                                    <History className="w-5 h-5 text-indigo-600" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <h2 className="text-lg font-bold text-gray-900 leading-tight">投稿履歴</h2>
+                                    <p className="text-xs text-gray-500 font-medium">過去の高いエンゲージメントの投稿を再利用できます</p>
+                                </div>
+                            </div>
+                            <button type="button" onClick={() => setShowHistoryModal(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"><X className="w-5 h-5"/></button>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+                            {!selectedProjectId ? (
+                                <div className="flex flex-col items-center justify-center py-20 text-center">
+                                    <FolderPlus className="w-12 h-12 text-gray-300 mb-4" />
+                                    <p className="text-gray-500 font-bold mb-1">プロジェクトが選択されていません</p>
+                                    <p className="text-gray-400 text-sm">履歴を表示するにはプロジェクトを選択してください</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                    {isLoadingHistory ? (
+                                        <div className="col-span-full py-20 flex flex-col items-center justify-center">
+                                            <Loader2 className="w-8 h-8 animate-spin text-indigo-500 mb-4" />
+                                            <p className="text-gray-500 font-medium text-sm">読み込み中...</p>
+                                        </div>
+                                    ) : history.length > 0 ? (
+                                        history.map((hist, idx) => (
+                                            <div 
+                                                key={hist.id} 
+                                                onClick={() => {
+                                                    handleSelectHistorical(hist);
+                                                    setShowHistoryModal(false);
+                                                }}
+                                                className={cn("aspect-square relative rounded-2xl border border-gray-200 overflow-hidden cursor-pointer group shadow-sm bg-white hover:border-indigo-300 hover:shadow-md transition-all", idx >= 5 && "opacity-80 grayscale-[30%]")}
+                                            >
+                                                <img src={hist.imageUrl} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+                                                    <span className="text-xs font-bold text-white bg-black/60 px-3 py-1.5 rounded-full border border-white/20">再利用する</span>
+                                                </div>
+                                                {hist.mediaType === 'VIDEO' && (
+                                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                                        <Video className="w-8 h-8 text-white drop-shadow-lg" />
+                                                    </div>
+                                                )}
+                                                {idx < 5 && (
+                                                    <div className="absolute top-2 left-2 px-2 h-6 rounded-full bg-white font-bold flex items-center justify-center text-xs shadow-sm border border-gray-100 gap-1 text-gray-700">
+                                                        {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx+1}`}
+                                                    </div>
+                                                )}
+                                                <div className="absolute bottom-2 inset-x-2">
+                                                    <div className="bg-black/70 backdrop-blur-md rounded-xl p-2 border border-white/10 flex flex-col gap-1">
+                                                        <div className="text-[10px] text-gray-300 font-medium tracking-wide">
+                                                            {new Date(hist.createdAt).toLocaleDateString()}
+                                                        </div>
+                                                        <div className="flex items-center gap-2 mb-0.5">
+                                                            <div className="flex items-center gap-1"><Heart className="w-3 h-3 text-pink-400 fill-pink-400"/><span className="text-[10px] text-white font-bold">{hist.likes}</span></div>
+                                                            <div className="flex items-center gap-1"><History className="w-3 h-3 text-blue-400"/><span className="text-[10px] text-white font-bold">{hist.reach}</span></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="col-span-full py-20 flex flex-col items-center justify-center text-center">
+                                            <History className="w-12 h-12 text-gray-300 mb-4" />
+                                            <p className="text-gray-500 font-bold mb-1">履歴データが見つかりません</p>
+                                            <p className="text-gray-400 text-sm">システムが十分なデータポイントを収集していません</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Manage Projects Modal */}
             {showManageProjectsModal && (
