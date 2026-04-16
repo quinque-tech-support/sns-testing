@@ -1,6 +1,7 @@
 import { Sidebar } from '@/app/components/Sidebar'
 import { Topbar } from '@/app/components/Topbar'
 import { AccountProvider } from '@/app/components/AccountContext'
+import { SidebarProvider } from '@/app/components/SidebarContext'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
@@ -29,22 +30,20 @@ export default async function DashboardLayout({
 
     return (
         <AccountProvider accounts={connectedAccounts}>
-            <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
-                {/* Sidebar - Desktop Only */}
-                <div className="hidden lg:block shrink-0">
-                    <Sidebar user={session.user} />
-                </div>
-
-                {/* Main Content Area */}
-                <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <SidebarProvider>
+                <div className="flex flex-col h-screen bg-gray-50 overflow-hidden font-sans">
                     <Topbar user={session.user} />
-                    <main className="flex-1 overflow-y-auto px-4 py-8 lg:px-8">
-                        <div className="max-w-7xl mx-auto space-y-8">
-                            {children}
-                        </div>
-                    </main>
+                    <div className="flex-1 flex min-h-0 overflow-hidden">
+                        <Sidebar user={session.user} />
+                        {/* Main Content Area */}
+                        <main className="flex-1 overflow-y-auto px-4 py-5 lg:px-8">
+                            <div className="max-w-7xl mx-auto space-y-5 lg:space-y-6">
+                                {children}
+                            </div>
+                        </main>
+                    </div>
                 </div>
-            </div>
+            </SidebarProvider>
         </AccountProvider>
     )
 }

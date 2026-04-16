@@ -105,7 +105,7 @@ export default async function WorkflowPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">ワークフロー</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">投稿履歴</h1>
                     <p className="text-gray-500 mt-1">
                         {totalPosts > 0
                             ? `全ステージ合計 ${totalPosts} 件の投稿`
@@ -143,7 +143,7 @@ export default async function WorkflowPage() {
                     <div className="w-14 h-14 instagram-gradient rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-purple-500/20">
                         <ListChecks className="w-7 h-7 text-white" />
                     </div>
-                    <p className="text-base font-bold text-gray-900">ワークフローが空です</p>
+                    <p className="text-base font-bold text-gray-900">投稿履歴が空です</p>
                     <p className="text-sm text-gray-400 mt-1 mb-6">最初の投稿を作成してここでトラッキングしましょう。</p>
                     <Link href="/create" className="inline-flex items-center gap-2 px-6 py-3 instagram-gradient text-white rounded-xl font-bold shadow-lg shadow-purple-500/20 hover:opacity-90 transition-all duration-200 ease-out active:scale-95 hover:shadow-xl hover:-translate-y-0.5">
                         <PlusCircle className="w-4 h-4" />
