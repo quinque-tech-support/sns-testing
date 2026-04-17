@@ -17,6 +17,8 @@ import {
     Images,
     FileImage,
     ChevronDown,
+    ChevronLeft,
+    ChevronRight,
     ArrowRight,
     Search,
     FolderPlus,
@@ -28,7 +30,8 @@ import {
     Heart,
     Bookmark,
     Settings,
-    Upload
+    Upload,
+    FileEdit
 } from 'lucide-react'
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
@@ -109,9 +112,16 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
     const [isLoadingProjectImages, setIsLoadingProjectImages] = useState(false)
     const [isLibraryExpanded, setIsLibraryExpanded] = useState(false)
     const [showHistoryModal, setShowHistoryModal] = useState(false)
-    const [libraryUploadFiles, setLibraryUploadFiles] = useState<File[]>([])
     const [isLibraryUploading, setIsLibraryUploading] = useState(false)
     const [libraryUploadProgress, setLibraryUploadProgress] = useState(0)
+
+    // Drafts State
+    const [drafts, setDrafts] = useState<HistoryItem[]>([])
+    const [isLoadingDrafts, setIsLoadingDrafts] = useState(false)
+    const [showDraftsModal, setShowDraftsModal] = useState(false)
+
+    // Preview carousel index
+    const [previewIndex, setPreviewIndex] = useState(0)
 
     useEffect(() => {
         const fetchProjects = async () => {
@@ -134,6 +144,7 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
     useEffect(() => {
         if (!selectedProjectId) {
             setHistory([])
+            setDrafts([])
             setProjectImages([])
             setIsLibraryExpanded(false)
             return
@@ -150,6 +161,18 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
                 setIsLoadingHistory(false)
             }
         }
+        const fetchDrafts = async () => {
+            setIsLoadingDrafts(true)
+            try {
+                const res = await fetch(`/api/projects/${selectedProjectId}/drafts`)
+                if (res.ok) {
+                    const data = await res.json()
+                    setDrafts(data.drafts || [])
+                }
+            } finally {
+                setIsLoadingDrafts(false)
+            }
+        }
         const fetchLibrary = async () => {
             setIsLoadingProjectImages(true)
             try {
@@ -163,8 +186,8 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
             }
         }
         fetchHistory()
+        fetchDrafts()
         fetchLibrary()
-        setIsLibraryExpanded(true)
     }, [selectedProjectId])
 
     const handleSaveProject = async (e: React.FormEvent) => {
@@ -219,16 +242,16 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
     // Library Operations
     // ─────────────────────────────────────────────
     
-    const handleLibraryUpload = async () => {
-        if (libraryUploadFiles.length === 0 || !selectedProjectId) return
+    const handleLibraryUpload = async (files: File[]) => {
+        if (files.length === 0 || !selectedProjectId) return
         setIsLibraryUploading(true)
         setLibraryUploadProgress(0)
 
         try {
             const uploadedUrls: { url: string; storagePath: string; fileName: string }[] = []
             
-            for (let i = 0; i < libraryUploadFiles.length; i++) {
-                const file = libraryUploadFiles[i]
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i]
                 const { token, path, storagePath, publicUrl, error: urlError } = await getProjectImageUploadUrl(selectedProjectId, file.name, file.type)
                 
                 if (urlError || !token || !path || !storagePath || !publicUrl) {
@@ -244,7 +267,7 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
                     uploadedUrls.push({ url: publicUrl, storagePath, fileName: file.name })
                 }
                 
-                setLibraryUploadProgress(Math.round(((i + 1) / libraryUploadFiles.length) * 100))
+                setLibraryUploadProgress(Math.round(((i + 1) / files.length) * 100))
             }
 
             if (uploadedUrls.length > 0) {
@@ -265,8 +288,16 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
         } finally {
             setIsLibraryUploading(false)
             setLibraryUploadProgress(0)
-            setLibraryUploadFiles([])
             setIsLibraryExpanded(true)
+        }
+    }
+
+    const handleSelectDraft = (draft: HistoryItem) => {
+        // Load draft image into media items
+        setMediaItems([{ type: 'url', url: draft.imageUrl, isVideo: draft.mediaType === 'VIDEO', id: Math.random().toString() }])
+        // Load draft caption into caption editor
+        if (draft.caption) {
+            setCaption(draft.caption)
         }
     }
 
@@ -447,8 +478,7 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
     }
 
     const handleGenerateCaption = async () => {
-        const itemToUse = mediaItems[0]
-        if (!itemToUse) {
+        if (mediaItems.length === 0) {
             setResult({ error: 'キャプションを生成するには、まず画像を準備してください。' })
             return
         }
@@ -457,28 +487,28 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
         setCaptionOptions([])
         setResult(null)
         try {
-            let imageBase64 = null
-            let mimeType = null
+            // Convert ALL selected images to base64 for the multi-stage pipeline
+            const images: { base64: string; mimeType: string }[] = []
 
-            // If it's a new file and it's an image, pass it to Gemini
-            if (itemToUse.type === 'file' && !itemToUse.file.type.startsWith('video/')) {
-                const reader = new FileReader()
-                const dataUrl = await new Promise<string>((resolve, reject) => {
-                    reader.onload = () => resolve(reader.result as string)
-                    reader.onerror = reject
-                    reader.readAsDataURL(itemToUse.file)
-                })
-                imageBase64 = dataUrl
-                mimeType = itemToUse.file.type
+            for (const item of mediaItems) {
+                if (item.type === 'file' && !item.file.type.startsWith('video/')) {
+                    const dataUrl = await new Promise<string>((resolve, reject) => {
+                        const reader = new FileReader()
+                        reader.onload = () => resolve(reader.result as string)
+                        reader.onerror = reject
+                        reader.readAsDataURL(item.file)
+                    })
+                    images.push({ base64: dataUrl, mimeType: item.file.type })
+                }
+                // URL-based images (library/history) can't be sent as base64
+                // The pipeline will work with whatever images we can provide
             }
 
             const res = await fetch('/api/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
-                    imageBase64, 
-                    mimeType, 
-                    aiMode: 'personal', 
+                    images,
                     customPrompt, 
                     currentCaption: caption,
                     projectId: selectedProjectId || undefined
@@ -595,13 +625,22 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <label className="block text-sm font-bold text-gray-900">メディア</label>
-                            <button
-                                type="button"
-                                onClick={() => setShowHistoryModal(true)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-600 hover:text-indigo-600 font-bold rounded-xl shadow-sm hover:bg-gray-50 hover:border-indigo-200 transition-all text-xs"
-                            >
-                                <History className="w-3.5 h-3.5" />履歴から再利用
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowDraftsModal(true)}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-600 hover:text-amber-600 font-bold rounded-xl shadow-sm hover:bg-gray-50 hover:border-amber-200 transition-all text-xs"
+                                >
+                                    <FileEdit className="w-3.5 h-3.5" />下書きから編集
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowHistoryModal(true)}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-600 hover:text-indigo-600 font-bold rounded-xl shadow-sm hover:bg-gray-50 hover:border-indigo-200 transition-all text-xs"
+                                >
+                                    <History className="w-3.5 h-3.5" />履歴から再利用
+                                </button>
+                            </div>
                         </div>
                         
                         {/* Currently Selected Media Strip */}
@@ -692,21 +731,15 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
                                                                 <span className="text-xs font-bold text-gray-400">{projectImages.length} 項目</span>
                                                                 <label className="text-xs font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-lg cursor-pointer transition-colors flex items-center gap-1.5">
                                                                     <Plus className="w-3 h-3"/>追加
-                                                                    <input type="file" multiple className="hidden" accept="image/*" onChange={e => setLibraryUploadFiles(Array.from(e.target.files || []))} />
+                                                                    <input type="file" multiple className="hidden" accept="image/*" onChange={e => {
+                                                                        const files = Array.from(e.target.files || [])
+                                                                        if (files.length > 0) handleLibraryUpload(files)
+                                                                        e.target.value = '' // reset so same file can be re-selected
+                                                                    }} />
                                                                 </label>
                                                             </div>
-                                                            
-                                                            {libraryUploadFiles.length > 0 && (
-                                                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-blue-50 px-4 py-3 sm:py-2 rounded-lg border border-blue-100 gap-3">
-                                                                    <span className="text-xs font-bold text-blue-700">{libraryUploadFiles.length} ファイルを選択中</span>
-                                                                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                                                                        <button type="button" onClick={() => setLibraryUploadFiles([])} className="text-xs font-bold text-gray-500 hover:text-gray-700 px-2 flex-1 sm:flex-none">キャンセル</button>
-                                                                        <button type="button" onClick={handleLibraryUpload} className="w-full sm:w-auto px-4 py-1.5 bg-blue-600 hover:bg-blue-700 transition-colors text-white rounded-md text-xs font-bold shadow-sm">アップロード</button>
-                                                                    </div>
-                                                                </div>
-                                                            )}
 
-                                                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                                                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-[280px] overflow-y-auto pr-1 scrollbar-thin">
                                                                 {isLoadingProjectImages ? (
                                                                     <div className="col-span-full flex justify-center py-6">
                                                                         <Loader2 className="w-6 h-6 animate-spin text-gray-300" />
@@ -778,7 +811,7 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
                             {captionOptions.length > 0 && (
                                 <div className="space-y-3 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 animate-in fade-in zoom-in-95">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-xs font-bold text-indigo-600 flex items-center gap-1"><Sparkles className="w-3 h-3"/> AIが {captionOptions.length} つのオプションを作成しました</span>
+                                        <span className="text-xs font-bold text-indigo-600 flex items-center gap-1"><Sparkles className="w-3 h-3"/> AIが最適なキャプションを生成しました</span>
                                         <button onClick={() => setCaptionOptions([])} type="button" className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4"/></button>
                                     </div>
                                     <div className="flex flex-col gap-3">
@@ -792,8 +825,11 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
                                                 className="w-full bg-white p-5 rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:border-indigo-400 hover:ring-2 hover:ring-indigo-100 transition-all group"
                                             >
                                                 <div className="flex items-start justify-between mb-3 border-b border-gray-50 pb-2">
-                                                    <span className="text-sm font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-md">オプション {idx + 1}</span>
-                                                    {opt.rationale && <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md flex items-center gap-1"><Sparkles className="w-3 h-3"/> スコア: {opt.rationale.match(/Score: (\d+\/\d+)/)?.[1] || '評価済'}</span>}
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-sm font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-md">ベストキャプション</span>
+                                                        {opt.style && <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100">{opt.style}</span>}
+                                                    </div>
+                                                    {opt.score != null && <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md flex items-center gap-1"><Sparkles className="w-3 h-3"/> スコア: {opt.score}/10</span>}
                                                 </div>
                                                 <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">{opt.caption}</p>
                                                 {opt.hashtags && opt.hashtags.length > 0 && (
@@ -1003,6 +1039,76 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
                 </div>
             )}
 
+            {/* Drafts Modal */}
+            {showDraftsModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-in fade-in zoom-in-95" onClick={() => setShowDraftsModal(false)}>
+                    <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[85vh] shadow-2xl flex flex-col overflow-hidden relative" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-gray-50/50">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-amber-50 border border-amber-100 rounded-xl flex items-center justify-center leading-none">
+                                    <FileEdit className="w-5 h-5 text-amber-600" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <h2 className="text-lg font-bold text-gray-900 leading-tight">下書き一覧</h2>
+                                    <p className="text-xs text-gray-500 font-medium">下書きを選んでキャプションと画像を編集できます</p>
+                                </div>
+                            </div>
+                            <button type="button" onClick={() => setShowDraftsModal(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"><X className="w-5 h-5"/></button>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+                            {!selectedProjectId ? (
+                                <div className="flex flex-col items-center justify-center py-20 text-center">
+                                    <FolderPlus className="w-12 h-12 text-gray-300 mb-4" />
+                                    <p className="text-gray-500 font-bold mb-1">プロジェクトが選択されていません</p>
+                                    <p className="text-gray-400 text-sm">下書きを表示するにはプロジェクトを選択してください</p>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col gap-3">
+                                    {isLoadingDrafts ? (
+                                        <div className="py-20 flex flex-col items-center justify-center">
+                                            <Loader2 className="w-8 h-8 animate-spin text-amber-500 mb-4" />
+                                            <p className="text-gray-500 font-medium text-sm">読み込み中...</p>
+                                        </div>
+                                    ) : drafts.length > 0 ? (
+                                        drafts.map((draft) => (
+                                            <div 
+                                                key={draft.id}
+                                                onClick={() => {
+                                                    handleSelectDraft(draft)
+                                                    setShowDraftsModal(false)
+                                                }}
+                                                className="flex gap-4 bg-white rounded-2xl border border-gray-200 p-4 cursor-pointer hover:border-amber-300 hover:shadow-md transition-all group"
+                                            >
+                                                <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-gray-100">
+                                                    <img src={draft.imageUrl} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                                </div>
+                                                <div className="flex-1 min-w-0 flex flex-col justify-between">
+                                                    <p className="text-sm text-gray-800 line-clamp-2 leading-relaxed">{draft.caption || '（キャプションなし）'}</p>
+                                                    <div className="flex items-center gap-3 mt-2">
+                                                        <span className="text-[10px] text-gray-400 font-medium">{new Date(draft.createdAt).toLocaleDateString()}</span>
+                                                        <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">下書き</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <span className="text-xs font-bold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-100">編集する</span>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="py-20 flex flex-col items-center justify-center text-center">
+                                            <FileEdit className="w-12 h-12 text-gray-300 mb-4" />
+                                            <p className="text-gray-500 font-bold mb-1">下書きがありません</p>
+                                            <p className="text-gray-400 text-sm">下書きボタンで保存すると、ここに表示されます</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Manage Projects Modal */}
             {showManageProjectsModal && (
                 <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
@@ -1115,17 +1221,34 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
                             <span className="text-gray-900 font-bold tracking-widest text-xs">...</span>
                         </div>
 
-                        {/* Media */}
+                        {/* Media — carousel support */}
                         <div className="w-full aspect-square bg-gray-100 relative shrink-0">
-                            {mediaItems.length > 0 && (
-                                <img 
-                                    src={mediaItems[0].type === 'file' ? URL.createObjectURL(mediaItems[0].file) : mediaItems[0].url} 
-                                    className="w-full h-full object-cover" 
-                                    alt="Preview" 
-                                />
-                            )}
+                            {mediaItems.length > 0 && (() => {
+                                const idx = Math.min(previewIndex, mediaItems.length - 1)
+                                const item = mediaItems[idx]
+                                const src = item.type === 'file' ? URL.createObjectURL(item.file) : item.url
+                                return <img src={src} className="w-full h-full object-cover" alt="Preview" />
+                            })()}
                             {mediaItems.length > 1 && (
-                                <div className="absolute top-3 right-3 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">1/{mediaItems.length}</div>
+                                <>
+                                    <div className="absolute top-3 right-3 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">{Math.min(previewIndex, mediaItems.length - 1) + 1}/{mediaItems.length}</div>
+                                    {previewIndex > 0 && (
+                                        <button type="button" onClick={(e) => { e.stopPropagation(); setPreviewIndex(i => Math.max(0, i - 1)) }} className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-lg transition-all">
+                                            <ChevronLeft className="w-4 h-4 text-gray-800" />
+                                        </button>
+                                    )}
+                                    {previewIndex < mediaItems.length - 1 && (
+                                        <button type="button" onClick={(e) => { e.stopPropagation(); setPreviewIndex(i => Math.min(mediaItems.length - 1, i + 1)) }} className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-lg transition-all">
+                                            <ChevronRight className="w-4 h-4 text-gray-800" />
+                                        </button>
+                                    )}
+                                    {/* Carousel dots */}
+                                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+                                        {mediaItems.map((_, i) => (
+                                            <button key={i} type="button" onClick={(e) => { e.stopPropagation(); setPreviewIndex(i) }} className={cn("w-1.5 h-1.5 rounded-full transition-all", i === Math.min(previewIndex, mediaItems.length - 1) ? "bg-blue-500 w-3" : "bg-white/70")} />
+                                        ))}
+                                    </div>
+                                </>
                             )}
                         </div>
 
