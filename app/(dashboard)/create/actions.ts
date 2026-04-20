@@ -195,7 +195,8 @@ export async function saveDraft(formData: FormData): Promise<ActionResult> {
 
     const caption = formData.get('caption') as string
     const connectedAccountId = formData.get('connectedAccountId') as string
-    const mediaUrl = formData.get('mediaUrl') as string
+    const mediaUrls = formData.getAll('mediaUrls[]') as string[]
+    const mediaUrl = mediaUrls[0] || (formData.get('mediaUrl') as string)
     const isVideo = formData.get('isVideo') === 'true'
     const projectId = formData.get('projectId') as string | null
     const libraryImageId = formData.get('libraryImageId') as string | null
@@ -205,7 +206,7 @@ export async function saveDraft(formData: FormData): Promise<ActionResult> {
     }
 
     try {
-        let finalImageUrl = mediaUrl || 'https://placeholder.co/1080x1080'
+        let finalImageUrl = mediaUrls.length > 1 ? JSON.stringify(mediaUrls) : (mediaUrl || 'https://placeholder.co/1080x1080')
 
         const post = await prisma.post.create({
             data: {
@@ -338,7 +339,7 @@ export async function publishNow(formData: FormData): Promise<ActionResult> {
                     userId: session.user.id,
                     connectedAccountId,
                     caption: caption || '',
-                    imageUrl: mediaUrls[0],
+                    imageUrl: mediaUrls.length > 1 ? JSON.stringify(mediaUrls) : mediaUrls[0],
                     mediaType: 'IMAGE',
                     instagramMediaId: publishData.id,
                     projectId: projectId || null,
