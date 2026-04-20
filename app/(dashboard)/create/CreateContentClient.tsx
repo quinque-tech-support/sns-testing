@@ -294,7 +294,19 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
 
     const handleSelectDraft = (draft: HistoryItem) => {
         // Load draft image into media items
-        setMediaItems([{ type: 'url', url: draft.imageUrl, isVideo: draft.mediaType === 'VIDEO', id: Math.random().toString() }])
+        let urls: string[] = []
+        try {
+            if (draft.imageUrl && draft.imageUrl.startsWith('[')) {
+                urls = JSON.parse(draft.imageUrl)
+            } else {
+                urls = [draft.imageUrl]
+            }
+        } catch {
+            urls = [draft.imageUrl]
+        }
+        
+        setMediaItems(urls.map(url => ({ type: 'url', url, isVideo: draft.mediaType === 'VIDEO', id: Math.random().toString() })))
+
         // Load draft caption into caption editor
         if (draft.caption) {
             setCaption(draft.caption)
@@ -344,13 +356,25 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
     }
 
     const handleSelectHistorical = (hist: HistoryItem) => {
+        let urls: string[] = []
+        try {
+            if (hist.imageUrl && hist.imageUrl.startsWith('[')) {
+                urls = JSON.parse(hist.imageUrl)
+            } else {
+                urls = [hist.imageUrl]
+            }
+        } catch {
+            urls = [hist.imageUrl]
+        }
+        
         const isHistVideo = hist.mediaType === 'VIDEO'
         if (isHistVideo) {
-            setMediaItems([{ type: 'url', url: hist.imageUrl, isVideo: true, id: Math.random().toString() }])
+            setMediaItems([{ type: 'url', url: urls[0], isVideo: true, id: Math.random().toString() }])
         } else {
             setMediaItems(prev => {
                 const filtered = prev.filter(item => item.type === 'file' ? !item.file.type.startsWith('video/') : !item.isVideo)
-                return [...filtered, { type: 'url', url: hist.imageUrl, isVideo: false, id: Math.random().toString() }]
+                const newItems = urls.map(url => ({ type: 'url', url, isVideo: false, id: Math.random().toString() } as MediaItem))
+                return [...filtered, ...newItems]
             })
         }
         if (hist.caption && !caption) {
@@ -895,7 +919,10 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
                                     fd.set('connectedAccountId', selectedAccountId)
                                     fd.set('isVideo', isVideo.toString())
                                     if (selectedProjectId) fd.set('projectId', selectedProjectId)
-                                    if (urls && urls.length > 0) fd.set('mediaUrl', urls[0])
+                                    if (urls && urls.length > 0) {
+                                        urls.forEach(u => fd.append('mediaUrls[]', u))
+                                        fd.set('mediaUrl', urls[0])
+                                    }
                                     const res = await saveDraft(fd)
                                     setResult(res)
                                     if (res.success) setTimeout(() => router.push('/workflow'), 1500)
@@ -998,7 +1025,19 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
                                                 }}
                                                 className={cn("aspect-square relative rounded-2xl border border-gray-200 overflow-hidden cursor-pointer group shadow-sm bg-white hover:border-indigo-300 hover:shadow-md transition-all", idx >= 5 && "opacity-80 grayscale-[30%]")}
                                             >
-                                                <img src={hist.imageUrl} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                                <img src={(() => {
+                                                    try {
+                                                        if (hist.imageUrl && hist.imageUrl.startsWith('[')) {
+                                                            return JSON.parse(hist.imageUrl)[0]
+                                                        }
+                                                    } catch {}
+                                                    return hist.imageUrl
+                                                })()} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                                {hist.imageUrl && hist.imageUrl.startsWith('[') && (
+                                                    <div className="absolute top-2 right-2 bg-black/60 rounded px-1.5 py-0.5 flex items-center gap-1">
+                                                        <Images className="w-3 h-3 text-white" />
+                                                    </div>
+                                                )}
                                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
                                                     <span className="text-xs font-bold text-white bg-black/60 px-3 py-1.5 rounded-full border border-white/20">再利用する</span>
                                                 </div>
@@ -1080,8 +1119,20 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
                                                 }}
                                                 className="flex gap-4 bg-white rounded-2xl border border-gray-200 p-4 cursor-pointer hover:border-amber-300 hover:shadow-md transition-all group"
                                             >
-                                                <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-gray-100">
-                                                    <img src={draft.imageUrl} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                                <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-gray-100 relative">
+                                                    <img src={(() => {
+                                                        try {
+                                                            if (draft.imageUrl && draft.imageUrl.startsWith('[')) {
+                                                                return JSON.parse(draft.imageUrl)[0]
+                                                            }
+                                                        } catch {}
+                                                        return draft.imageUrl
+                                                    })()} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                                    {draft.imageUrl && draft.imageUrl.startsWith('[') && (
+                                                        <div className="absolute bottom-1 right-1 bg-black/60 rounded-md px-1.5 py-0.5">
+                                                            <Images className="w-3 h-3 text-white" />
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <div className="flex-1 min-w-0 flex flex-col justify-between">
                                                     <p className="text-sm text-gray-800 line-clamp-2 leading-relaxed">{draft.caption || '（キャプションなし）'}</p>

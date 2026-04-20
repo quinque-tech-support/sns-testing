@@ -64,7 +64,12 @@ export default async function WorkflowPage() {
     })
 
     // Automatically fetch real-time likes & views for published posts
-    const publishedPostsToSync = posts.filter(p => getPostStatus(p as Post) === 'PUBLISHED' && p.instagramMediaId && p.connectedAccount?.pageAccessToken)
+    const publishedPostsToSync = posts.filter(p => 
+        getPostStatus(p as Post) === 'PUBLISHED' && 
+        p.instagramMediaId && 
+        !p.instagramMediaId.startsWith('test_') && 
+        p.connectedAccount?.pageAccessToken
+    )
     if (publishedPostsToSync.length > 0) {
         await Promise.all(publishedPostsToSync.map(async (p) => {
             try {
