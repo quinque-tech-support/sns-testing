@@ -12,13 +12,15 @@ import {
     Settings,
     LogOut,
     ChevronRight,
-    X
+    X,
+    FolderKanban
 } from 'lucide-react'
 import { signOut } from 'next-auth/react'
 
 const navigation = [
     { name: 'ダッシュボード', href: '/dashboard', icon: LayoutDashboard },
     { name: 'コンテンツ作成', href: '/create', icon: PlusCircle },
+    { name: 'プロジェクト', href: '/projects', icon: FolderKanban },
     { name: 'カレンダー', href: '/calendar', icon: Calendar },
     { name: 'アナリティクス', href: '/analytics', icon: BarChart3 },
     { name: '投稿履歴', href: '/workflow', icon: ListChecks },

@@ -1,4 +1,6 @@
-import { auth } from '@/auth'
+import { apiError } from '@/lib/api.utils'
+import { requireAuth } from '@/lib/auth.utils'
+import { toErrorMessage } from '@/lib/api.utils'
 import { prisma } from '@/lib/prisma'
 import { supabaseAdmin } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
@@ -11,15 +13,14 @@ type RouteProps = { params: Promise<{ id: string; imageId: string }> }
 export async function DELETE(_req: Request, { params }: RouteProps) {
     try {
         const { id: projectId, imageId } = await params
-        const session = await auth()
-        if (!session?.user?.id) return new NextResponse('Unauthorized', { status: 401 })
+        const userId = await requireAuth()
 
         // Find the image and verify ownership atomically
         const image = await prisma.projectImage.findUnique({
             where: { id: imageId },
         })
-
-        if (!image || image.userId !== session.user.id || image.projectId !== projectId) {
+        
+        if (!image || image.userId !== userId || image.projectId !== projectId) {
             return new NextResponse('Not Found', { status: 404 })
         }
 
@@ -37,7 +38,8 @@ export async function DELETE(_req: Request, { params }: RouteProps) {
         await prisma.projectImage.delete({ where: { id: imageId } })
 
         return new NextResponse(null, { status: 204 })
-    } catch (error) {
+    } catch (error: any) {
+        if (error?.isAuthError) return apiError("Unauthorized", 401)
         console.error('[DELETE /api/projects/[id]/images/[imageId]]', error)
         return new NextResponse('Internal Error', { status: 500 })
     }

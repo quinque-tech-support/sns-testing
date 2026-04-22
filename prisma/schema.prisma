@@ -17,6 +17,7 @@ model User {
   posts             Post[]
   projects          Project[]
   projectImages     ProjectImage[]
+  aiUsageOption     String             @default("Normal AI Use")
 }
 
 model ConnectedAccount {
@@ -68,6 +69,7 @@ model Project {
   user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   posts       Post[]
   images      ProjectImage[]
+  defaultHashtags String[]
 }
 
 model ProjectImage {
