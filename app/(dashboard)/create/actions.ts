@@ -1,175 +1,52 @@
 'use server'
 
-import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { supabaseAdmin } from '@/lib/supabase'
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
+import { serializeImageUrls } from './types'
+import { requireAuth } from '@/lib/auth.utils'
+import { ActionResult } from '@/lib/types'
 
-export type ActionResult = {
-    success?: boolean
-    error?: string
-    postId?: string
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const MAX_FILE_SIZE = 500 * 1024 * 1024 // 500 MB
+const IG_GRAPH_BASE = 'https://graph.facebook.com/v19.0'
+const CONTAINER_POLL_INTERVAL_MS = 5_000
+const CONTAINER_MAX_ATTEMPTS_IMAGE = 12   // ~60 s
+const CONTAINER_MAX_ATTEMPTS_VIDEO = 60   // ~5 min
+const PUBLISH_MAX_RETRIES = 3
+const IG_SUBCODE_MEDIA_NOT_READY = 2207027
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+/** Safely delete a library image without throwing on miss. */
+async function consumeLibraryImage(libraryImageId: string | null): Promise<void> {
+    if (!libraryImageId) return
+    await prisma.projectImage.delete({ where: { id: libraryImageId } }).catch(() => {})
 }
 
-const MAX_FILE_SIZE = 500 * 1024 * 1024 // 500MB
-
-export async function getSignedUploadUrl(fileName: string, contentType: string) {
-    const session = await auth()
-    if (!session?.user?.id) return { error: 'Not authenticated' }
-
-    try {
-        const { data, error } = await supabaseAdmin
-            .storage
-            .from('media-uploads')
-            .createSignedUploadUrl(fileName)
-
-        if (error) {
-            console.error('[getSignedUploadUrl Error]', error)
-            return { error: error.message }
-        }
-
-        return { 
-            signedUrl: data.signedUrl, 
-            token: data.token, 
-            path: data.path 
-        }
-    } catch (e: any) {
-        console.error('[getSignedUploadUrl Exception]', e)
-        return { error: e.message }
-    }
+function sleep(ms: number) {
+    return new Promise<void>(resolve => setTimeout(resolve, ms))
 }
 
 /**
- * Returns a signed upload URL scoped to a project folder:
- * projects/{projectId}/{uuid}_{fileName}
- * Also returns the storagePath for later deletion and the public URL.
+ * Poll the IG container status until FINISHED or timeout.
+ * @returns `true` when the container is ready, `false` on error or timeout.
  */
-export async function getProjectImageUploadUrl(
-    projectId: string,
-    fileName: string,
-    contentType: string
-) {
-    const session = await auth()
-    if (!session?.user?.id) return { error: 'Not authenticated' }
- 
-    // Verify the project belongs to this user
-    const project = await prisma.project.findUnique({
-        where: { id: projectId, userId: session.user.id },
-        select: { id: true }
-    })
-    if (!project) return { error: 'Project not found' }
-
-    try {
-        const ext = fileName.split('.').pop() || 'jpg'
-        const safeName = `${Math.random().toString(36).substring(2, 10)}_${Date.now()}.${ext}`
-        const storagePath = `projects/${projectId}/${safeName}`
-
-        const { data, error } = await supabaseAdmin
-            .storage
-            .from('media-uploads')
-            .createSignedUploadUrl(storagePath)
-
-        if (error) {
-            console.error('[getProjectImageUploadUrl Error]', error)
-            return { error: error.message }
-        }
-
-        const { data: urlData } = supabaseAdmin
-            .storage
-            .from('media-uploads')
-            .getPublicUrl(storagePath)
-
-        return {
-            signedUrl: data.signedUrl,
-            token: data.token,
-            path: data.path,
-            storagePath,
-            publicUrl: urlData.publicUrl,
-        }
-    } catch (e: any) {
-        console.error('[getProjectImageUploadUrl Exception]', e)
-        return { error: e.message }
-    }
-}
-
-/**
- * Bulk-registers ProjectImage rows after the client has uploaded files.
- */
-export async function registerProjectImages(
-    projectId: string,
-    images: { url: string; storagePath: string; fileName: string }[]
-) {
-    const session = await auth()
-    if (!session?.user?.id) return { error: 'Not authenticated' }
-
-    try {
-        const result = await prisma.projectImage.createMany({
-            data: images.map(img => ({
-                projectId,
-                userId: session.user.id,
-                url: img.url,
-                storagePath: img.storagePath,
-                fileName: img.fileName,
-            }))
-        })
-        return { count: result.count }
-    } catch (e: any) {
-        console.error('[registerProjectImages]', e)
-        return { error: e.message }
-    }
-}
-
-/**
- * Helper to upload a File to Supabase Storage and return its public URL.
- */
-async function uploadMediaToSupabase(file: File): Promise<string | null> {
-    try {
-        if (file.size > MAX_FILE_SIZE) {
-            throw new Error('File exceeds the 500MB limit.')
-        }
-
-        const fileExt = file.name.split('.').pop()
-        const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`
-
-        // Use the File's ReadableStream directly to avoid loading the entire file into RAM.
-       
-        const { error } = await supabaseAdmin
-            .storage
-            .from('media-uploads')
-            .upload(fileName, file, {
-                contentType: file.type,
-                duplex: 'half',
-                upsert: false,
-            } as any)
-
-        if (error) {
-            console.error('[Supabase Upload Error]', error)
-            return null
-        }
-
-        const { data } = supabaseAdmin
-            .storage
-            .from('media-uploads')
-            .getPublicUrl(fileName)
-
-        return data.publicUrl
-    } catch (e) {
-        console.error('[Upload helper exception]', e)
-        return null
-    }
-}
-
-
-async function waitForContainer(containerId: string, accessToken: string, isVideo = false): Promise<boolean> {
-    const pollInterval = 5000
-    const maxAttempts = isVideo ? 60 : 12 // 60×5s=5min for video, 12×5s=60s for image
+async function waitForContainer(
+    containerId: string,
+    accessToken: string,
+    isVideo = false
+): Promise<boolean> {
+    const maxAttempts = isVideo
+        ? CONTAINER_MAX_ATTEMPTS_VIDEO
+        : CONTAINER_MAX_ATTEMPTS_IMAGE
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        await new Promise(resolve => setTimeout(resolve, pollInterval))
+        await sleep(CONTAINER_POLL_INTERVAL_MS)
 
         const res = await fetch(
-            `https://graph.facebook.com/v19.0/${containerId}?fields=status_code&access_token=${accessToken}`
+            `${IG_GRAPH_BASE}/${containerId}?fields=status_code&access_token=${accessToken}`
         )
         const data = await res.json()
 
@@ -182,342 +59,354 @@ async function waitForContainer(containerId: string, accessToken: string, isVide
         }
     }
 
-    console.warn(`[Container Poll] Timed out waiting for container ${containerId}`)
+    console.warn(`[Container Poll] Timed out for container ${containerId}`)
     return false
 }
 
-/**
- * Save a post as a Draft without publishing or scheduling.
- */
-export async function saveDraft(formData: FormData): Promise<ActionResult> {
-    const session = await auth()
-    if (!session?.user?.id) return { error: 'Not authenticated' }
-
-    const caption = formData.get('caption') as string
+/** Extract FormData fields used by all three publishing actions. */
+function extractPublishFields(formData: FormData) {
+    const caption = (formData.get('caption') as string) || ''
     const connectedAccountId = formData.get('connectedAccountId') as string
     const mediaUrls = formData.getAll('mediaUrls[]') as string[]
-    const mediaUrl = mediaUrls[0] || (formData.get('mediaUrl') as string)
+    const mediaUrl = mediaUrls[0] ?? (formData.get('mediaUrl') as string)
     const isVideo = formData.get('isVideo') === 'true'
-    const projectId = formData.get('projectId') as string | null
-    const libraryImageId = formData.get('libraryImageId') as string | null
+    const projectId = (formData.get('projectId') as string) || null
+    const libraryImageId = (formData.get('libraryImageId') as string) || null
+    return { caption, connectedAccountId, mediaUrls, mediaUrl, isVideo, projectId, libraryImageId }
+}
+
+// ─── Signed Upload URLs ───────────────────────────────────────────────────────
+
+export async function getSignedUploadUrl(fileName: string, contentType: string) {
+    try {
+        await requireAuth()
+        const { data, error } = await supabaseAdmin
+            .storage
+            .from('media-uploads')
+            .createSignedUploadUrl(fileName)
+
+        if (error) {
+            console.error('[getSignedUploadUrl]', error)
+            return { error: error.message }
+        }
+        return { signedUrl: data.signedUrl, token: data.token, path: data.path }
+    } catch (e) {
+        console.error('[getSignedUploadUrl]', e)
+        return { error: e instanceof Error ? e.message : 'Unknown error' }
+    }
+}
+
+/**
+ * Returns a signed upload URL scoped to `projects/{projectId}/{uuid}_{fileName}`.
+ * Also returns the storage path and public URL.
+ */
+export async function getProjectImageUploadUrl(projectId: string, fileName: string) {
+    try {
+        const userId = await requireAuth()
+
+        const project = await prisma.project.findUnique({
+            where: { id: projectId, userId },
+            select: { id: true },
+        })
+        if (!project) return { error: 'Project not found' }
+
+        const ext = fileName.split('.').pop() ?? 'jpg'
+        const safeName = `${Math.random().toString(36).substring(2, 10)}_${Date.now()}.${ext}`
+        const storagePath = `projects/${projectId}/${safeName}`
+
+        const { data, error } = await supabaseAdmin
+            .storage
+            .from('media-uploads')
+            .createSignedUploadUrl(storagePath)
+
+        if (error) {
+            console.error('[getProjectImageUploadUrl]', error)
+            return { error: error.message }
+        }
+
+        const { data: urlData } = supabaseAdmin.storage.from('media-uploads').getPublicUrl(storagePath)
+
+        return {
+            signedUrl: data.signedUrl,
+            token: data.token,
+            path: data.path,
+            storagePath,
+            publicUrl: urlData.publicUrl,
+        }
+    } catch (e) {
+        console.error('[getProjectImageUploadUrl]', e)
+        return { error: e instanceof Error ? e.message : 'Unknown error' }
+    }
+}
+
+/** Bulk-register ProjectImage rows after client uploads. */
+export async function registerProjectImages(
+    projectId: string,
+    images: { url: string; storagePath: string; fileName: string }[]
+) {
+    try {
+        const userId = await requireAuth()
+        const result = await prisma.projectImage.createMany({
+            data: images.map(img => ({
+                projectId,
+                userId,
+                url: img.url,
+                storagePath: img.storagePath,
+                fileName: img.fileName,
+            })),
+        })
+        return { count: result.count }
+    } catch (e) {
+        console.error('[registerProjectImages]', e)
+        return { error: e instanceof Error ? e.message : 'Unknown error' }
+    }
+}
+
+// ─── saveDraft ────────────────────────────────────────────────────────────────
+
+/** Save a post as a draft without publishing or scheduling. */
+export async function saveDraft(formData: FormData): Promise<ActionResult<{ postId: string }>> {
+    try {
+        const userId = await requireAuth()
+        const { caption, connectedAccountId, mediaUrls, mediaUrl, isVideo, projectId, libraryImageId } =
+            extractPublishFields(formData)
 
     if (!connectedAccountId) {
         return { error: 'Please select an Instagram account first.' }
     }
-
-    try {
-        let finalImageUrl = mediaUrls.length > 1 ? JSON.stringify(mediaUrls) : (mediaUrl || 'https://placeholder.co/1080x1080')
+        const imageUrl = mediaUrls.length > 1
+            ? serializeImageUrls(mediaUrls)
+            : (mediaUrl || 'https://placeholder.co/1080x1080')
 
         const post = await prisma.post.create({
             data: {
-                userId: session.user.id,
+                userId,
                 connectedAccountId,
-                caption: caption || '',
-                imageUrl: finalImageUrl,
+                caption,
+                imageUrl,
                 mediaType: isVideo ? 'VIDEO' : 'IMAGE',
-                projectId: projectId || null,
-            }
+                projectId,
+            },
         })
 
-        // Consume the library image — it's now part of a post, remove from library
-        if (libraryImageId) {
-            await prisma.projectImage.delete({ where: { id: libraryImageId } }).catch(() => {})
-        }
-
+        await consumeLibraryImage(libraryImageId)
         revalidatePath('/dashboard')
         revalidatePath('/workflow')
-        return { success: true, postId: post.id }
+        return { success: true, data: { postId: post.id } }
     } catch (err: any) {
+        if (err.isAuthError) return { error: 'Unauthorized' }
         console.error('[saveDraft]', err)
         return { error: err.message || 'Failed to save draft. Please try again.' }
     }
 }
 
-/**
- * Publish a post immediately - supports both images and videos (Reels).
- */
-export async function publishNow(formData: FormData): Promise<ActionResult> {
-    const session = await auth()
-    if (!session?.user?.id) return { error: 'Not authenticated' }
+// ─── publishNow ───────────────────────────────────────────────────────────────
 
-    const caption = formData.get('caption') as string
-    const mediaUrls = formData.getAll('mediaUrls[]') as string[]
-    const mediaUrl = mediaUrls[0] || (formData.get('mediaUrl') as string)
-    const isVideo = formData.get('isVideo') === 'true'
-    const connectedAccountId = formData.get('connectedAccountId') as string
-    const projectId = formData.get('projectId') as string | null
-    const libraryImageId = formData.get('libraryImageId') as string | null
-    const isCarousel = !isVideo && mediaUrls.length > 1
-
-    if (!connectedAccountId) {
-        return { error: 'Please select an Instagram account first.' }
-    }
-    if (!mediaUrl) {
-        return { error: 'Please upload an image or video before publishing.' }
-    }
-
+/** Publish a post immediately — supports single images, carousels, and Reels. */
+export async function publishNow(formData: FormData): Promise<ActionResult<{ postId: string }>> {
     try {
-        const account = await prisma.connectedAccount.findUnique({
-            where: { id: connectedAccountId }
-        })
+        const userId = await requireAuth()
+        const { caption, connectedAccountId, mediaUrls, mediaUrl, isVideo, projectId, libraryImageId } =
+            extractPublishFields(formData)
 
-        if (!account?.pageAccessToken || !account?.instagramBusinessId) {
-            return { error: 'Instagram account implies missing access tokens. Please reconnect.' }
+    if (!connectedAccountId) return { error: 'Please select an Instagram account first.' }
+    if (!mediaUrl) return { error: 'Please upload an image or video.' }
+        const account = await prisma.connectedAccount.findUnique({
+            where: { id: connectedAccountId, userId },
+            select: { instagramBusinessId: true, pageAccessToken: true },
+        })
+        if (!account?.instagramBusinessId || !account?.pageAccessToken) {
+            return { error: 'Instagram account not properly configured.' }
         }
 
-        // ── Carousel path (multiple images) ──────────────────────────
-        if (isCarousel) {
-            // 1a. Create one item container per image
-            const itemIds: string[] = []
-            for (const imgUrl of mediaUrls) {
-                const itemRes = await fetch(
-                    `https://graph.facebook.com/v19.0/${account.instagramBusinessId}/media`,
-                    {
+        // ── Carousel path ───────────────────────────────────────────────────
+        if (!isVideo && mediaUrls.length > 1) {
+            // 1a. Create child containers
+            const childContainerIds = await Promise.all(
+                mediaUrls.map(async url => {
+                    const res = await fetch(`${IG_GRAPH_BASE}/${account.instagramBusinessId}/media`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            image_url: imgUrl,
+                            image_url: url,
                             is_carousel_item: true,
                             access_token: account.pageAccessToken,
                         }),
-                    }
-                )
-                const itemData = await itemRes.json()
-                if (!itemRes.ok || itemData.error) {
-                    return { error: `IG Carousel Item Error: ${itemData.error?.message || 'Unknown'}` }
-                }
-                itemIds.push(itemData.id)
-            }
-
-            // 1b. Create the carousel container
-            const carouselRes = await fetch(
-                `https://graph.facebook.com/v19.0/${account.instagramBusinessId}/media`,
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        media_type: 'CAROUSEL',
-                        children: itemIds.join(','),
-                        caption: caption || '',
-                        access_token: account.pageAccessToken,
-                    }),
-                }
+                    })
+                    const data = await res.json()
+                    if (!res.ok || data.error) throw new Error(`Child container error: ${data.error?.message}`)
+                    return data.id as string
+                })
             )
+
+            // 1b. Create carousel container
+            const carouselRes = await fetch(`${IG_GRAPH_BASE}/${account.instagramBusinessId}/media`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    media_type: 'CAROUSEL',
+                    children: childContainerIds.join(','),
+                    caption,
+                    access_token: account.pageAccessToken,
+                }),
+            })
             const carouselData = await carouselRes.json()
             if (!carouselRes.ok || carouselData.error) {
-                return { error: `IG Carousel Container Error: ${carouselData.error?.message || 'Unknown'}` }
+                return { error: `IG Carousel Error: ${carouselData.error?.message ?? 'Unknown'}` }
             }
-
             const carouselCreationId = carouselData.id
-            console.log(`[publishNow] Carousel container created: ${carouselCreationId}`)
 
-            // 1c. Wait for carousel to be ready
-            const carouselReady = await waitForContainer(carouselCreationId, account.pageAccessToken, false)
+            // 1c. Wait for processing
+            const carouselReady = await waitForContainer(carouselCreationId, account.pageAccessToken)
             if (!carouselReady) {
                 return { error: 'Instagram took too long to process your carousel. Please try again.' }
             }
 
-            // 1d. Publish carousel
-            const publishRes = await fetch(
-                `https://graph.facebook.com/v19.0/${account.instagramBusinessId}/media_publish`,
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        creation_id: carouselCreationId,
-                        access_token: account.pageAccessToken,
-                    }),
-                }
-            )
+            // 1d. Publish
+            const publishRes = await fetch(`${IG_GRAPH_BASE}/${account.instagramBusinessId}/media_publish`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    creation_id: carouselCreationId,
+                    access_token: account.pageAccessToken,
+                }),
+            })
             const publishData = await publishRes.json()
             if (!publishRes.ok || publishData.error) {
-                return { error: `IG Publish Error: ${publishData.error?.message || 'Unknown'}` }
+                return { error: `IG Publish Error: ${publishData.error?.message ?? 'Unknown'}` }
             }
 
             const post = await prisma.post.create({
                 data: {
-                    userId: session.user.id,
+                    userId,
                     connectedAccountId,
-                    caption: caption || '',
-                    imageUrl: mediaUrls.length > 1 ? JSON.stringify(mediaUrls) : mediaUrls[0],
+                    caption,
+                    imageUrl: serializeImageUrls(mediaUrls),
                     mediaType: 'IMAGE',
                     instagramMediaId: publishData.id,
-                    projectId: projectId || null,
-                }
+                    projectId,
+                },
             })
             await prisma.schedule.create({
-                data: { postId: post.id, scheduledFor: new Date(), status: 'PUBLISHED' }
+                data: { postId: post.id, scheduledFor: new Date(), status: 'PUBLISHED' },
             })
-            // Consume the library image
-            if (libraryImageId) {
-                await prisma.projectImage.delete({ where: { id: libraryImageId } }).catch(() => {})
-            }
+            await consumeLibraryImage(libraryImageId)
             revalidatePath('/dashboard')
             revalidatePath('/workflow')
-            return { success: true, postId: post.id }
+            return { success: true, data: { postId: post.id } }
         }
 
-        // ── Single image / video path (existing flow) ────────────────
-        const containerUrl = `https://graph.facebook.com/v19.0/${account.instagramBusinessId}/media`
+        // ── Single image / Reels path ───────────────────────────────────────
         const containerBody = isVideo
-            ? {
-                video_url: mediaUrl,
-                media_type: 'REELS',
-                share_to_feed: true,
-                caption: caption || '',
-                access_token: account.pageAccessToken
-            }
-            : {
-                image_url: mediaUrl,
-                caption: caption || '',
-                access_token: account.pageAccessToken
-            }
+            ? { video_url: mediaUrl, media_type: 'REELS', share_to_feed: true, caption, access_token: account.pageAccessToken }
+            : { image_url: mediaUrl, caption, access_token: account.pageAccessToken }
 
-        const containerRes = await fetch(containerUrl, {
+        const containerRes = await fetch(`${IG_GRAPH_BASE}/${account.instagramBusinessId}/media`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(containerBody)
+            body: JSON.stringify(containerBody),
         })
-
         const containerData = await containerRes.json()
         if (!containerRes.ok || containerData.error) {
-            return { error: `IG Container Error: ${containerData.error?.message || 'Unknown'}` }
+            return { error: `IG Container Error: ${containerData.error?.message ?? 'Unknown'}` }
         }
 
         const creationId = containerData.id
         console.log(`[publishNow] Container created: ${creationId}, isVideo: ${isVideo}`)
 
-        // 2. Wait for Instagram to finish processing (required for BOTH images and videos)
         const ready = await waitForContainer(creationId, account.pageAccessToken, isVideo)
         if (!ready) {
-            return { error: `Instagram is taking too long to process your ${isVideo ? 'video' : 'image'}. Please try again.` }
+            return {
+                error: `Instagram is taking too long to process your ${isVideo ? 'video' : 'image'}. Please try again.`,
+            }
         }
 
-        // 3. Publish Media — retry up to 3 times with backoff for transient "not ready" errors
-        const publishUrl = `https://graph.facebook.com/v19.0/${account.instagramBusinessId}/media_publish`
-        let publishData: any = null
-        const MAX_PUBLISH_RETRIES = 3
-        for (let attempt = 1; attempt <= MAX_PUBLISH_RETRIES; attempt++) {
-            const publishRes = await fetch(publishUrl, {
+        // Publish with retry for transient "not ready" errors
+        let publishData: Record<string, any> | null = null
+        for (let attempt = 1; attempt <= PUBLISH_MAX_RETRIES; attempt++) {
+            const publishRes = await fetch(`${IG_GRAPH_BASE}/${account.instagramBusinessId}/media_publish`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    creation_id: creationId,
-                    access_token: account.pageAccessToken
-                })
+                body: JSON.stringify({ creation_id: creationId, access_token: account.pageAccessToken }),
             })
             publishData = await publishRes.json()
+            if (publishRes.ok && !publishData!.error) break
 
-            if (publishRes.ok && !publishData.error) break // success
-
-            const isTransient = publishData.error?.error_subcode === 2207027 // Media not ready
-            if (!isTransient || attempt === MAX_PUBLISH_RETRIES) {
-                console.error(`[publishNow] IG Publish Error (attempt ${attempt}):`, publishData.error)
-                return { error: `IG Publish Error: ${publishData.error?.message || 'Unknown'}` }
+            const isTransient = publishData!.error?.error_subcode === IG_SUBCODE_MEDIA_NOT_READY
+            if (!isTransient || attempt === PUBLISH_MAX_RETRIES) {
+                console.error(`[publishNow] IG Publish Error (attempt ${attempt}):`, publishData!.error)
+                return { error: `IG Publish Error: ${publishData!.error?.message ?? 'Unknown'}` }
             }
 
-            console.warn(`[publishNow] Media not ready yet, retrying in 5s (attempt ${attempt}/${MAX_PUBLISH_RETRIES})...`)
-            await new Promise(r => setTimeout(r, 5000))
+            console.warn(`[publishNow] Media not ready, retrying (attempt ${attempt}/${PUBLISH_MAX_RETRIES})…`)
+            await sleep(5_000)
         }
 
-        // 4. Save to Database
         const post = await prisma.post.create({
             data: {
-                userId: session.user.id,
+                userId,
                 connectedAccountId,
-                caption: caption || '',
+                caption,
                 imageUrl: mediaUrl,
                 mediaType: isVideo ? 'VIDEO' : 'IMAGE',
-                instagramMediaId: publishData.id,
-                projectId: projectId || null,
-            }
+                instagramMediaId: publishData!.id,
+                projectId,
+            },
         })
-
-        // Create a schedule entry immediately marked as PUBLISHED
         await prisma.schedule.create({
-            data: {
-                postId: post.id,
-                scheduledFor: new Date(),
-                status: 'PUBLISHED',
-            }
+            data: { postId: post.id, scheduledFor: new Date(), status: 'PUBLISHED' },
         })
-
-        // Consume the library image
-        if (libraryImageId) {
-            await prisma.projectImage.delete({ where: { id: libraryImageId } }).catch(() => {})
-        }
-
+        await consumeLibraryImage(libraryImageId)
         revalidatePath('/dashboard')
         revalidatePath('/workflow')
-        return { success: true, postId: post.id }
+        return { success: true, data: { postId: post.id } }
     } catch (err: any) {
+        if (err.isAuthError) return { error: 'Unauthorized' }
         console.error('[publishNow]', err)
         return { error: err.message || 'Failed to publish post. Please try again.' }
     }
 }
 
-/**
- * Schedule a post for a future date and time.
- */
-export async function schedulePost(formData: FormData): Promise<ActionResult> {
-    const session = await auth()
-    if (!session?.user?.id) return { error: 'Not authenticated' }
+// ─── schedulePost ─────────────────────────────────────────────────────────────
 
-    const caption = formData.get('caption') as string
-    const mediaUrls = formData.getAll('mediaUrls[]') as string[]
-    const mediaUrl = mediaUrls[0] || (formData.get('mediaUrl') as string)
-    const isVideo = formData.get('isVideo') === 'true'
-    const connectedAccountId = formData.get('connectedAccountId') as string
-    const projectId = formData.get('projectId') as string | null
-    const libraryImageId = formData.get('libraryImageId') as string | null
+/** Schedule a post for a future date and time. */
+export async function schedulePost(formData: FormData): Promise<ActionResult<{ postId: string }>> {
+    try {
+        const userId = await requireAuth()
+        const { caption, connectedAccountId, mediaUrls, mediaUrl, isVideo, projectId, libraryImageId } =
+            extractPublishFields(formData)
     const scheduledForStr = formData.get('scheduledFor') as string
 
-    if (!connectedAccountId) {
-        return { error: 'Please select an Instagram account first.' }
-    }
-    if (!scheduledForStr) {
-        return { error: 'Please select a date and time to schedule this post.' }
-    }
-    if (!mediaUrl) {
-        return { error: 'Please upload an image or video to schedule a post.' }
-    }
+    if (!connectedAccountId) return { error: 'Please select an Instagram account first.' }
+    if (!scheduledForStr) return { error: 'Please select a date and time to schedule this post.' }
+    if (!mediaUrl) return { error: 'Please upload an image or video to schedule a post.' }
 
     const scheduledFor = new Date(scheduledForStr)
     if (scheduledFor <= new Date()) {
         return { error: 'Scheduled time must be in the future.' }
     }
-
-    try {
         const post = await prisma.post.create({
             data: {
-                userId: session.user.id,
+                userId,
                 connectedAccountId,
-                caption: caption || '',
-                // Store all URLs as JSON array when carousel, otherwise just the single URL
-                imageUrl: mediaUrls.length > 1 ? JSON.stringify(mediaUrls) : mediaUrl,
+                caption,
+                imageUrl: serializeImageUrls(mediaUrls.length > 1 ? mediaUrls : [mediaUrl]),
                 mediaType: isVideo ? 'VIDEO' : 'IMAGE',
-                projectId: projectId || null,
-            }
+                projectId,
+            },
         })
 
         await prisma.schedule.create({
-            data: {
-                postId: post.id,
-                scheduledFor,
-                status: 'PENDING',
-            }
+            data: { postId: post.id, scheduledFor, status: 'PENDING' },
         })
 
-        // Consume the library image
-        if (libraryImageId) {
-            await prisma.projectImage.delete({ where: { id: libraryImageId } }).catch(() => {})
-        }
-
+        await consumeLibraryImage(libraryImageId)
         revalidatePath('/dashboard')
         revalidatePath('/calendar')
         revalidatePath('/workflow')
-        return { success: true, postId: post.id }
+        return { success: true, data: { postId: post.id } }
     } catch (err: any) {
+        if (err.isAuthError) return { error: 'Unauthorized' }
         console.error('[schedulePost]', err)
         return { error: err.message || 'Failed to schedule post. Please try again.' }
     }
