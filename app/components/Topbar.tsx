@@ -2,18 +2,10 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import {
-    Bell,
     ChevronDown,
-    Search,
     Instagram,
-    Menu,
-    Plus,
-    X,
-    Filter,
-    Send,
-    Calendar
+    Menu
 } from 'lucide-react'
 import { useAccount } from './AccountContext'
 import { useSidebar } from './SidebarContext'
@@ -29,11 +21,7 @@ interface TopbarProps {
 export function Topbar({ user }: TopbarProps) {
     const { accounts, selectedAccountId, setSelectedAccountId, activeAccount } = useAccount()
     const { toggleSidebar } = useSidebar()
-    const [isNotificationOpen, setIsNotificationOpen] = useState(false)
     const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false)
-    
-    const pathname = usePathname()
-    const isCreatePage = pathname === '/create'
 
     const initials = user?.name
         ? user.name.split(' ').map(n => n[0]).join('').toUpperCase()
@@ -60,14 +48,6 @@ export function Topbar({ user }: TopbarProps) {
                     </span>
                 </Link>
 
-                <div className="hidden md:flex items-center relative max-w-sm lg:max-w-md w-full group">
-                    <Search className="absolute left-3 w-4 h-4 text-gray-400 group-focus-within:text-purple-500 transition-colors" />
-                    <input
-                        type="text"
-                        placeholder="投稿・分析・テーマを検索..."
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2 pl-9 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/10 focus:border-purple-500 transition-all"
-                    />
-                </div>
             </div>
 
             {/* Right: Actions */}
@@ -121,17 +101,6 @@ export function Topbar({ user }: TopbarProps) {
                 )}
 
                 <div className="h-8 w-[1px] bg-gray-100 hidden sm:block" />
-
-
-
-                {/* Notifications */}
-                <button
-                    onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-                    className="relative p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-xl transition-all duration-200 ease-out active:scale-95"
-                >
-                    <Bell className="w-5 h-5" />
-                    <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 border-2 border-white rounded-full"></span>
-                </button>
 
                 {/* Profile Toggle (Mobile/Mini) */}
                 <button className="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-all duration-200 ease-out active:scale-95 sm:hidden">
