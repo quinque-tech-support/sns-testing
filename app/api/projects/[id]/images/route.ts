@@ -1,4 +1,6 @@
-import { auth } from '@/auth'
+import { apiError } from '@/lib/api.utils'
+import { requireAuth } from '@/lib/auth.utils'
+import { toErrorMessage } from '@/lib/api.utils'
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 
@@ -10,23 +12,23 @@ type RouteProps = { params: Promise<{ id: string }> }
 export async function GET(_req: Request, { params }: RouteProps) {
     try {
         const { id: projectId } = await params
-        const session = await auth()
-        if (!session?.user?.id) return new NextResponse('Unauthorized', { status: 401 })
+        const userId = await requireAuth()
 
         // Verify the project belongs to this user
         const project = await prisma.project.findUnique({
-            where: { id: projectId, userId: session.user.id },
+            where: { id: projectId, userId: userId },
             select: { id: true }
         })
         if (!project) return new NextResponse('Not Found', { status: 404 })
 
         const images = await prisma.projectImage.findMany({
-            where: { projectId, userId: session.user.id },
+            where: { projectId, userId: userId },
             orderBy: { createdAt: 'desc' },
         })
 
         return NextResponse.json(images)
-    } catch (error) {
+    } catch (error: any) {
+        if (error?.isAuthError) return apiError("Unauthorized", 401)
         console.error('[GET /api/projects/[id]/images]', error)
         return new NextResponse('Internal Error', { status: 500 })
     }
@@ -39,12 +41,11 @@ export async function GET(_req: Request, { params }: RouteProps) {
 export async function POST(req: Request, { params }: RouteProps) {
     try {
         const { id: projectId } = await params
-        const session = await auth()
-        if (!session?.user?.id) return new NextResponse('Unauthorized', { status: 401 })
+        const userId = await requireAuth()
 
         // Verify ownership
         const project = await prisma.project.findUnique({
-            where: { id: projectId, userId: session.user.id },
+            where: { id: projectId, userId: userId },
             select: { id: true }
         })
         if (!project) return new NextResponse('Not Found', { status: 404 })
@@ -59,7 +60,7 @@ export async function POST(req: Request, { params }: RouteProps) {
         const created = await prisma.projectImage.createMany({
             data: images.map(img => ({
                 projectId,
-                userId: session.user.id,
+                userId: userId,
                 url: img.url,
                 storagePath: img.storagePath,
                 fileName: img.fileName,
@@ -67,7 +68,8 @@ export async function POST(req: Request, { params }: RouteProps) {
         })
 
         return NextResponse.json({ count: created.count })
-    } catch (error) {
+    } catch (error: any) {
+        if (error?.isAuthError) return apiError("Unauthorized", 401)
         console.error('[POST /api/projects/[id]/images]', error)
         return new NextResponse('Internal Error', { status: 500 })
     }

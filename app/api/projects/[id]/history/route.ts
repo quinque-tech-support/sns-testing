@@ -1,18 +1,19 @@
-import { auth } from '@/auth'
+import { apiError } from '@/lib/api.utils'
+import { requireAuth } from '@/lib/auth.utils'
+import { toErrorMessage } from '@/lib/api.utils'
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 
 export async function GET(req: Request, props: { params: Promise<{ id: string }> }) {
     try {
         const params = await props.params
-        const session = await auth()
-        if (!session?.user?.id) return new NextResponse('Unauthorized', { status: 401 })
+        const userId = await requireAuth()
 
         // Find posts mapped to this project that actually have an image
         const posts = await prisma.post.findMany({
             where: { 
                 projectId: params.id,
-                userId: session.user.id,
+                userId: userId,
                 // Only consider posts with successfully stored media
                 imageUrl: { not: '' }
             },
@@ -44,7 +45,8 @@ export async function GET(req: Request, props: { params: Promise<{ id: string }>
         return NextResponse.json({
             history: posts
         })
-    } catch (error) {
+    } catch (error: any) {
+        if (error?.isAuthError) return apiError("Unauthorized", 401)
         console.error('[GET /api/projects/[id]/history]', error)
         return new NextResponse('Internal Error', { status: 500 })
     }

@@ -1,4 +1,4 @@
-import { auth } from '@/auth'
+import { requirePageAuth } from '@/lib/auth.utils'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import CreateContentClient from './CreateContentClient'
@@ -6,11 +6,11 @@ import CreateContentClient from './CreateContentClient'
 export const dynamic = 'force-dynamic'
 
 export default async function CreateContentPage() {
-    const session = await auth()
-    if (!session?.user?.id) redirect('/signin')
+    const session = await requirePageAuth();
+    const userId = session.user.id
 
     const accounts = await prisma.connectedAccount.findMany({
-        where: { userId: session.user.id },
+        where: { userId: userId },
         select: {
             id: true,
             username: true,
