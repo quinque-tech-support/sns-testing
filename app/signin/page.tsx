@@ -1,13 +1,17 @@
 'use client'
 
-import { useState } from 'react'
-import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { signIn, useSession } from 'next-auth/react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { validateEmail } from '@/lib/validation'
+import { Instagram, Loader2, ArrowLeft } from 'lucide-react'
 
-export default function SignIn() {
+function SignInForm() {
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const message = searchParams.get('message')
+    
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
@@ -17,10 +21,9 @@ export default function SignIn() {
         e.preventDefault()
         setError('')
 
-        // Email validation
         const emailValidation = validateEmail(email)
         if (!emailValidation.valid) {
-            setError(emailValidation.error || 'Invalid email')
+            setError(emailValidation.error || '有効なメールアドレスを入力してください。')
             return
         }
 
@@ -34,85 +37,118 @@ export default function SignIn() {
             })
 
             if (result?.error) {
-                setError('Invalid email or password')
+                setError('メールアドレスまたはパスワードが正しくありません。')
             } else {
-                router.push('/')
-                router.refresh()
+                window.location.replace('/dashboard')
             }
-        } catch (err) {
-            setError('An error occurred. Please try again.')
+        } catch {
+            setError('エラーが発生しました。もう一度お試しください。')
         } finally {
             setLoading(false)
         }
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-            <div className="max-w-md w-full bg-white border border-gray-300 p-8">
-                <div className="text-center mb-6">
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">おかえりなさい</h1>
-                    <p className="text-gray-600">アカウントにサインイン</p>
+        <div className="w-full">
+            {message && (
+                <div className="mb-6 p-4 bg-green-50 border border-green-200 text-green-700 rounded-2xl text-sm font-medium">
+                    {message}
+                </div>
+            )}
+            
+            <form onSubmit={handleSubmit} className="space-y-5">
+                {error && (
+                    <div className="p-4 bg-red-50 border border-red-200 text-red-600 rounded-2xl text-sm font-medium">
+                        {error}
+                    </div>
+                )}
+
+                <div className="space-y-1.5">
+                    <label htmlFor="email" className="block text-sm font-bold text-gray-700">
+                        メールアドレス
+                    </label>
+                    <input
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-medium text-gray-900 placeholder:text-gray-400"
+                        placeholder="you@example.com"
+                    />
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    {error && (
-                        <div className="bg-red-50 border border-red-300 text-red-800 px-4 py-3 text-sm">
-                            {error}
-                        </div>
-                    )}
+                <div className="space-y-1.5">
+                    <label htmlFor="password" className="block text-sm font-bold text-gray-700">
+                        パスワード
+                    </label>
+                    <input
+                        id="password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-medium text-gray-900 placeholder:text-gray-400"
+                        placeholder="••••••••"
+                    />
+                </div>
 
-                    <div>
-                        <label htmlFor="email" className="block text-gray-700 font-medium mb-1">
-                            メールアドレス
-                        </label>
-                        <input
-                            id="email"
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                            className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            placeholder="you@example.com"
-                        />
+                <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full instagram-gradient text-white py-4 px-4 rounded-2xl font-bold shadow-lg shadow-purple-500/20 hover:opacity-90 transition-all active:scale-95 flex items-center justify-center gap-2"
+                >
+                    {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> サインイン中...</> : 'サインイン'}
+                </button>
+            </form>
+        </div>
+    )
+}
+
+export default function SignIn() {
+    const router = useRouter()
+    const { status } = useSession()
+
+    useEffect(() => {
+        if (status === 'authenticated') {
+            router.replace('/dashboard')
+        }
+    }, [status, router])
+
+    if (status === 'loading' || status === 'authenticated') {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+            </div>
+        )
+    }
+
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 font-sans selection:bg-purple-100 relative">
+            <Link href="/" className="absolute top-8 left-8 flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-gray-900 transition-colors">
+                <ArrowLeft className="w-4 h-4" /> ホームに戻る
+            </Link>
+
+            <div className="max-w-md w-full bg-white rounded-[2rem] border border-gray-100 p-8 shadow-xl shadow-gray-200/50">
+                <div className="flex flex-col items-center text-center mb-8">
+                    <div className="w-14 h-14 rounded-2xl instagram-gradient flex items-center justify-center shadow-lg shadow-purple-500/20 mb-6 rotate-12 hover:rotate-0 transition-transform duration-300">
+                        <Instagram className="w-8 h-8 text-white" />
                     </div>
+                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">お帰りなさい</h1>
+                    <p className="text-sm font-medium text-gray-500 mt-2">アカウントにサインインして続行します</p>
+                </div>
 
-                    <div>
-                        <label htmlFor="password" className="block text-gray-700 font-medium mb-1">
-                            パスワード
-                        </label>
-                        <input
-                            id="password"
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                            className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            placeholder="••••••••"
-                        />
-                    </div>
+                <Suspense fallback={<div className="h-64 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-purple-500" /></div>}>
+                    <SignInForm />
+                </Suspense>
 
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {loading ? 'サインイン中...' : 'サインイン'}
-                    </button>
-                </form>
-
-                <div className="mt-4 text-center">
-                    <p className="text-gray-600 text-sm">
-                        アカウントがない方は{' '}
-                        <Link href="/signup" className="text-blue-600 hover:text-blue-700">
-                            新規登録
+                <div className="mt-8 pt-6 border-t border-gray-100 text-center">
+                    <p className="text-sm font-medium text-gray-500">
+                        アカウントをお持ちではありませんか？{' '}
+                        <Link href="/signup" className="text-purple-600 font-bold hover:text-purple-700 transition-colors">
+                            無料で登録
                         </Link>
                     </p>
-                </div>
-
-                <div className="mt-4 text-center">
-                    <Link href="/" className="text-gray-600 hover:text-gray-800 text-sm">
-                        ← ホームに戻る
-                    </Link>
                 </div>
             </div>
         </div>
