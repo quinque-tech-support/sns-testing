@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
     Image as ImageIcon,
@@ -31,7 +31,8 @@ import {
     Settings,
     Upload,
     FileEdit,
-    FolderKanban
+    FolderKanban,
+    Hash
 } from 'lucide-react'
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
@@ -91,6 +92,8 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
     const {
         caption,
         setCaption,
+        hashtags,
+        setHashtags,
         customPrompt,
         setCustomPrompt,
         captionOptions,
@@ -120,21 +123,20 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
     const [scheduledFor, setScheduledFor] = useState('')
     const [showDatePicker, setShowDatePicker] = useState(false)
 
-    // Auto-append project default hashtags when project changes
+    // Replace hashtags with the new project's defaults when project changes
     useEffect(() => {
-        if (!selectedProject?.defaultHashtags?.length) return
-        setCaption(prev => {
-            const missing = selectedProject.defaultHashtags.filter(t => !prev.includes(t))
-            if (missing.length === 0) return prev
-            const appendage = missing.join(' ')
-            return prev.trim() ? `${prev.trim()}\n\n${appendage}` : appendage
-        })
-    }, [selectedProject?.id])
+        if (selectedProject?.defaultHashtags?.length) {
+            setHashtags(selectedProject.defaultHashtags)
+        } else {
+            setHashtags([])
+        }
+    }, [selectedProjectId])
 
     // Clear caption/options when media is removed
     useEffect(() => {
         if (mediaItems.length === 0) {
             setCaption('')
+            setHashtags([])
             setCustomPrompt('')
             setCaptionOptions([])
         }
@@ -165,6 +167,7 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
     const handlePublishAction = (mode: 'now' | 'schedule') => {
         publish(mode, {
             caption,
+            hashtags,
             selectedAccountId,
             selectedProjectId,
             isVideo,
@@ -178,6 +181,7 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
     const handleSaveDraft = () => {
         saveAsDraft({
             caption,
+            hashtags,
             selectedAccountId,
             selectedProjectId,
             isVideo,
@@ -192,6 +196,23 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
     const isWorking = isPublishing || isGeneratingAI
     const actAccount = accounts?.find(a => a.id === selectedAccountId)
 
+    // Project selector dropdown state
+    const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false)
+    const projectDropdownRef = useRef<HTMLDivElement>(null)
+
+    // Close dropdown on outside click
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (projectDropdownRef.current && !projectDropdownRef.current.contains(e.target as Node)) {
+                setIsProjectDropdownOpen(false)
+            }
+        }
+        if (isProjectDropdownOpen) {
+            document.addEventListener('mousedown', handleClickOutside)
+            return () => document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [isProjectDropdownOpen])
+
     return (
         <div className="w-full max-w-full h-full flex flex-col space-y-4 pb-32 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Header */}
@@ -200,18 +221,64 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
                     コンテンツ作成
                 </h1>
                 {!isProjectsLoading && projects.length > 0 && (
-                    <div className="flex items-center gap-2 bg-gray-50 px-3.5 py-2 rounded-xl border border-gray-200">
-                        <FolderKanban className="w-4.5 h-4.5 text-indigo-500 shrink-0" />
-                        <select
-                            value={selectedProjectId}
-                            onChange={(e) => setSelectedProjectId(e.target.value)}
-                            className="bg-transparent border-none text-sm font-bold text-gray-700 py-0 pr-6 pl-0.5 focus:ring-0 focus:outline-none cursor-pointer appearance-none"
-                            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' viewBox='0 0 24 24' stroke='%236b7280' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 2px center' }}
+                    <div className="relative" ref={projectDropdownRef}>
+                        <button
+                            type="button"
+                            onClick={() => setIsProjectDropdownOpen(prev => !prev)}
+                            className={cn(
+                                'flex items-center gap-2.5 pl-3 pr-2.5 py-2 rounded-xl border text-sm font-bold transition-all cursor-pointer',
+                                isProjectDropdownOpen
+                                    ? 'bg-indigo-50 border-indigo-300 text-indigo-700 ring-2 ring-indigo-200'
+                                    : 'bg-white border-gray-200 text-gray-700 hover:border-indigo-200 hover:bg-indigo-50/40 shadow-sm'
+                            )}
                         >
-                            {projects.map(p => (
-                                <option key={p.id} value={p.id}>{p.name}</option>
-                            ))}
-                        </select>
+                            <FolderKanban className="w-4 h-4 text-indigo-500 shrink-0" />
+                            <span className="max-w-[180px] truncate">{selectedProject?.name || 'プロジェクト選択'}</span>
+                            <ChevronDown className={cn('w-4 h-4 text-gray-400 transition-transform duration-200', isProjectDropdownOpen && 'rotate-180')} />
+                        </button>
+                        {isProjectDropdownOpen && (
+                            <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl border border-gray-200 shadow-xl z-50 py-1.5 animate-in fade-in slide-in-from-top-2 duration-150">
+                                <div className="px-3 py-2 border-b border-gray-100">
+                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">プロジェクト切替</span>
+                                </div>
+                                <div className="max-h-64 overflow-y-auto py-1">
+                                    {projects.map(p => (
+                                        <button
+                                            key={p.id}
+                                            type="button"
+                                            onClick={() => {
+                                                setSelectedProjectId(p.id)
+                                                setIsProjectDropdownOpen(false)
+                                            }}
+                                            className={cn(
+                                                'w-full text-left px-3 py-2.5 flex items-start gap-2.5 transition-colors',
+                                                p.id === selectedProjectId
+                                                    ? 'bg-indigo-50'
+                                                    : 'hover:bg-gray-50'
+                                            )}
+                                        >
+                                            <FolderKanban className={cn('w-4 h-4 mt-0.5 shrink-0', p.id === selectedProjectId ? 'text-indigo-600' : 'text-gray-400')} />
+                                            <div className="flex-1 min-w-0">
+                                                <div className={cn('text-sm font-semibold truncate', p.id === selectedProjectId ? 'text-indigo-700' : 'text-gray-800')}>
+                                                    {p.name}
+                                                </div>
+                                                {p.description && (
+                                                    <div className="text-[11px] text-gray-400 truncate mt-0.5">{p.description}</div>
+                                                )}
+                                                {p.defaultHashtags?.length > 0 && (
+                                                    <div className="text-[10px] text-blue-500 mt-1 truncate">
+                                                        {p.defaultHashtags.slice(0, 3).join(' ')}{p.defaultHashtags.length > 3 ? ` +${p.defaultHashtags.length - 3}` : ''}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {p.id === selectedProjectId && (
+                                                <CheckCircle2 className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -440,16 +507,13 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
                             {/* Options Modal / In-place Switcher */}
                             {captionOptions.length > 0 && (
                                 <div className="space-y-3 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 animate-in fade-in zoom-in-95">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-xs font-bold text-indigo-600 flex items-center gap-1"><Sparkles className="w-3 h-3"/> AIが最適なキャプションを生成しました</span>
-                                        <button onClick={() => setCaptionOptions([])} type="button" className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4"/></button>
-                                    </div>
                                     <div className="flex flex-col gap-3">
                                         {captionOptions.map((opt, idx) => (
                                             <div 
                                                 key={idx} 
                                                 onClick={() => {
-                                                    setCaption(`${opt.caption}\n\n${(opt.hashtags || []).join(' ')}`);
+                                                    setCaption(opt.caption);
+                                                    setHashtags(opt.hashtags || []);
                                                     setCaptionOptions([]) // close options
                                                 }}
                                                 className="w-full bg-white p-5 rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:border-indigo-400 hover:ring-2 hover:ring-indigo-100 transition-all group"
@@ -474,26 +538,65 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
                             )}
 
                         </div>
-                        <div className="relative flex-1 flex flex-col group min-h-[250px]">
-                            <textarea
-                                value={caption}
-                                onChange={e => setCaption(e.target.value)}
-                                placeholder="キャプションを入力、またはAIで自動生成..."
-                                className={cn(
-                                    "w-full h-full p-4 rounded-xl text-gray-900 text-sm leading-relaxed placeholder:text-gray-400 focus:outline-none transition-all resize-none shadow-sm flex-1 peer",
-                                    caption.length > 0 
-                                        ? "bg-blue-50/30 border-2 border-indigo-400 focus:ring-4 focus:ring-indigo-500/20" 
-                                        : "bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-black/5 focus:border-gray-400 focus:bg-white min-h-[200px]"
-                                )}
-                                maxLength={2200}
-                            />
-                            <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                                <span className={cn(
-                                    'text-[10px] font-bold px-2 py-1 rounded-md transition-colors border',
-                                    caption.length > 2000 ? 'bg-red-50 text-red-500 border-red-100' : 'bg-white/80 text-gray-400 border-gray-200 shadow-sm peer-focus:border-gray-300 peer-focus:text-gray-500'
-                                )}>
-                                    {caption.length} / 2200
-                                </span>
+                        <div className="flex-1 flex flex-col group min-h-[250px] gap-2">
+                            {/* Hashtags Section — on top */}
+                            <div className="bg-gradient-to-r from-blue-50/60 to-indigo-50/40 border border-blue-200/60 rounded-xl p-3 shadow-sm">
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                    {hashtags.map((tag, i) => (
+                                        <span key={`${tag}-${i}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/80 text-blue-700 text-xs font-medium border border-blue-200 transition-all hover:bg-blue-100 hover:border-blue-300 shadow-sm">
+                                            {tag}
+                                            <button 
+                                                type="button" 
+                                                onClick={() => setHashtags(prev => prev.filter((_, idx) => idx !== i))}
+                                                className="text-blue-300 hover:text-red-500 focus:outline-none transition-colors"
+                                            >
+                                                <X className="w-3 h-3" />
+                                            </button>
+                                        </span>
+                                    ))}
+                                    <input 
+                                        type="text" 
+                                        placeholder="+ 追加..."
+                                        className="text-xs bg-transparent border-none focus:ring-0 focus:outline-none text-gray-700 placeholder:text-gray-400 w-20 py-1 px-0.5"
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ' || e.key === ',') {
+                                                e.preventDefault()
+                                                const val = e.currentTarget.value.trim()
+                                                if (val) {
+                                                    const newTag = val.startsWith('#') ? val : `#${val}`
+                                                    if (!hashtags.includes(newTag)) {
+                                                        setHashtags(prev => [...prev, newTag])
+                                                    }
+                                                    e.currentTarget.value = ''
+                                                }
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Caption Textarea */}
+                            <div className="relative flex-1">
+                                <textarea
+                                    value={caption}
+                                    onChange={e => setCaption(e.target.value)}
+                                    placeholder="キャプションを入力、またはAIで自動生成..."
+                                    className={cn(
+                                        "w-full h-full p-4 pb-10 rounded-xl text-gray-900 text-sm leading-relaxed placeholder:text-gray-400 focus:outline-none transition-all resize-none shadow-sm peer",
+                                        caption.length > 0 
+                                            ? "bg-blue-50/30 border-2 border-indigo-400 focus:ring-4 focus:ring-indigo-500/20" 
+                                            : "bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-black/5 focus:border-gray-400 focus:bg-white min-h-[200px]"
+                                    )}
+                                    maxLength={2200}
+                                />
+                                <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                                    <span className={cn(
+                                        'text-[10px] font-bold px-2 py-1 rounded-md transition-colors border',
+                                        caption.length > 2000 ? 'bg-red-50 text-red-500 border-red-100' : 'bg-white/80 text-gray-400 border-gray-200 shadow-sm peer-focus:border-gray-300 peer-focus:text-gray-500'
+                                    )}>
+                                        {caption.length} / 2200
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>

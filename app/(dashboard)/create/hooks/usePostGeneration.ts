@@ -15,6 +15,7 @@ interface CaptionOption {
 
 export function usePostGeneration() {
     const [caption, setCaption] = useState('')
+    const [hashtags, setHashtags] = useState<string[]>([])
     const [customPrompt, setCustomPrompt] = useState('')
     const [captionOptions, setCaptionOptions] = useState<CaptionOption[]>([])
     const [selectedOptionIndex, setSelectedOptionIndex] = useState(0)
@@ -78,8 +79,10 @@ export function usePostGeneration() {
                 setCaptionOptions(json.options)
             } else {
                 // Fallback: merge caption + hashtags into the editor
-                const newCaption = (json.caption + '\n\n' + (Array.isArray(json.hashtags) ? json.hashtags.join(' ') : '')).trim()
-                setCaption(newCaption)
+                setCaption(json.caption || '')
+                if (Array.isArray(json.hashtags)) {
+                    setHashtags(json.hashtags)
+                }
             }
         } catch (error) {
             const message = error instanceof Error ? error.message : 'AIの生成に失敗しました。'
@@ -94,8 +97,8 @@ export function usePostGeneration() {
     const applyCaptionOption = (index: number) => {
         const option = captionOptions[index]
         if (!option) return
-        const combined = (option.caption + '\n\n' + option.hashtags.join(' ')).trim()
-        setCaption(combined)
+        setCaption(option.caption)
+        setHashtags(option.hashtags || [])
         setSelectedOptionIndex(index)
         setCaptionOptions([])
     }
@@ -103,6 +106,8 @@ export function usePostGeneration() {
     return {
         caption,
         setCaption,
+        hashtags,
+        setHashtags,
         customPrompt,
         setCustomPrompt,
         captionOptions,
