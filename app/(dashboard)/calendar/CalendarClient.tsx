@@ -2,23 +2,14 @@
 
 import { useState, useMemo } from 'react'
 import {
-    ChevronLeft,
-    ChevronRight,
-    Filter,
-    Instagram,
-    Clock,
-    Plus,
-    Search,
-    X,
-    MoreHorizontal,
-    Play,
-    Image as ImageIcon,
-    CheckCircle2,
-    Calendar
+    ChevronLeft, ChevronRight, Filter, Instagram,
+    Clock, Plus, Search, X, CheckCircle2
 } from 'lucide-react'
 import Link from 'next/link'
 
-interface Schedule {
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+export interface Schedule {
     id: string
     scheduledFor: string
     status: string
@@ -26,16 +17,13 @@ interface Schedule {
         id: string
         caption: string | null
         imageUrl: string
-        connectedAccount: {
-            username: string | null
-        }
+        connectedAccount: { username: string | null }
     }
 }
 
 interface WeekDay {
     name: string
     date: string
-    dayOfWeek: number
     fullDate: Date
 }
 
@@ -44,24 +32,46 @@ interface CalendarClientProps {
     weekOffset: number
 }
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
 function getWeekDays(offsetWeeks: number): WeekDay[] {
     const now = new Date()
-    const dayOfWeek = now.getDay() // 0=Sun
     const monday = new Date(now)
-    monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7) + offsetWeeks * 7)
+    monday.setDate(now.getDate() - ((now.getDay() + 6) % 7) + offsetWeeks * 7)
 
-    const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-    return dayNames.map((name, i) => {
+    return DAY_NAMES.map((name, i) => {
         const d = new Date(monday)
         d.setDate(monday.getDate() + i)
         return {
             name,
             date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-            dayOfWeek: i,
-            fullDate: d
+            fullDate: d,
         }
     })
 }
+
+function statusColor(status: string) {
+    switch (status) {
+        case 'PUBLISHED': return 'text-green-600'
+        case 'PENDING': return 'text-purple-600'
+        case 'FAILED': return 'text-red-600'
+        default: return 'text-orange-500'
+    }
+}
+
+function statusLabel(status: string) {
+    switch (status) {
+        case 'PUBLISHED': return '公開済み'
+        case 'PENDING': return '予約済み'
+        case 'PROCESSING': return '処理中'
+        case 'FAILED': return '失敗'
+        default: return status
+    }
+}
+
+// ─── Component ───────────────────────────────────────────────────────────────
 
 export default function CalendarClient({ schedules, weekOffset: initialOffset }: CalendarClientProps) {
     const [weekOffset, setWeekOffset] = useState(initialOffset)
@@ -69,55 +79,27 @@ export default function CalendarClient({ schedules, weekOffset: initialOffset }:
     const [searchQuery, setSearchQuery] = useState('')
 
     const weekDays = useMemo(() => getWeekDays(weekOffset), [weekOffset])
+    const weekLabel = `${weekDays[0].date} – ${weekDays[6].date}, ${weekDays[6].fullDate.getFullYear()}`
 
-    const weekStart = weekDays[0].fullDate
-    const weekEnd = weekDays[6].fullDate
-    const weekLabel = `${weekDays[0].date} – ${weekDays[6].date}, ${weekEnd.getFullYear()}`
-
-    // Filter schedules to the current displayed week
     const weekSchedules = useMemo(() => {
-        const start = new Date(weekStart)
-        start.setHours(0, 0, 0, 0)
-        const end = new Date(weekEnd)
-        end.setHours(23, 59, 59, 999)
-
+        const start = new Date(weekDays[0].fullDate); start.setHours(0, 0, 0, 0)
+        const end = new Date(weekDays[6].fullDate); end.setHours(23, 59, 59, 999)
         return schedules.filter(s => {
             const d = new Date(s.scheduledFor)
             return d >= start && d <= end
         })
-    }, [schedules, weekStart, weekEnd])
+    }, [schedules, weekDays])
 
     const getPostsForDay = (day: WeekDay) => {
+        const dayStart = new Date(day.fullDate); dayStart.setHours(0, 0, 0, 0)
+        const dayEnd = new Date(day.fullDate); dayEnd.setHours(23, 59, 59, 999)
         return weekSchedules.filter(s => {
             const d = new Date(s.scheduledFor)
-            const dayStart = new Date(day.fullDate)
-            dayStart.setHours(0, 0, 0, 0)
-            const dayEnd = new Date(day.fullDate)
-            dayEnd.setHours(23, 59, 59, 999)
             const matchesSearch = !searchQuery ||
                 s.post.caption?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 s.status.toLowerCase().includes(searchQuery.toLowerCase())
             return d >= dayStart && d <= dayEnd && matchesSearch
         })
-    }
-
-    const statusColor = (status: string) => {
-        switch (status) {
-            case 'PUBLISHED': return 'text-green-600'
-            case 'PENDING': return 'text-purple-600'
-            case 'FAILED': return 'text-red-600'
-            default: return 'text-orange-500'
-        }
-    }
-
-    const statusLabel = (status: string) => {
-        switch (status) {
-            case 'PUBLISHED': return '公開済み'
-            case 'PENDING': return '予約済み'
-            case 'PROCESSING': return '処理中'
-            case 'FAILED': return '失敗'
-            default: return status
-        }
     }
 
     return (
@@ -126,42 +108,21 @@ export default function CalendarClient({ schedules, weekOffset: initialOffset }:
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">コンテンツカレンダー</h1>
-                    <p className="text-gray-500 mt-1">今週の投稿スケジュールを管理しましょう。</p>
                 </div>
                 <div className="flex items-center gap-3 bg-white p-1 rounded-xl shadow-sm border border-gray-100">
                     <button
-                        onClick={() => setWeekOffset(w => w - 1)}
+                        onClick={() => setWeekOffset(prev => prev - 1)}
                         className="p-2 hover:bg-gray-50 rounded-lg transition-all duration-200 ease-out active:scale-95"
                     >
                         <ChevronLeft className="w-4 h-4" />
                     </button>
                     <span className="text-sm font-bold px-2 whitespace-nowrap">{weekLabel}</span>
                     <button
-                        onClick={() => setWeekOffset(w => w + 1)}
+                        onClick={() => setWeekOffset(prev => prev + 1)}
                         className="p-2 hover:bg-gray-50 rounded-lg transition-all duration-200 ease-out active:scale-95"
                     >
                         <ChevronRight className="w-4 h-4" />
                     </button>
-                </div>
-            </div>
-
-            {/* Filters & Search */}
-            <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-                <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-gray-400 uppercase tracking-widest">
-                        <Filter className="w-3.5 h-3.5" />
-                        今週 {weekSchedules.length} 件の投稿
-                    </div>
-                </div>
-                <div className="relative max-w-xs w-full">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder="投稿を検索..."
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-purple-500 transition-all"
-                    />
                 </div>
             </div>
 
@@ -286,7 +247,7 @@ export default function CalendarClient({ schedules, weekOffset: initialOffset }:
                                     <div>
                                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">キャプション</p>
                                         <p className="text-sm text-gray-600 bg-gray-50 p-4 rounded-2xl border border-gray-100 leading-relaxed italic">
-                                            "{selectedPost.post.caption}"
+                                            &quot;{selectedPost.post.caption}&quot;
                                         </p>
                                     </div>
                                 )}

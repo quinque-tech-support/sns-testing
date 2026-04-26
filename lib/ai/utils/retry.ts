@@ -3,7 +3,7 @@
  * Handles Gemini 429 / 503 errors and parses explicit retry-after headers.
  */
 
-const DEFAULT_MAX_RETRIES = 3;
+const DEFAULT_MAX_RETRIES = 1;
 const DEFAULT_BASE_DELAY_MS = 2000;
 const STAGGER_INTERVAL_MS = 1500;
 
@@ -22,10 +22,14 @@ export function staggeredDelay(index: number): number {
  * Check if an error is retryable (rate limit or server error).
  */
 function isRetryableError(error: any): boolean {
+    const msg = String(error);
+
+    // Daily quota exhausted — no point retrying, fail fast
+    if (msg.includes('PerDay') && msg.includes('limit: 0')) return false;
+
     const status = error?.status;
     if (status === 429 || status === 503) return true;
 
-    const msg = String(error);
     if (msg.includes('429') || msg.includes('503')) return true;
     if (error instanceof SyntaxError) return true; // JSON parse intermittent failures
 

@@ -51,7 +51,7 @@ function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs))
 }
 
-export default function CreateContentClient({ accounts: _ignored }: { accounts?: ConnectedAccount[] }) {
+export default function CreateContentClient({ accounts: _ignored, aiUsageOption = 'Normal AI Use' }: { accounts?: ConnectedAccount[], aiUsageOption?: string }) {
     const router = useRouter()
     const { selectedAccountId, accounts } = useAccount()
 
@@ -123,20 +123,29 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
     const [scheduledFor, setScheduledFor] = useState('')
     const [showDatePicker, setShowDatePicker] = useState(false)
 
-    // Replace hashtags with the new project's defaults when project changes
+    // When project changes, replace hashtag lines at end of caption with new project defaults
+    const prevProjectIdRef = useRef(selectedProjectId)
     useEffect(() => {
-        if (selectedProject?.defaultHashtags?.length) {
-            setHashtags(selectedProject.defaultHashtags)
-        } else {
-            setHashtags([])
-        }
-    }, [selectedProjectId])
+        if (prevProjectIdRef.current === selectedProjectId) return
+        prevProjectIdRef.current = selectedProjectId
+
+        const newTags = selectedProject?.defaultHashtags ?? []
+        setCaption(prev => {
+            // Strip trailing hashtag lines from caption
+            const lines = prev.trimEnd().split('\n')
+            while (lines.length > 0 && lines[lines.length - 1].trim().startsWith('#')) {
+                lines.pop()
+            }
+            const base = lines.join('\n').trimEnd()
+            if (newTags.length === 0) return base
+            return base ? `${base}\n\n${newTags.join(' ')}` : newTags.join(' ')
+        })
+    }, [selectedProjectId, selectedProject])
 
     // Clear caption/options when media is removed
     useEffect(() => {
         if (mediaItems.length === 0) {
             setCaption('')
-            setHashtags([])
             setCustomPrompt('')
             setCaptionOptions([])
         }
@@ -150,9 +159,6 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
         }
     }, [generationError])
 
-    // ─────────────────────────────────────────────
-    // Handlers (thin wrappers that glue hooks together)
-    // ─────────────────────────────────────────────
 
     const handleSelectDraft = (draft: HistoryItem) => {
         loadFromDraft(draft)
@@ -167,7 +173,7 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
     const handlePublishAction = (mode: 'now' | 'schedule') => {
         publish(mode, {
             caption,
-            hashtags,
+            hashtags: [],  // hashtags are already in caption text
             selectedAccountId,
             selectedProjectId,
             isVideo,
@@ -181,7 +187,7 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
     const handleSaveDraft = () => {
         saveAsDraft({
             caption,
-            hashtags,
+            hashtags: [],  // hashtags are already in caption text
             selectedAccountId,
             selectedProjectId,
             isVideo,
@@ -190,7 +196,7 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
     }
 
     const handleGenerateCaption = () => {
-        generateCaption(mediaItems, selectedProjectId)
+        generateCaption(mediaItems, selectedProjectId, selectedProject?.defaultHashtags || [])
     }
 
     const isWorking = isPublishing || isGeneratingAI
@@ -220,67 +226,6 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
                 <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
                     コンテンツ作成
                 </h1>
-                {!isProjectsLoading && projects.length > 0 && (
-                    <div className="relative" ref={projectDropdownRef}>
-                        <button
-                            type="button"
-                            onClick={() => setIsProjectDropdownOpen(prev => !prev)}
-                            className={cn(
-                                'flex items-center gap-2.5 pl-3 pr-2.5 py-2 rounded-xl border text-sm font-bold transition-all cursor-pointer',
-                                isProjectDropdownOpen
-                                    ? 'bg-indigo-50 border-indigo-300 text-indigo-700 ring-2 ring-indigo-200'
-                                    : 'bg-white border-gray-200 text-gray-700 hover:border-indigo-200 hover:bg-indigo-50/40 shadow-sm'
-                            )}
-                        >
-                            <FolderKanban className="w-4 h-4 text-indigo-500 shrink-0" />
-                            <span className="max-w-[180px] truncate">{selectedProject?.name || 'プロジェクト選択'}</span>
-                            <ChevronDown className={cn('w-4 h-4 text-gray-400 transition-transform duration-200', isProjectDropdownOpen && 'rotate-180')} />
-                        </button>
-                        {isProjectDropdownOpen && (
-                            <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl border border-gray-200 shadow-xl z-50 py-1.5 animate-in fade-in slide-in-from-top-2 duration-150">
-                                <div className="px-3 py-2 border-b border-gray-100">
-                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">プロジェクト切替</span>
-                                </div>
-                                <div className="max-h-64 overflow-y-auto py-1">
-                                    {projects.map(p => (
-                                        <button
-                                            key={p.id}
-                                            type="button"
-                                            onClick={() => {
-                                                setSelectedProjectId(p.id)
-                                                setIsProjectDropdownOpen(false)
-                                            }}
-                                            className={cn(
-                                                'w-full text-left px-3 py-2.5 flex items-start gap-2.5 transition-colors',
-                                                p.id === selectedProjectId
-                                                    ? 'bg-indigo-50'
-                                                    : 'hover:bg-gray-50'
-                                            )}
-                                        >
-                                            <FolderKanban className={cn('w-4 h-4 mt-0.5 shrink-0', p.id === selectedProjectId ? 'text-indigo-600' : 'text-gray-400')} />
-                                            <div className="flex-1 min-w-0">
-                                                <div className={cn('text-sm font-semibold truncate', p.id === selectedProjectId ? 'text-indigo-700' : 'text-gray-800')}>
-                                                    {p.name}
-                                                </div>
-                                                {p.description && (
-                                                    <div className="text-[11px] text-gray-400 truncate mt-0.5">{p.description}</div>
-                                                )}
-                                                {p.defaultHashtags?.length > 0 && (
-                                                    <div className="text-[10px] text-blue-500 mt-1 truncate">
-                                                        {p.defaultHashtags.slice(0, 3).join(' ')}{p.defaultHashtags.length > 3 ? ` +${p.defaultHashtags.length - 3}` : ''}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            {p.id === selectedProjectId && (
-                                                <CheckCircle2 className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
-                                            )}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
             </div>
 
             {/* Error / Success Banner */}
@@ -315,70 +260,130 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
                     </button>
                 </div>
             ) : (
-                <form id="create-post-form" onSubmit={(e) => { e.preventDefault(); handlePublishAction('now'); }} className="bg-white border border-gray-200 rounded-2xl overflow-hidden p-6 md:p-8 space-y-8 shadow-sm">
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                    {/* Section 1: Media & Gallery */}
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <label className="block text-sm font-bold text-gray-900">メディア</label>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowDraftsModal(true)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-600 hover:text-amber-600 font-bold rounded-xl shadow-sm hover:bg-gray-50 hover:border-amber-200 transition-all text-xs"
-                                >
-                                    <FileEdit className="w-3.5 h-3.5" />下書きから編集
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setShowHistoryModal(true)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-600 hover:text-indigo-600 font-bold rounded-xl shadow-sm hover:bg-gray-50 hover:border-indigo-200 transition-all text-xs"
-                                >
-                                    <History className="w-3.5 h-3.5" />履歴から再利用
-                                </button>
-                            </div>
-                        </div>
-                        
-                        {/* Currently Selected Media Strip */}
-                        {mediaItems.length > 0 && (
-                            <div className="flex gap-3 overflow-x-auto pb-4 snap-x relative">
-                                {mediaItems.map((item) => {
-                                    const src = item.type === 'file' ? URL.createObjectURL(item.file) : item.url
-                                    return (
-                                        <div key={item.id} className="relative shrink-0 snap-start group">
-                                            {item.type === 'file' && item.file.type.startsWith('video/') || (item.type === 'url' && item.isVideo) ? (
-                                                <div className="w-[140px] h-[140px] rounded-xl bg-gray-900 flex items-center justify-center border border-gray-200 shadow-sm relative overflow-hidden">
-                                                    <img src={src} className="absolute inset-0 w-full h-full object-cover opacity-50" alt="" />
-                                                    <Video className="w-8 h-8 text-white/80 z-10" />
-                                                    <span className="absolute bottom-2 left-2 text-[10px] bg-white/20 text-white backdrop-blur-md px-2 py-0.5 rounded font-medium z-10">REEL</span>
-                                                </div>
-                                            ) : (
-                                                <img src={src} className="w-[140px] h-[140px] rounded-xl object-cover border border-gray-200 shadow-sm" alt="media" />
-                                            )}
-                                            <button
-                                                type="button"
-                                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeMedia(item.id); }}
-                                                className="absolute top-2 right-2 w-6 h-6 bg-black/60 hover:bg-black/90 rounded-full flex items-center justify-center text-white backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all z-20"
-                                            >
-                                                <X className="w-3 h-3" />
-                                            </button>
-                                        </div>
-                                    )
-                                })}
-                                {!isVideo && (
-                                    <label className="shrink-0 w-[140px] h-[140px] rounded-xl border-2 border-dashed border-gray-300 hover:border-gray-400 bg-gray-50 flex flex-col items-center justify-center cursor-pointer transition-all gap-2">
-                                        <Plus className="w-5 h-5 text-gray-500" />
-                                        <span className="text-xs text-gray-500 font-medium">追加</span>
-                                        <input type="file" multiple className="hidden" accept="image/*" onChange={e => handleFiles(Array.from(e.target.files || []))} />
-                                    </label>
-                                )}
-                            </div>
-                        )}
+                <form id="create-post-form" onSubmit={(e) => { e.preventDefault(); handlePublishAction('now'); }} className="bg-white border border-gray-200 rounded-2xl overflow-hidden p-6 md:p-8 space-y-6 shadow-sm">
 
-                        {/* ──────── 新デザインのメディアアップロード UI ──────── */}
+                    {/* Project Selector — inside form */}
+                    {!isProjectsLoading && projects.length > 0 && (
+                        <div className="relative" ref={projectDropdownRef}>
+                            <button
+                                type="button"
+                                onClick={() => setIsProjectDropdownOpen(prev => !prev)}
+                                className={cn(
+                                    'flex items-center gap-2.5 pl-3 pr-2.5 py-2 rounded-xl border text-sm font-bold transition-all cursor-pointer',
+                                    isProjectDropdownOpen
+                                        ? 'bg-indigo-50 border-indigo-300 text-indigo-700 ring-2 ring-indigo-200'
+                                        : 'bg-white border-gray-200 text-gray-700 hover:border-indigo-200 hover:bg-indigo-50/40 shadow-sm'
+                                )}
+                            >
+                                <FolderKanban className="w-4 h-4 text-indigo-500 shrink-0" />
+                                <span className="max-w-[240px] truncate">{selectedProject?.name || 'プロジェクト選択'}</span>
+                                <ChevronDown className={cn('w-4 h-4 text-gray-400 transition-transform duration-200', isProjectDropdownOpen && 'rotate-180')} />
+                            </button>
+                            {isProjectDropdownOpen && (
+                                <div className="absolute left-0 top-full mt-2 w-72 bg-white rounded-xl border border-gray-200 shadow-xl z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-150">
+                                    <div className="max-h-64 overflow-y-auto py-1">
+                                        {projects.map(p => (
+                                            <button
+                                                key={p.id}
+                                                type="button"
+                                                onClick={() => {
+                                                    setSelectedProjectId(p.id)
+                                                    setIsProjectDropdownOpen(false)
+                                                }}
+                                                className={cn(
+                                                    'w-full text-left px-3 py-2.5 flex items-start gap-2.5 transition-colors',
+                                                    p.id === selectedProjectId
+                                                        ? 'bg-indigo-50'
+                                                        : 'hover:bg-gray-50'
+                                                )}
+                                            >
+                                                <FolderKanban className={cn('w-4 h-4 mt-0.5 shrink-0', p.id === selectedProjectId ? 'text-indigo-600' : 'text-gray-400')} />
+                                                <div className="flex-1 min-w-0">
+                                                    <div className={cn('text-sm font-semibold truncate', p.id === selectedProjectId ? 'text-indigo-700' : 'text-gray-800')}>
+                                                        {p.name}
+                                                    </div>
+                                                    {p.description && (
+                                                        <div className="text-[11px] text-gray-400 truncate mt-0.5">{p.description}</div>
+                                                    )}
+                                                    {p.defaultHashtags?.length > 0 && (
+                                                        <div className="text-[10px] text-blue-500 mt-1 truncate">
+                                                            {p.defaultHashtags.slice(0, 3).join(' ')}{p.defaultHashtags.length > 3 ? ` +${p.defaultHashtags.length - 3}` : ''}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                {p.id === selectedProjectId && (
+                                                    <CheckCircle2 className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                        {/* Section 1: Media & Gallery */}
                         <div className="space-y-4">
-                                
+                            <div className="flex items-center justify-between">
+                                <label className="block text-sm font-bold text-gray-900">メディア</label>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowDraftsModal(true)}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-600 hover:text-amber-600 font-bold rounded-xl shadow-sm hover:bg-gray-50 hover:border-amber-200 transition-all text-xs"
+                                    >
+                                        <FileEdit className="w-3.5 h-3.5" />下書きから編集
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowHistoryModal(true)}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-600 hover:text-indigo-600 font-bold rounded-xl shadow-sm hover:bg-gray-50 hover:border-indigo-200 transition-all text-xs"
+                                    >
+                                        <History className="w-3.5 h-3.5" />履歴から再利用
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Currently Selected Media Strip */}
+                            {mediaItems.length > 0 && (
+                                <div className="flex gap-3 overflow-x-auto pb-4 snap-x relative">
+                                    {mediaItems.map((item) => {
+                                        const src = item.type === 'file' ? URL.createObjectURL(item.file) : item.url
+                                        return (
+                                            <div key={item.id} className="relative shrink-0 snap-start group">
+                                                {item.type === 'file' && item.file.type.startsWith('video/') || (item.type === 'url' && item.isVideo) ? (
+                                                    <div className="w-[140px] h-[140px] rounded-xl bg-gray-900 flex items-center justify-center border border-gray-200 shadow-sm relative overflow-hidden">
+                                                        <img src={src} className="absolute inset-0 w-full h-full object-cover opacity-50" alt="" />
+                                                        <Video className="w-8 h-8 text-white/80 z-10" />
+                                                        <span className="absolute bottom-2 left-2 text-[10px] bg-white/20 text-white backdrop-blur-md px-2 py-0.5 rounded font-medium z-10">REEL</span>
+                                                    </div>
+                                                ) : (
+                                                    <img src={src} className="w-[140px] h-[140px] rounded-xl object-cover border border-gray-200 shadow-sm" alt="media" />
+                                                )}
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeMedia(item.id); }}
+                                                    className="absolute top-2 right-2 w-6 h-6 bg-black/60 hover:bg-black/90 rounded-full flex items-center justify-center text-white backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all z-20"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            </div>
+                                        )
+                                    })}
+                                    {!isVideo && (
+                                        <label className="shrink-0 w-[140px] h-[140px] rounded-xl border-2 border-dashed border-gray-300 hover:border-gray-400 bg-gray-50 flex flex-col items-center justify-center cursor-pointer transition-all gap-2">
+                                            <Plus className="w-5 h-5 text-gray-500" />
+                                            <span className="text-xs text-gray-500 font-medium">追加</span>
+                                            <input type="file" multiple className="hidden" accept="image/*" onChange={e => handleFiles(Array.from(e.target.files || []))} />
+                                        </label>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* ──────── 新デザインのメディアアップロード UI ──────── */}
+                            <div className="space-y-4">
+
                                 {/* 1. デバイスからアップロード（メインカード） */}
                                 {mediaItems.length === 0 && (
                                     <div className="bg-white border border-gray-200 rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors shadow-sm relative group overflow-hidden h-40 md:h-56">
@@ -397,8 +402,8 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
                                 {/* 2. ライブラリ（アコーディオン） */}
                                 {selectedProjectId && (
                                     <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                                        <button 
-                                            type="button" 
+                                        <button
+                                            type="button"
                                             onClick={() => setIsLibraryExpanded(!isLibraryExpanded)}
                                             className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
                                         >
@@ -410,7 +415,7 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
                                             </div>
                                             <ChevronDown className={cn("w-5 h-5 text-gray-400 transition-transform duration-300", isLibraryExpanded && "rotate-180")} />
                                         </button>
-                                        
+
                                         <div className={cn("grid transition-[grid-template-rows] duration-300 ease-in-out", isLibraryExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
                                             <div className="overflow-hidden">
                                                 <div className="p-6 pt-0 border-t border-gray-100">
@@ -427,7 +432,7 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
                                                             <div className="flex items-center justify-between">
                                                                 <span className="text-xs font-bold text-gray-400">{projectImages.length} 項目</span>
                                                                 <label className="text-xs font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-lg cursor-pointer transition-colors flex items-center gap-1.5">
-                                                                    <Plus className="w-3 h-3"/>追加
+                                                                    <Plus className="w-3 h-3" />追加
                                                                     <input type="file" multiple className="hidden" accept="image/*" onChange={e => {
                                                                         const files = Array.from(e.target.files || [])
                                                                         if (files.length > 0) handleLibraryUpload(files)
@@ -468,208 +473,148 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
                                     </div>
                                 )}
                             </div>
-                        {!selectedProjectId && mediaItems.length === 0 && (
-                            <p className="text-xs text-gray-400 italic">※ プロジェクトを選択すると、ライブラリと履歴ギャラリーが有効になります。</p>
-                        )}
-                        {mediaItems.length > 1 && (
-                            <div className="flex items-center gap-2 px-3 py-2 bg-blue-50/50 border border-blue-100 rounded-lg text-xs text-blue-700 w-fit">
-                                <Images className="w-4 h-4" />
-                                <span>複数画像はカルーセルとして公開されます</span>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Section 2: Caption */}
-                    <div className="space-y-4 flex flex-col h-full">
-                        <div className="flex items-center justify-between">
-                            <label className="block text-sm font-bold text-gray-900">キャプション</label>
+                            {!selectedProjectId && mediaItems.length === 0 && (
+                                <p className="text-xs text-gray-400 italic">※ プロジェクトを選択すると、ライブラリと履歴ギャラリーが有効になります。</p>
+                            )}
+                            {mediaItems.length > 1 && (
+                                <div className="flex items-center gap-2 px-3 py-2 bg-blue-50/50 border border-blue-100 rounded-lg text-xs text-blue-700 w-fit">
+                                    <Images className="w-4 h-4" />
+                                    <span>複数画像はカルーセルとして公開されます</span>
+                                </div>
+                            )}
                         </div>
-                        <div className="flex flex-col gap-3">
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="text"
-                                    value={customPrompt}
-                                    onChange={e => setCustomPrompt(e.target.value)}
-                                    placeholder="AIへの追加指示（プロンプト）..."
-                                    className="flex-1 bg-gray-50 border border-gray-200 rounded-lg py-2.5 px-3 text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all shadow-sm placeholder:text-gray-400"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={handleGenerateCaption}
-                                    disabled={isWorking || mediaItems.length === 0}
-                                    className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all border shrink-0 bg-white border-gray-200 text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 hover:shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {isGeneratingAI ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                                    <span>自動生成</span>
-                                </button>
-                            </div>
 
-                            {/* Options Modal / In-place Switcher */}
-                            {captionOptions.length > 0 && (
-                                <div className="space-y-3 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 animate-in fade-in zoom-in-95">
-                                    <div className="flex flex-col gap-3">
-                                        {captionOptions.map((opt, idx) => (
-                                            <div 
-                                                key={idx} 
-                                                onClick={() => {
-                                                    setCaption(opt.caption);
-                                                    setHashtags(opt.hashtags || []);
-                                                    setCaptionOptions([]) // close options
-                                                }}
-                                                className="w-full bg-white p-5 rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:border-indigo-400 hover:ring-2 hover:ring-indigo-100 transition-all group"
-                                            >
-                                                <div className="flex items-start justify-between mb-3 border-b border-gray-50 pb-2">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-sm font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-md">ベストキャプション</span>
-                                                        {opt.style && <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100">{opt.style}</span>}
-                                                    </div>
-                                                    {opt.score != null && <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md flex items-center gap-1"><Sparkles className="w-3 h-3"/> スコア: {opt.score}/10</span>}
-                                                </div>
-                                                <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">{opt.caption}</p>
-                                                {opt.hashtags && opt.hashtags.length > 0 && (
-                                                    <div className="mt-3 text-xs text-blue-600 font-medium">
-                                                        {opt.hashtags.join(' ')}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ))}
+                        {/* Section 2: Caption */}
+                        <div className="space-y-4 flex flex-col h-full">
+                            <div className="flex items-center justify-between">
+                                <label className="block text-sm font-bold text-gray-900">キャプション</label>
+                            </div>
+                            {aiUsageOption !== 'No AI' && (
+                                <div className="flex flex-col gap-3">
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="text"
+                                            value={customPrompt}
+                                            onChange={e => setCustomPrompt(e.target.value)}
+                                            onKeyDown={e => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault()
+                                                    if (!isWorking && mediaItems.length > 0) {
+                                                        handleGenerateCaption()
+                                                    }
+                                                }
+                                            }}
+                                            placeholder="AIへの追加指示（プロンプト）..."
+                                            className="flex-1 bg-gray-50 border border-gray-200 rounded-lg py-2.5 px-3 text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all shadow-sm placeholder:text-gray-400"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleGenerateCaption}
+                                            disabled={isWorking || mediaItems.length === 0}
+                                            className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all border shrink-0 bg-white border-gray-200 text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 hover:shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {isGeneratingAI ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                            <span>自動生成</span>
+                                        </button>
                                     </div>
                                 </div>
                             )}
-
-                        </div>
-                        <div className="flex-1 flex flex-col group min-h-[250px] gap-2">
-                            {/* Hashtags Section — on top */}
-                            <div className="bg-gradient-to-r from-blue-50/60 to-indigo-50/40 border border-blue-200/60 rounded-xl p-3 shadow-sm">
-                                <div className="flex flex-wrap items-center gap-1.5">
-                                    {hashtags.map((tag, i) => (
-                                        <span key={`${tag}-${i}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/80 text-blue-700 text-xs font-medium border border-blue-200 transition-all hover:bg-blue-100 hover:border-blue-300 shadow-sm">
-                                            {tag}
-                                            <button 
-                                                type="button" 
-                                                onClick={() => setHashtags(prev => prev.filter((_, idx) => idx !== i))}
-                                                className="text-blue-300 hover:text-red-500 focus:outline-none transition-colors"
-                                            >
-                                                <X className="w-3 h-3" />
-                                            </button>
-                                        </span>
-                                    ))}
-                                    <input 
-                                        type="text" 
-                                        placeholder="+ 追加..."
-                                        className="text-xs bg-transparent border-none focus:ring-0 focus:outline-none text-gray-700 placeholder:text-gray-400 w-20 py-1 px-0.5"
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter' || e.key === ' ' || e.key === ',') {
-                                                e.preventDefault()
-                                                const val = e.currentTarget.value.trim()
-                                                if (val) {
-                                                    const newTag = val.startsWith('#') ? val : `#${val}`
-                                                    if (!hashtags.includes(newTag)) {
-                                                        setHashtags(prev => [...prev, newTag])
-                                                    }
-                                                    e.currentTarget.value = ''
-                                                }
-                                            }
-                                        }}
+                            <div className="flex-1 flex flex-col group min-h-[250px]">
+                                {/* Caption Textarea */}
+                                <div className="relative flex-1">
+                                    <textarea
+                                        value={caption}
+                                        onChange={e => setCaption(e.target.value)}
+                                        placeholder="キャプションを入力、またはAIで自動生成..."
+                                        className={cn(
+                                            "w-full h-full p-4 pb-10 rounded-xl text-gray-900 text-sm leading-relaxed placeholder:text-gray-400 focus:outline-none transition-all resize-none shadow-sm peer",
+                                            caption.length > 0
+                                                ? "bg-blue-50/30 border-2 border-indigo-400 focus:ring-4 focus:ring-indigo-500/20"
+                                                : "bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-black/5 focus:border-gray-400 focus:bg-white min-h-[200px]"
+                                        )}
+                                        maxLength={2200}
                                     />
-                                </div>
-                            </div>
-
-                            {/* Caption Textarea */}
-                            <div className="relative flex-1">
-                                <textarea
-                                    value={caption}
-                                    onChange={e => setCaption(e.target.value)}
-                                    placeholder="キャプションを入力、またはAIで自動生成..."
-                                    className={cn(
-                                        "w-full h-full p-4 pb-10 rounded-xl text-gray-900 text-sm leading-relaxed placeholder:text-gray-400 focus:outline-none transition-all resize-none shadow-sm peer",
-                                        caption.length > 0 
-                                            ? "bg-blue-50/30 border-2 border-indigo-400 focus:ring-4 focus:ring-indigo-500/20" 
-                                            : "bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-black/5 focus:border-gray-400 focus:bg-white min-h-[200px]"
-                                    )}
-                                    maxLength={2200}
-                                />
-                                <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                                    <span className={cn(
-                                        'text-[10px] font-bold px-2 py-1 rounded-md transition-colors border',
-                                        caption.length > 2000 ? 'bg-red-50 text-red-500 border-red-100' : 'bg-white/80 text-gray-400 border-gray-200 shadow-sm peer-focus:border-gray-300 peer-focus:text-gray-500'
-                                    )}>
-                                        {caption.length} / 2200
-                                    </span>
+                                    <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                                        <span className={cn(
+                                            'text-[10px] font-bold px-2 py-1 rounded-md transition-colors border',
+                                            caption.length > 2000 ? 'bg-red-50 text-red-500 border-red-100' : 'bg-white/80 text-gray-400 border-gray-200 shadow-sm peer-focus:border-gray-300 peer-focus:text-gray-500'
+                                        )}>
+                                            {caption.length} / 2200
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div className="h-px bg-gray-100" />
+                    <div className="h-px bg-gray-100" />
 
-                {/* Submit Controls Fixed to Bottom of Form */}
-                <div className="flex flex-col sm:flex-row items-end sm:items-center justify-between gap-4">
-                    <div className="w-full sm:w-auto flex flex-col sm:flex-row sm:items-center gap-3">
-                        <button
-                            type="button"
-                            onClick={() => setShowPreview(true)}
-                            disabled={mediaItems.length === 0}
-                            className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto shadow-sm"
-                        >
-                            <Eye className="w-4 h-4" />
-                            プレビュー
-                        </button>
-
-                        <button
-                            type="button"
-                            onClick={handleSaveDraft}
-                            disabled={isWorking || !selectedAccountId || (mediaItems.length === 0 && !caption.trim())}
-                            className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 w-full sm:w-auto"
-                        >
-                            <FileImage className="w-4 h-4" />
-                            下書き
-                        </button>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-                        {!showDatePicker ? (
+                    {/* Submit Controls Fixed to Bottom of Form */}
+                    <div className="flex flex-col sm:flex-row items-end sm:items-center justify-between gap-4">
+                        <div className="w-full sm:w-auto flex flex-col sm:flex-row sm:items-center gap-3">
                             <button
                                 type="button"
-                                onClick={() => setShowDatePicker(true)}
-                                className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all border border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900 active:scale-95 w-full sm:w-auto"
+                                onClick={() => setShowPreview(true)}
+                                disabled={mediaItems.length === 0}
+                                className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto shadow-sm"
                             >
-                                <Calendar className="w-4 h-4" />
-                                予約を設定...
+                                <Eye className="w-4 h-4" />
+                                プレビュー
                             </button>
-                        ) : (
-                            <div className="flex items-center gap-2 animate-in fade-in zoom-in-95 bg-gray-50 p-1.5 rounded-xl border border-gray-200 w-full sm:w-auto">
-                                <input
-                                    type="datetime-local"
-                                    value={scheduledFor}
-                                    onChange={e => setScheduledFor(e.target.value)}
-                                    min={new Date(Date.now() - new Date().getTimezoneOffset() * 60000 + 60000).toISOString().slice(0, 16)}
-                                    className="bg-white border border-gray-200 rounded-lg py-2 pl-3 pr-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 w-full sm:w-auto"
-                                />
+
+                            <button
+                                type="button"
+                                onClick={handleSaveDraft}
+                                disabled={isWorking || !selectedAccountId || (mediaItems.length === 0 && !caption.trim())}
+                                className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 w-full sm:w-auto"
+                            >
+                                <FileImage className="w-4 h-4" />
+                                下書き
+                            </button>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+                            {!showDatePicker ? (
                                 <button
                                     type="button"
-                                    onClick={() => handlePublishAction('schedule')}
-                                    disabled={isWorking || !selectedAccountId || mediaItems.length === 0 || !scheduledFor}
-                                    className="flex items-center justify-center px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-md bg-purple-600 text-white hover:bg-purple-700 active:scale-95 disabled:opacity-50 w-full sm:w-auto shrink-0"
+                                    onClick={() => setShowDatePicker(true)}
+                                    className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all border border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900 active:scale-95 w-full sm:w-auto"
                                 >
-                                    完了
+                                    <Calendar className="w-4 h-4" />
+                                    予約を設定...
                                 </button>
-                                <button type="button" onClick={() => setShowDatePicker(false)} className="p-2 text-gray-400 hover:text-gray-600 rounded-lg"><X className="w-5 h-5" /></button>
-                            </div>
-                        )}
-                        <button
-                            type="button"
-                            onClick={() => handlePublishAction('now')}
-                            disabled={isWorking || !selectedAccountId || mediaItems.length === 0}
-                            className="flex items-center justify-center gap-2 px-8 py-3 rounded-xl text-sm font-bold transition-all shadow-xl shadow-black/10 active:scale-95 bg-black text-white hover:bg-gray-900 border border-black disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {isPublishing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-4 h-4" />}
-                            <span>今すぐ公開</span>
-                        </button>
+                            ) : (
+                                <div className="flex items-center gap-2 animate-in fade-in zoom-in-95 bg-gray-50 p-1.5 rounded-xl border border-gray-200 w-full sm:w-auto">
+                                    <input
+                                        type="datetime-local"
+                                        value={scheduledFor}
+                                        onChange={e => setScheduledFor(e.target.value)}
+                                        min={new Date(Date.now() - new Date().getTimezoneOffset() * 60000 + 60000).toISOString().slice(0, 16)}
+                                        className="bg-white border border-gray-200 rounded-lg py-2 pl-3 pr-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 w-full sm:w-auto"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => handlePublishAction('schedule')}
+                                        disabled={isWorking || !selectedAccountId || mediaItems.length === 0 || !scheduledFor}
+                                        className="flex items-center justify-center px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-md bg-purple-600 text-white hover:bg-purple-700 active:scale-95 disabled:opacity-50 w-full sm:w-auto shrink-0"
+                                    >
+                                        完了
+                                    </button>
+                                    <button type="button" onClick={() => setShowDatePicker(false)} className="p-2 text-gray-400 hover:text-gray-600 rounded-lg"><X className="w-5 h-5" /></button>
+                                </div>
+                            )}
+                            <button
+                                type="button"
+                                onClick={() => handlePublishAction('now')}
+                                disabled={isWorking || !selectedAccountId || mediaItems.length === 0}
+                                className="flex items-center justify-center gap-2 px-8 py-3 rounded-xl text-sm font-bold transition-all shadow-xl shadow-black/10 active:scale-95 bg-black text-white hover:bg-gray-900 border border-black disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isPublishing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-4 h-4" />}
+                                <span>今すぐ公開</span>
+                            </button>
+                        </div>
                     </div>
-                </div>
-            </form>
+                </form>
             )}
 
             {/* ─────────────────────────────────────────────
@@ -699,7 +644,7 @@ export default function CreateContentClient({ accounts: _ignored }: { accounts?:
 
 
             {/* Instagram Preview Modal */}
-            <MobilePreviewModal 
+            <MobilePreviewModal
                 show={showPreview}
                 onClose={() => setShowPreview(false)}
                 mediaItems={mediaItems}

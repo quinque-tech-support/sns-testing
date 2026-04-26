@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
-import { facebookService } from '@/lib/facebook.service'
+import { facebookService } from '@/lib/services/facebook.service'
 import { verifySignatureAppRouter } from '@upstash/qstash/nextjs'
 
 // Important: This route should be secured in production so that only authorized cron jobs can trigger it.
@@ -74,7 +74,7 @@ async function processSchedule(scheduleId: string) {
         const maxAttempts = isVideo ? 18 : 12 // 18 × 5s = 90s for video, 12 × 5s = 60s for image
         let ready = false
         for (let i = 0; i < maxAttempts; i++) {
-            await new Promise(r => setTimeout(r, 5000))
+            if (process.env.NODE_ENV !== 'test') await new Promise(r => setTimeout(r, 5000))
             const statusRes = await fetch(
                 `https://graph.facebook.com/v19.0/${creationId}?fields=status_code&access_token=${pageAccessToken}`
             )
@@ -118,20 +118,20 @@ async function processSchedule(scheduleId: string) {
 
         return { success: true, scheduleId, mediaId: publishData.id }
 
-    } catch (error: any) {
-        console.error(`[Cron] Error processing schedule ${scheduleId}:`, error.message)
+    } catch (error) {
+        console.error(`[Cron] Error processing schedule ${scheduleId}:`, error instanceof Error ? error.message : 'Unknown')
 
         await prisma.schedule.update({
             where: { id: scheduleId },
             data: { status: 'FAILED' }
         })
 
-        return { success: false, scheduleId, error: error.message }
+        return { success: false, scheduleId, error: error instanceof Error ? error.message : 'Unknown error' }
     }
 }
 
 // The handler function that actually runs your logic
-async function handler(req: Request) {
+async function handler(_req: Request) {
     try {
         console.log(`[Cron] Executing job via Upstash QStash...`)
 
@@ -188,9 +188,9 @@ async function handler(req: Request) {
             message: `Processed ${publishedResults.length} post(s). Synced insights for ${syncedCount} post(s).`,
             publishedResults
         })
-    } catch (e: any) {
+    } catch (e) {
         console.error("[Cron] Error:", e)
-        return NextResponse.json({ error: "Internal Server Error", message: e.message }, { status: 500 })
+        return NextResponse.json({ error: "Internal Server Error", message: e instanceof Error ? e.message : 'Unknown' }, { status: 500 })
     }
 }
 

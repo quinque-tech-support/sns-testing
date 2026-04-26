@@ -1,12 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createUser } from '@/app/actions/auth'
 import { checkPasswordStrength, isPasswordStrong, type PasswordStrength } from '@/lib/validation'
+import { Instagram, Loader2, ArrowLeft, CheckCircle2, XCircle } from 'lucide-react'
 
-export default function SignUp() {
+function SignUpForm() {
     const router = useRouter()
     const [name, setName] = useState('')
     const [email, setEmail] = useState('')
@@ -22,7 +24,6 @@ export default function SignUp() {
         hasSpecialChar: false,
     })
 
-    // Update password strength indicators using shared utility
     const handlePasswordChange = (newPassword: string) => {
         setPassword(newPassword)
         setPasswordStrength(checkPasswordStrength(newPassword))
@@ -32,149 +33,182 @@ export default function SignUp() {
         e.preventDefault()
         setError('')
 
-        // Name validation
         if (name.trim().length < 2) {
-            setError('Name must be at least 2 characters long')
+            setError('名前は2文字以上である必要があります。')
             return
         }
 
-        // Email validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
         if (!emailRegex.test(email)) {
-            setError('Please enter a valid email address')
+            setError('有効なメールアドレスを入力してください。')
             return
         }
 
-        // Password strength validation - simplified using utility
         if (!isPasswordStrong(passwordStrength)) {
-            setError('Please meet all password requirements')
+            setError('パスワードの要件をすべて満たしてください。')
             return
         }
 
-        // Confirm password match
         if (password !== confirmPassword) {
-            setError('Passwords do not match')
+            setError('パスワードが一致しません。')
             return
         }
 
         setLoading(true)
 
         try {
-            // Server will validate again for security
             const result = await createUser(name, email, password)
 
             if (!result.success) {
-                setError(result.error || 'Failed to create account')
+                setError(result.error || 'アカウントの作成に失敗しました。')
                 return
             }
 
-            // Redirect to sign in page
-            router.push('/signin?message=Account created successfully')
+            router.push('/signin?message=アカウントが正常に作成されました。サインインしてください。')
         } catch (err) {
             console.error('Signup error:', err)
-            setError('An error occurred. Please try again.')
+            setError('エラーが発生しました。もう一度お試しください。')
         } finally {
             setLoading(false)
         }
     }
 
+    const Requirement = ({ met, text }: { met: boolean; text: string }) => (
+        <div className={`flex items-center gap-1.5 text-xs font-bold ${met ? 'text-green-600' : 'text-gray-400'}`}>
+            {met ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5 opacity-50" />}
+            {text}
+        </div>
+    )
+
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-            <div className="max-w-md w-full bg-white border border-gray-300 p-8">
-                <div className="text-center mb-6">
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">アカウント作成</h1>
-                    <p className="text-gray-600">今日から始めましょう</p>
+        <form onSubmit={handleSubmit} className="space-y-5">
+            {error && (
+                <div className="p-4 bg-red-50 border border-red-200 text-red-600 rounded-2xl text-sm font-medium">
+                    {error}
+                </div>
+            )}
+
+            <div className="space-y-1.5">
+                <label htmlFor="name" className="block text-sm font-bold text-gray-700">
+                    フルネーム
+                </label>
+                <input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-medium text-gray-900 placeholder:text-gray-400"
+                    placeholder="John Doe"
+                />
+            </div>
+
+            <div className="space-y-1.5">
+                <label htmlFor="email" className="block text-sm font-bold text-gray-700">
+                    メールアドレス
+                </label>
+                <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-medium text-gray-900 placeholder:text-gray-400"
+                    placeholder="you@example.com"
+                />
+            </div>
+
+            <div className="space-y-1.5">
+                <label htmlFor="password" className="block text-sm font-bold text-gray-700">
+                    パスワード
+                </label>
+                <input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => handlePasswordChange(e.target.value)}
+                    required
+                    className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-medium text-gray-900 placeholder:text-gray-400"
+                    placeholder="••••••••"
+                />
+                <div className="pt-2 grid grid-cols-2 gap-2">
+                    <Requirement met={passwordStrength.hasMinLength} text="8文字以上" />
+                    <Requirement met={passwordStrength.hasUppercase} text="大文字を含む" />
+                    <Requirement met={passwordStrength.hasNumber} text="数字を含む" />
+                    <Requirement met={passwordStrength.hasSpecialChar} text="記号を含む" />
+                </div>
+            </div>
+
+            <div className="space-y-1.5 pt-2">
+                <label htmlFor="confirmPassword" className="block text-sm font-bold text-gray-700">
+                    パスワードの確認
+                </label>
+                <input
+                    id="confirmPassword"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-medium text-gray-900 placeholder:text-gray-400"
+                    placeholder="••••••••"
+                />
+            </div>
+
+            <button
+                type="submit"
+                disabled={loading}
+                className="w-full instagram-gradient text-white py-4 px-4 rounded-2xl font-bold shadow-lg shadow-purple-500/20 hover:opacity-90 transition-all active:scale-95 flex items-center justify-center gap-2 mt-4"
+            >
+                {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> アカウント作成中...</> : '無料で登録する'}
+            </button>
+        </form>
+    )
+}
+
+export default function SignUp() {
+    const router = useRouter()
+    const { status } = useSession()
+
+    useEffect(() => {
+        if (status === 'authenticated') {
+            router.replace('/dashboard')
+        }
+    }, [status, router])
+
+    if (status === 'loading' || status === 'authenticated') {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+            </div>
+        )
+    }
+
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 font-sans selection:bg-purple-100 relative">
+            <Link href="/" className="absolute top-8 left-8 flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-gray-900 transition-colors">
+                <ArrowLeft className="w-4 h-4" /> ホームに戻る
+            </Link>
+
+            <div className="max-w-md w-full bg-white rounded-[2rem] border border-gray-100 p-8 shadow-xl shadow-gray-200/50 my-12">
+                <div className="flex flex-col items-center text-center mb-8">
+                    <div className="w-14 h-14 rounded-2xl instagram-gradient flex items-center justify-center shadow-lg shadow-purple-500/20 mb-6 -rotate-12 hover:rotate-0 transition-transform duration-300">
+                        <Instagram className="w-8 h-8 text-white" />
+                    </div>
+                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">アカウント作成</h1>
+                    <p className="text-sm font-medium text-gray-500 mt-2">今日からコンテンツ管理を始めましょう</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    {error && (
-                        <div className="bg-red-50 border border-red-300 text-red-800 px-4 py-3 text-sm">
-                            {error}
-                        </div>
-                    )}
+                <Suspense fallback={<div className="h-64 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-purple-500" /></div>}>
+                    <SignUpForm />
+                </Suspense>
 
-                    <div>
-                        <label htmlFor="name" className="block text-gray-700 font-medium mb-1">
-                            フルネーム
-                        </label>
-                        <input
-                            id="name"
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            required
-                            className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            placeholder="John Doe"
-                        />
-                    </div>
-
-                    <div>
-                        <label htmlFor="email" className="block text-gray-700 font-medium mb-1">
-                            メールアドレス
-                        </label>
-                        <input
-                            id="email"
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                            className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            placeholder="you@example.com"
-                        />
-                    </div>
-
-                    <div>
-                        <label htmlFor="password" className="block text-gray-700 font-medium mb-1">
-                            パスワード
-                        </label>
-                        <input
-                            id="password"
-                            type="password"
-                            value={password}
-                            onChange={(e) => handlePasswordChange(e.target.value)}
-                            required
-                            className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            placeholder="••••••••"
-                        />
-                    </div>
-
-                    <div>
-                        <label htmlFor="confirmPassword" className="block text-gray-700 font-medium mb-1">
-                            パスワードの確認
-                        </label>
-                        <input
-                            id="confirmPassword"
-                            type="password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            required
-                            className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            placeholder="••••••••"
-                        />
-                    </div>
-
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {loading ? 'アカウント作成中...' : '登録する'}
-                    </button>
-                </form>
-
-                <div className="mt-4 text-center">
-                    <p className="text-gray-600 text-sm">
-                        すでにアカウントをお持ちの方は{' '}
-                        <Link href="/signin" className="text-blue-600 hover:text-blue-700">
+                <div className="mt-8 pt-6 border-t border-gray-100 text-center">
+                    <p className="text-sm font-medium text-gray-500">
+                        すでにアカウントをお持ちですか？{' '}
+                        <Link href="/signin" className="text-purple-600 font-bold hover:text-purple-700 transition-colors">
                             サインイン
                         </Link>
                     </p>
-                </div>
-
-                <div className="mt-4 text-center">
-                    <Link href="/" className="text-gray-600 hover:text-gray-800 text-sm">
-                        ← ホームに戻る
-                    </Link>
                 </div>
             </div>
         </div>

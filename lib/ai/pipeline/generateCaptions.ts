@@ -1,245 +1,208 @@
 import type {
     PipelineInput,
     PipelineOutput,
-    FusedContext,
-    CaptionResult,
     ImageAnalysis,
-    CriticScore,
+    PatternAnalysis,
+    ProjectContext,
 } from '../types';
 import { MAX_IMAGES } from '../types';
 import { analyzeImage } from '../vision/analyzeImage';
 import { detectPostType, selectAnchorImage, interpretSequence } from '../sequence/interpretSequence';
-import { runStrategist } from '../strategist/strategist';
 import { analyzePatterns } from '../pattern/analyzer';
 import { runWriter } from '../writer/writer';
-import { runCritic } from '../critic/critic';
-import { runRefiner } from '../refiner/refiner';
 import { sleep, staggeredDelay } from '../utils/retry';
+import { prisma } from '@/lib/prisma';
 
-// Re-import constants as values (not types)
-const MAX_ITERATIONS = 2;
-const SCORE_THRESHOLD = 8;
+const PATTERN_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 /**
- * Main pipeline orchestrator.
+ * Simplified pipeline orchestrator.
  *
- * Flow:
- *  1. Analyze all images (parallel, staggered)
- *  2. Detect post type
- *  3. Select anchor image
- *  4. If multi-image → run sequence interpreter
- *  5. Run pattern analyzer on past captions (mandatory)
- *  6. Fuse all context
- *  7. Run strategist (once)
- *  8. For each variation in strategy.variation_plan:
- *     Writer → Critic → Refiner (max 2 iterations)
- *  9. Rank by score
- * 10. Return single best caption
+ * Flow (2-3 API calls total):
+ *  1. Analyze anchor image only                     → 1 API call
+ *  2. (Multi-image only) Sequence interpretation     → 1 API call (conditional)
+ *  3. Load or generate pattern analysis (cached)     → 0 or 1 API call
+ *  4. Build combined context
+ *  5. Run writer — single call, no strategist        → 1 API call
  */
 export async function generateCaptions(input: PipelineInput): Promise<PipelineOutput> {
     const startTime = Date.now();
     const { apiKey } = input;
 
     console.log('═══════════════════════════════════════');
-    console.log('[Pipeline] Starting multi-stage caption generation');
+    console.log('[Pipeline] Starting simplified caption generation');
     console.log(`[Pipeline] Images: ${input.images.length}, Project: ${input.projectContext?.title || 'none'}, Prompt: ${input.userPrompt ? 'yes' : 'no'}`);
     console.log('═══════════════════════════════════════');
 
-    // ── 1. VISION ANALYSIS — analyze all images ─────────────────────────
+    // ── 1. VISION ANALYSIS — analyze only the anchor image ──────────────
     const imagesToAnalyze = input.images.slice(0, MAX_IMAGES);
-    let allAnalyses: ImageAnalysis[] = [];
+    let anchorAnalysis: ImageAnalysis;
 
     if (imagesToAnalyze.length > 0) {
-        console.log(`[Pipeline] Stage 1: Analyzing ${imagesToAnalyze.length} image(s)...`);
-
-        // Staggered parallel — avoid burst rate limits
-        const analysisPromises = imagesToAnalyze.map(async (img, i) => {
-            if (i > 0) await sleep(staggeredDelay(i));
-            return analyzeImage(img, apiKey);
-        });
-
-        const results = await Promise.allSettled(analysisPromises);
-        allAnalyses = results
-            .filter((r): r is PromiseFulfilledResult<ImageAnalysis> => r.status === 'fulfilled')
-            .map(r => r.value);
-
-        // Log any failures
-        results
-            .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
-            .forEach((r, i) => console.error(`[Pipeline] Vision analysis failed for image ${i}:`, r.reason?.message));
-
-        if (allAnalyses.length === 0) {
-            // Fallback: create a minimal analysis so pipeline can continue
-            console.warn('[Pipeline] All vision analyses failed — using minimal fallback');
-            allAnalyses = [{
+        console.log('[Pipeline] Stage 1: Analyzing anchor image...');
+        try {
+            anchorAnalysis = await analyzeImage(imagesToAnalyze[0], apiKey);
+        } catch (err: any) {
+            console.warn('[Pipeline] Vision analysis failed — using fallback:', err.message);
+            anchorAnalysis = {
                 objects: [],
                 scene: 'unknown',
                 mood: 'neutral',
                 actions: [],
                 primary_subject: 'image content',
                 confidence: 0.2,
-            }];
+            };
         }
     } else {
-        // No images — text-only generation
-        allAnalyses = [{
+        anchorAnalysis = {
             objects: [],
             scene: 'no image provided',
             mood: 'neutral',
             actions: [],
             primary_subject: 'text-only post',
             confidence: 0.1,
-        }];
+        };
     }
 
-    // ── 2. POST TYPE DETECTION ──────────────────────────────────────────
+    // ── 2. POST TYPE DETECTION (local, no API call) ─────────────────────
     const postType = detectPostType(imagesToAnalyze.length);
     console.log(`[Pipeline] Stage 2: Post type = "${postType}"`);
 
-    // ── 3. ANCHOR IMAGE SELECTION ───────────────────────────────────────
-    const { anchor: anchorAnalysis } = selectAnchorImage(allAnalyses);
-    console.log(`[Pipeline] Stage 3: Anchor = "${anchorAnalysis.primary_subject}"`);
-
-    // ── 4. SEQUENCE INTERPRETATION (multi-image only) ───────────────────
-    let sequenceData = undefined;
-    if (postType !== 'single' && allAnalyses.length > 1) {
-        console.log('[Pipeline] Stage 4: Running sequence interpreter...');
+    // ── 3. SEQUENCE INTERPRETATION (multi-image only — 1 API call) ──────
+    let sequenceSummary = '';
+    if (postType !== 'single' && imagesToAnalyze.length > 1) {
+        console.log('[Pipeline] Stage 3: Running sequence interpreter...');
         try {
-            sequenceData = await interpretSequence(allAnalyses, apiKey);
+            // Build lightweight analyses for non-anchor images from the anchor data
+            // This avoids analyzing every image but still gives the sequence context
+            const lightweightAnalyses: ImageAnalysis[] = [anchorAnalysis];
+            // For remaining images, create placeholder analyses to indicate they exist
+            for (let i = 1; i < imagesToAnalyze.length; i++) {
+                lightweightAnalyses.push({
+                    objects: [],
+                    scene: `image ${i + 1} in sequence`,
+                    mood: anchorAnalysis.mood, // assume similar mood
+                    actions: [],
+                    primary_subject: `additional image ${i + 1}`,
+                    confidence: 0.3,
+                });
+            }
+            const seqData = await interpretSequence(lightweightAnalyses, apiKey);
+            sequenceSummary = `Theme: ${seqData.theme}. Arc: ${seqData.emotional_arc.join(' → ')}. Focus: ${seqData.anchor_focus}`;
         } catch (err: any) {
             console.warn('[Pipeline] Sequence interpretation failed (non-fatal):', err.message);
         }
     }
 
-    // ── 5. PATTERN ANALYSIS (mandatory) ─────────────────────────────────
-    console.log('[Pipeline] Stage 5: Running pattern analysis...');
-    let patternData = undefined;
+    // ── 4. PATTERN ANALYSIS (cached — 0 or 1 API call) ──────────────────
+    console.log('[Pipeline] Stage 4: Loading pattern analysis...');
+    let patternData: PatternAnalysis | undefined;
     const pastCaptions = input.pastCaptions?.filter(c => c && c.trim().length > 0) || [];
 
-    try {
-        patternData = await analyzePatterns(pastCaptions, apiKey);
-    } catch (err: any) {
-        console.warn('[Pipeline] Pattern analysis failed (non-fatal):', err.message);
-    }
+    patternData = await getCachedOrFreshPatterns(
+        input.userId,
+        input.projectId,
+        pastCaptions,
+        apiKey
+    );
 
-    // ── 6. FUSE CONTEXT ─────────────────────────────────────────────────
-    const visionSummary = allAnalyses.map((a, i) =>
-        `Image ${i + 1}: ${a.primary_subject} (${a.scene}, ${a.mood})`
-    ).join('; ');
+    // ── 5. BUILD CONTEXT + WRITE CAPTION (1 API call) ───────────────────
+    console.log('[Pipeline] Stage 5: Generating caption...');
 
-    const fusedContext: FusedContext = {
+    const result = await runWriter({
+        anchorAnalysis,
+        postType,
+        sequenceSummary,
+        patternData,
+        projectContext: input.projectContext,
         userPrompt: input.userPrompt,
         currentCaption: input.currentCaption,
-        projectContext: input.projectContext,
-        analysisContextStr: input.analysisContextStr,
-        visionSummary,
-        sequenceData,
-        patternData,
-        postType,
-        anchorAnalysis,
-        allAnalyses,
-    };
+        imageCount: imagesToAnalyze.length,
+    }, apiKey);
 
-    console.log('[Pipeline] Stage 6: Context fused');
-
-    // ── 7. STRATEGIST (runs once) ───────────────────────────────────────
-    console.log('[Pipeline] Stage 7: Running strategist...');
-    const strategy = await runStrategist(fusedContext, apiKey);
-
-    // ── 8. GENERATION LOOP — Writer → Critic → Refiner per variation ───
-    console.log(`[Pipeline] Stage 8: Generating ${strategy.variation_plan.length} variations...`);
-
-    const variationResults: CaptionResult[] = [];
-
-    // Run variations sequentially to respect rate limits
-    for (let v = 0; v < strategy.variation_plan.length; v++) {
-        const variationType = strategy.variation_plan[v];
-
-        // Stagger between variations
-        if (v > 0) await sleep(staggeredDelay(v));
-
-        try {
-            const result = await runSingleVariation(
-                strategy,
-                fusedContext,
-                variationType,
-                apiKey
-            );
-            variationResults.push(result);
-        } catch (err: any) {
-            console.error(`[Pipeline] Variation "${variationType}" failed:`, err.message);
-        }
-    }
-
-    if (variationResults.length === 0) {
-        throw new Error('[Pipeline] All caption variations failed. No captions generated.');
-    }
-
-    // ── 9. RANK & SELECT BEST ───────────────────────────────────────────
-    variationResults.sort((a, b) => b.score - a.score);
-
-    const bestCaption = variationResults[0];
     console.log('═══════════════════════════════════════');
     console.log(`[Pipeline] COMPLETE in ${((Date.now() - startTime) / 1000).toFixed(1)}s`);
-    console.log(`[Pipeline] Best caption: "${bestCaption.style}" style, score: ${bestCaption.score}/10`);
-    console.log(`[Pipeline] All scores: ${variationResults.map(r => `${r.style}=${r.score}`).join(', ')}`);
+    console.log(`[Pipeline] Caption length: ${result.caption.length} chars, ${result.hashtags.length} hashtags`);
     console.log('═══════════════════════════════════════');
 
     return {
-        caption: bestCaption,
-        strategist_summary: strategy,
+        caption: {
+            text: result.caption,
+            hashtags: result.hashtags,
+            rationale: `Generated from image analysis + ${patternData ? 'learned patterns' : 'baseline patterns'}${input.projectContext ? ' + project context' : ''}${input.userPrompt ? ' + user prompt' : ''}.`,
+        },
     };
 }
 
 /**
- * Run a single Writer → Critic → Refiner loop for one variation style.
+ * Check the DB for cached pattern analysis. If cache is fresh (<24h), return it.
+ * Otherwise, run the AI analyzer and store the result.
  */
-async function runSingleVariation(
-    strategy: any,
-    ctx: FusedContext,
-    variationType: string,
+async function getCachedOrFreshPatterns(
+    userId: string | undefined,
+    projectId: string | undefined,
+    pastCaptions: string[],
     apiKey: string
-): Promise<CaptionResult> {
-    console.log(`\n[Variation "${variationType}"] Starting...`);
+): Promise<PatternAnalysis | undefined> {
+    // Try to load from cache if we have user + project context
+    if (userId && projectId) {
+        try {
+            const cached = await prisma.patternCache.findUnique({
+                where: { projectId_userId: { projectId, userId } },
+            });
 
-    // Writer
-    let draft = await runWriter(strategy, ctx, variationType, apiKey);
-    let criticResult: CriticScore | null = null;
-    let iterations = 0;
-
-    // Critic → Refiner loop (max 2 iterations)
-    while (iterations < MAX_ITERATIONS) {
-        iterations++;
-
-        // Small delay between writer/critic/refiner calls
-        await sleep(500);
-
-        // Critic
-        criticResult = await runCritic(strategy, draft, ctx, apiKey);
-
-        if (criticResult.total >= SCORE_THRESHOLD) {
-            console.log(`[Variation "${variationType}"] Score ${criticResult.total}/10 >= ${SCORE_THRESHOLD} — accepted after ${iterations} iteration(s)`);
-            break;
+            if (cached) {
+                const age = Date.now() - cached.updatedAt.getTime();
+                if (age < PATTERN_CACHE_TTL_MS) {
+                    console.log(`[Pattern] Using cached analysis (age: ${Math.round(age / 60000)}min)`);
+                    return JSON.parse(cached.data) as PatternAnalysis;
+                }
+                console.log('[Pattern] Cache expired, regenerating...');
+            }
+        } catch (err: any) {
+            console.warn('[Pattern] Cache lookup failed (non-fatal):', err.message);
         }
-
-        if (iterations >= MAX_ITERATIONS) {
-            console.log(`[Variation "${variationType}"] Max iterations reached with score ${criticResult.total}/10`);
-            break;
-        }
-
-        // Refiner
-        await sleep(500);
-        draft = await runRefiner(strategy, draft, criticResult, ctx, apiKey);
     }
 
-    // Final score — if critic didn't run (shouldn't happen), default to 5
-    const finalScore = criticResult?.total ?? 5;
+    // No cache or stale — run the analyzer
+    if (pastCaptions.length === 0) {
+        console.log('[Pattern] No past captions — using baseline defaults');
+        return {
+            avg_length: 'no data',
+            emoji_usage: 'no data',
+            hook_style: 'no data',
+            tone: 'no data',
+            CTA_style: 'no data',
+            pattern_summary: 'No past captions available. This is the first generation — establish a strong initial voice.',
+        };
+    }
 
-    return {
-        text: draft.caption,
-        score: finalScore,
-        style: variationType,
-        hashtags: draft.hashtags,
-        rationale: `Score: ${finalScore}/10 after ${iterations} iteration(s). Style: ${variationType}. ${criticResult?.suggestions?.[0] || ''}`,
-    };
+    try {
+        const result = await analyzePatterns(pastCaptions, apiKey);
+
+        // Store in cache
+        if (userId && projectId) {
+            try {
+                await prisma.patternCache.upsert({
+                    where: { projectId_userId: { projectId, userId } },
+                    create: {
+                        projectId,
+                        userId,
+                        data: JSON.stringify(result),
+                    },
+                    update: {
+                        data: JSON.stringify(result),
+                    },
+                });
+                console.log('[Pattern] Cached analysis for future use');
+            } catch (err: any) {
+                console.warn('[Pattern] Failed to cache (non-fatal):', err.message);
+            }
+        }
+
+        return result;
+    } catch (err: any) {
+        console.warn('[Pattern] Analysis failed (non-fatal):', err.message);
+        return undefined;
+    }
 }

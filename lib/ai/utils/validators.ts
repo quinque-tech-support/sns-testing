@@ -2,8 +2,6 @@ import { z } from 'zod';
 import type {
     ImageAnalysis,
     SequenceInterpretation,
-    Strategy,
-    CriticScore,
     CaptionDraft,
     PatternAnalysis,
 } from '../types';
@@ -37,39 +35,6 @@ export function validateSequence(data: unknown): SequenceInterpretation {
     return sequenceSchema.parse(data);
 }
 
-// ─── Strategy ─────────────────────────────────────────────────────────────────
-
-const strategySchema = z.object({
-    tone: z.string().default('authentic and relatable'),
-    hook_strategy: z.string().default('question-based hook'),
-    cta_style: z.string().default('soft engagement prompt'),
-    target_audience: z.string().default('general Instagram users'),
-    caption_structure: z.string().default('hook → story → CTA'),
-    variation_plan: z.array(z.string()).default(['emotional storytelling', 'witty', 'aesthetic']),
-    constraints: z.array(z.string()).default([]),
-});
-
-export function validateStrategy(data: unknown): Strategy {
-    return strategySchema.parse(data);
-}
-
-// ─── Critic Score ─────────────────────────────────────────────────────────────
-
-const criticScoreSchema = z.object({
-    hook_strength: z.number().min(0).max(2).default(1),
-    clarity: z.number().min(0).max(2).default(1),
-    relatability: z.number().min(0).max(2).default(1),
-    image_alignment: z.number().min(0).max(2).default(1),
-    engagement_potential: z.number().min(0).max(2).default(1),
-    total: z.number().min(0).max(10).default(5),
-    issues: z.array(z.string()).default([]),
-    suggestions: z.array(z.string()).default([]),
-});
-
-export function validateCriticScore(data: unknown): CriticScore {
-    return criticScoreSchema.parse(data);
-}
-
 // ─── Caption Draft ────────────────────────────────────────────────────────────
 
 const captionDraftSchema = z.object({
@@ -94,28 +59,4 @@ const patternSchema = z.object({
 
 export function validatePattern(data: unknown): PatternAnalysis {
     return patternSchema.parse(data);
-}
-
-// ─── Safe parse wrapper ───────────────────────────────────────────────────────
-
-/**
- * Attempt to validate with a schema. On failure, log warning and return a
- * best-effort coercion (letting Zod defaults fill gaps).
- */
-export function safeParse<T>(
-    validator: (data: unknown) => T,
-    data: unknown,
-    label: string
-): T {
-    try {
-        return validator(data);
-    } catch (error) {
-        console.warn(`[Validator] ${label} — validation issue, applying defaults:`, error);
-        // Try again with an empty object so defaults kick in
-        try {
-            return validator({});
-        } catch {
-            throw new Error(`[Validator] ${label} — unrecoverable validation failure`);
-        }
-    }
 }

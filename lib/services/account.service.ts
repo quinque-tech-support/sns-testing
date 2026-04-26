@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { facebookService } from '@/lib/facebook.service'
+import { facebookService } from '@/lib/services/facebook.service'
 
 export class AccountService {
     /**
