@@ -2,24 +2,22 @@ import { Sidebar } from '@/app/components/Sidebar'
 import { Topbar } from '@/app/components/Topbar'
 import { AccountProvider } from '@/app/components/AccountContext'
 import { SidebarProvider } from '@/app/components/SidebarContext'
-import { auth } from '@/auth'
+import { requirePageAuth } from '@/lib/auth.utils'
 import { prisma } from '@/lib/prisma'
-import { redirect } from 'next/navigation'
 
 export default async function DashboardLayout({
     children,
 }: {
     children: React.ReactNode
 }) {
-    const session = await auth()
+    const session = await requirePageAuth();
+    const userId = session.user.id
 
-    if (!session?.user?.id) {
-        redirect('/signin')
-    }
+    
 
     // Fetch connected accounts for the account selector
     const connectedAccounts = await prisma.connectedAccount.findMany({
-        where: { userId: session.user.id },
+        where: { userId: userId },
         select: {
             id: true,
             username: true,

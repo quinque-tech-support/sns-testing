@@ -1,59 +1,125 @@
-import type { FusedContext, Strategy, CaptionDraft } from '../types';
+import type { ImageAnalysis, PatternAnalysis, ProjectContext, CaptionDraft, PostType } from '../types';
 import { callModel } from '../utils/callModel';
 import { validateCaptionDraft } from '../utils/validators';
-import { buildContextBlock } from '../strategist/strategist';
 
 /**
- * Generate a single caption draft following the strategy brief and a specific
- * variation style. Each invocation produces a distinct style of caption.
+ * Input context for the writer — everything it needs in a single object.
+ */
+export interface WriterContext {
+    anchorAnalysis: ImageAnalysis;
+    postType: PostType;
+    sequenceSummary: string;
+    patternData?: PatternAnalysis;
+    projectContext?: ProjectContext;
+    userPrompt?: string;
+    currentCaption?: string;
+    imageCount: number;
+}
+
+/**
+ * Build the full context block for the writer prompt.
+ * Priority order: userPrompt > projectContext > imageAnalysis > patterns
+ */
+function buildContextBlock(ctx: WriterContext): string {
+    let text = '';
+
+    // 1. User Prompt (Highest Priority)
+    if (ctx.userPrompt) {
+        text += `[最優先 — ユーザーの指示]\n`;
+        text += `${ctx.userPrompt}\n\n`;
+    }
+
+    // 2. Existing Draft to Enhance
+    if (ctx.currentCaption) {
+        text += `[既存のキャプション（改善対象）]\n${ctx.currentCaption}\n\n`;
+    }
+
+    // 3. Project Context
+    if (ctx.projectContext) {
+        text += `[プロジェクト情報]\n`;
+        text += `プロジェクト名: ${ctx.projectContext.title}\n`;
+        if (ctx.projectContext.description) text += `ガイドライン: ${ctx.projectContext.description}\n`;
+        if (ctx.projectContext.keywords) text += `キーワード: ${ctx.projectContext.keywords}\n`;
+        text += '\n';
+    }
+
+    // 4. Image Analysis
+    text += `[画像分析]\n`;
+    text += `投稿タイプ: ${ctx.postType} (${ctx.imageCount}枚)\n`;
+    text += `主題: ${ctx.anchorAnalysis.primary_subject}\n`;
+    text += `シーン: ${ctx.anchorAnalysis.scene}\n`;
+    text += `雰囲気: ${ctx.anchorAnalysis.mood}\n`;
+    if (ctx.anchorAnalysis.objects.length > 0) {
+        text += `オブジェクト: ${ctx.anchorAnalysis.objects.join(', ')}\n`;
+    }
+    if (ctx.anchorAnalysis.actions.length > 0) {
+        text += `アクション: ${ctx.anchorAnalysis.actions.join(', ')}\n`;
+    }
+    text += '\n';
+
+    // 5. Sequence Summary (carousels)
+    if (ctx.sequenceSummary) {
+        text += `[カルーセル構成]\n${ctx.sequenceSummary}\n\n`;
+    }
+
+    // 6. Past Caption Patterns
+    if (ctx.patternData) {
+        text += `[過去の投稿パターン — スタイルを維持すること]\n`;
+        text += `平均的な長さ: ${ctx.patternData.avg_length}\n`;
+        text += `絵文字の使い方: ${ctx.patternData.emoji_usage}\n`;
+        text += `フックスタイル: ${ctx.patternData.hook_style}\n`;
+        text += `トーン: ${ctx.patternData.tone}\n`;
+        text += `CTA: ${ctx.patternData.CTA_style}\n`;
+        text += `まとめ: ${ctx.patternData.pattern_summary}\n\n`;
+    }
+
+    return text;
+}
+
+/**
+ * Generate a single, high-quality Instagram caption.
+ * Combines strategist + writer into a single API call.
  *
  * ALL OUTPUT IS IN JAPANESE — this is a Japanese-market Instagram platform.
  */
 export async function runWriter(
-    strategy: Strategy,
-    ctx: FusedContext,
-    variationType: string,
+    ctx: WriterContext,
     apiKey: string
 ): Promise<CaptionDraft> {
     const contextBlock = buildContextBlock(ctx);
 
-    const prompt = `You are a world-class Instagram copywriter specializing in the Japanese market.
-ALL OUTPUT MUST BE IN JAPANESE (日本語).
+    const prompt = `あなたはInstagramの日本市場に特化したプロのコピーライターです。
+以下のコンテキストを元に、エンゲージメント率の高いキャプションを1つ作成してください。
 
-Your task: Write a single, highly engaging Instagram caption in the "${variationType}" style.
+出力はすべて日本語で書いてください。
 
+═══════════════════════════════════════
 ${contextBlock}
+═══════════════════════════════════════
 
-[STRATEGY BRIEF — FOLLOW PRECISELY]
-${JSON.stringify(strategy, null, 2)}
+【キャプション作成ルール】
+1. 最初の1行（フック）は40文字以内で、読者の注意を引くこと
+2. 画像をただ説明するのではなく、ストーリーや感情を伝えること
+3. CTAは自然に組み込むこと（強引にならないように）
+4. AIっぽい定型文やマーケティングテンプレートは避けること
+5. ハッシュタグは日本語と英語を混ぜ、広いものとニッチなものを8〜15個
+${ctx.patternData ? '6. 過去の投稿パターンに合わせて一貫性を保つこと' : ''}
+${ctx.userPrompt ? '7. ユーザーの指示を最優先で反映すること' : ''}
 
-[YOUR SPECIFIC VARIATION STYLE: "${variationType}"]
-Write the caption in this specific style. Make it feel distinctly different from other styles.
-
-CRITICAL RULES:
-1. 出力はすべて日本語で書いてください
-2. The FIRST LINE is the hook. It MUST be 40 characters or less (Strict constraint). Cut to the core message instantly.
-3. Do NOT simply describe the image — tell a story, share a feeling, provoke thought
-4. Match the strategy's tone precisely
-5. Include the CTA naturally, not forced
-6. Keep it human — avoid sounding like a corporate AI or marketing template
-7. Hashtags should be a strategic mix of Japanese + English, broad + niche (8-15 total)
-${ctx.patternData ? `8. MAINTAIN CONSISTENCY with past patterns: ${ctx.patternData.pattern_summary}` : ''}
-
-Output JSON:
+出力形式（JSON）:
 {
-  "caption": "The full caption text in Japanese",
-  "hashtags": ["#hashtag1", "#hashtag2", "..."]
+  "caption": "完成したキャプション（日本語）",
+  "hashtags": ["#ハッシュタグ1", "#ハッシュタグ2", "..."]
 }`;
 
-    console.log(`[Writer] Generating "${variationType}" draft...`);
+    console.log('[Writer] Generating caption...');
 
     const raw = await callModel(apiKey, prompt, {
-        label: `Writer/${variationType}`,
+        label: 'Writer/generateCaption',
     });
 
     const draft = validateCaptionDraft(raw);
-    console.log(`[Writer] "${variationType}" draft ready — ${draft.caption.length} chars, ${draft.hashtags.length} hashtags`);
+    console.log(`[Writer] Caption ready — ${draft.caption.length} chars, ${draft.hashtags.length} hashtags`);
 
     return draft;
 }

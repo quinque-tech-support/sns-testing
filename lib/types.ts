@@ -7,3 +7,22 @@ export type ActionResult<T = void> = {
     error?: string
     data?: T
 }
+
+// ─── Analytics ───────────────────────────────────────────────────────────────
+
+export interface ChartDataPoint {
+    label: string
+    count: number
+    publishedCount: number
+    height: number
+    pubHeight: number
+}
+
+export interface TopPost {
+    id: string
+    imageUrl: string
+    caption: string | null
+    createdAt: Date
+    connectedAccount: { username: string | null } | null
+    schedules: { status: string; scheduledFor: Date | null }[]
+}

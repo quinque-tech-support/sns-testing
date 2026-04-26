@@ -18,6 +18,7 @@ model User {
   projects          Project[]
   projectImages     ProjectImage[]
   aiUsageOption     String             @default("Normal AI Use")
+  patternCaches     PatternCache[]
 }
 
 model ConnectedAccount {
@@ -69,7 +70,8 @@ model Project {
   user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   posts       Post[]
   images      ProjectImage[]
-  defaultHashtags String[]
+  defaultHashtags   String[]
+  patternCaches     PatternCache[]
 }
 
 model ProjectImage {
@@ -98,6 +100,20 @@ enum ScheduleStatus {
   PROCESSING
   PUBLISHED
   FAILED
+}
+
+model PatternCache {
+  id        String   @id @default(cuid())
+  projectId String
+  userId    String
+  data      String   // JSON-serialized PatternAnalysis
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
 }
 
 enum MediaType {

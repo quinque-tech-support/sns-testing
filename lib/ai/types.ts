@@ -26,8 +26,10 @@ export interface PipelineInput {
     pastCaptions?: string[];
     /** Gemini API key */
     apiKey: string;
-    /** Historical analysis context string (from ai-analysis.service) */
-    analysisContextStr?: string;
+    /** User ID for pattern caching */
+    userId?: string;
+    /** Project ID for pattern caching */
+    projectId?: string;
 }
 
 export type PostType = 'single' | 'small-carousel' | 'story-carousel';
@@ -53,18 +55,6 @@ export interface SequenceInterpretation {
     anchor_focus: string;
 }
 
-// ─── Strategist ───────────────────────────────────────────────────────────────
-
-export interface Strategy {
-    tone: string;
-    hook_strategy: string;
-    cta_style: string;
-    target_audience: string;
-    caption_structure: string;
-    variation_plan: string[];
-    constraints: string[];
-}
-
 // ─── Pattern Analysis ─────────────────────────────────────────────────────────
 
 export interface PatternAnalysis {
@@ -74,19 +64,6 @@ export interface PatternAnalysis {
     tone: string;
     CTA_style: string;
     pattern_summary: string;
-}
-
-// ─── Critic ───────────────────────────────────────────────────────────────────
-
-export interface CriticScore {
-    hook_strength: number;
-    clarity: number;
-    relatability: number;
-    image_alignment: number;
-    engagement_potential: number;
-    total: number;
-    issues: string[];
-    suggestions: string[];
 }
 
 // ─── Caption Draft ────────────────────────────────────────────────────────────
@@ -100,36 +77,15 @@ export interface CaptionDraft {
 
 export interface CaptionResult {
     text: string;
-    score: number;
-    style: string;
     hashtags: string[];
     rationale: string;
 }
 
 export interface PipelineOutput {
-    /** Single best caption (highest scored) */
     caption: CaptionResult;
-    strategist_summary: Strategy;
-}
-
-// ─── Internal context passed between stages ───────────────────────────────────
-
-export interface FusedContext {
-    userPrompt?: string;
-    currentCaption?: string;
-    projectContext?: ProjectContext;
-    analysisContextStr?: string;
-    visionSummary: string;
-    sequenceData?: SequenceInterpretation;
-    patternData?: PatternAnalysis;
-    postType: PostType;
-    anchorAnalysis: ImageAnalysis;
-    allAnalyses: ImageAnalysis[];
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 export const MAX_IMAGES = 10;
-export const MODEL_NAME = 'gemini-2.0-flash';
-export const TARGET_SCORE = 8;
-export const MAX_REFINE_ITERATIONS = 2;
+export const MODEL_NAME = 'gemini-2.5-flash-lite';

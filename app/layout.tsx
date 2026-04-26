@@ -9,8 +9,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Insta Auto - Authentication",
-  description: "Instagram automation with NextAuth",
+  title: "SNS Automation",
+  description: "Social media automation with AI",
 };
 
 export default function RootLayout({

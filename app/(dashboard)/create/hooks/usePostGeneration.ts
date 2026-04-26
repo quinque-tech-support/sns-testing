@@ -47,7 +47,8 @@ export function usePostGeneration() {
     /** Main AI generation function */
     const generateCaption = async (
         mediaItems: MediaItem[],
-        projectId?: string
+        projectId?: string,
+        projectHashtags: string[] = []
     ) => {
         if (mediaItems.length === 0) {
             setGenerationError('キャプションを生成するには、まず画像を準備してください。')
@@ -55,7 +56,6 @@ export function usePostGeneration() {
         }
 
         setIsGeneratingAI(true)
-        setCaptionOptions([])
         setGenerationError(null)
 
         try {
@@ -76,13 +76,26 @@ export function usePostGeneration() {
             if (!res.ok) throw new Error(json.error || 'AIキャプションの生成に失敗しました。')
 
             if (json.options && json.options.length > 0) {
-                setCaptionOptions(json.options)
+                const opt = json.options[0]
+                // Combine AI hashtags and project hashtags, remove duplicates
+                const allTags = Array.from(new Set([...(opt.hashtags || []), ...projectHashtags]))
+                
+                // Directly set the caption and hashtags
+                const combinedCaption = allTags.length > 0
+                    ? `${opt.caption}\n\n${allTags.join(' ')}`
+                    : opt.caption
+
+                setCaption(combinedCaption)
+                setHashtags(allTags)
             } else {
-                // Fallback: merge caption + hashtags into the editor
-                setCaption(json.caption || '')
-                if (Array.isArray(json.hashtags)) {
-                    setHashtags(json.hashtags)
-                }
+                // Fallback
+                const fallbackTags = Array.from(new Set([...(Array.isArray(json.hashtags) ? json.hashtags : []), ...projectHashtags]))
+                const combinedCaption = fallbackTags.length > 0
+                    ? `${json.caption}\n\n${fallbackTags.join(' ')}`
+                    : (json.caption || '')
+                    
+                setCaption(combinedCaption)
+                setHashtags(fallbackTags)
             }
         } catch (error) {
             const message = error instanceof Error ? error.message : 'AIの生成に失敗しました。'

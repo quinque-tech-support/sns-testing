@@ -1,6 +1,6 @@
 import { requirePageAuth } from '@/lib/auth.utils'
 import { prisma } from '@/lib/prisma'
-import { facebookService } from '@/lib/facebook.service'
+import { facebookService } from '@/lib/services/facebook.service'
 import { redirect } from 'next/navigation'
 import DashboardClient from './DashboardClient'
 

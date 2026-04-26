@@ -1,7 +1,6 @@
 /** @type {import('jest').Config} */
-const config = {
-  testEnvironment: 'jest-environment-jsdom',
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+
+const sharedConfig = {
   transform: {
     '^.+\\.(ts|tsx|js|jsx)$': ['babel-jest', { configFile: './babel.config.test.js' }],
   },
@@ -10,16 +9,59 @@ const config = {
     '\\.(css|less|scss|sass)$': '<rootDir>/__mocks__/styleMock.js',
     '\\.(jpg|jpeg|png|gif|svg|webp|avif)$': '<rootDir>/__mocks__/fileMock.js',
   },
-  // ✅ Exclude the babel config file and everything else that isn't a test
-  testMatch: [
-    '**/__tests__/**/*.{ts,tsx}',
-    '**/*.{spec,test}.{ts,tsx}',
-  ],
   testPathIgnorePatterns: [
     '<rootDir>/.next/',
     '<rootDir>/node_modules/',
     '<rootDir>/scripts/',
   ],
+  // Allow ESM packages from next/upstash to be transformed
+  transformIgnorePatterns: [
+    '/node_modules/(?!(lucide-react)/)',
+  ],
+}
+
+const config = {
+  projects: [
+    // ─── Unit Tests ──────────────────────────────────────────────────────
+    // Pure functions, isolated components with fully mocked dependencies.
+    // Test a single module in isolation.
+    {
+      ...sharedConfig,
+      displayName: 'unit',
+      testEnvironment: 'jest-environment-jsdom',
+      setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+      testMatch: [
+        '**/__tests__/unit/**/*.test.{ts,tsx}',
+      ],
+    },
+
+    // ─── Integration Tests ───────────────────────────────────────────────
+    // API routes and server actions — multiple modules collaborating
+    // with mocked external dependencies (Prisma, APIs, etc.)
+    {
+      ...sharedConfig,
+      displayName: 'integration',
+      testEnvironment: 'jest-environment-jsdom',
+      setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+      testMatch: [
+        '**/__tests__/integration/**/*.test.{ts,tsx}',
+      ],
+    },
+
+    // ─── E2E Tests ───────────────────────────────────────────────────────
+    // Full user flows — page-level components with real context providers,
+    // or multi-step API workflows end-to-end.
+    {
+      ...sharedConfig,
+      displayName: 'e2e',
+      testEnvironment: 'jest-environment-jsdom',
+      setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+      testMatch: [
+        '**/__tests__/e2e/**/*.test.{ts,tsx}',
+      ],
+    },
+  ],
+
   collectCoverageFrom: [
     'lib/**/*.{ts,tsx}',
     'app/actions/**/*.{ts,tsx}',
@@ -36,10 +78,6 @@ const config = {
       statements: 70,
     },
   },
-  // Allow ESM packages from next/upstash to be transformed
-  transformIgnorePatterns: [
-    '/node_modules/(?!(lucide-react)/)',
-  ],
 }
 
 module.exports = config

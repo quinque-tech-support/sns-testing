@@ -47,7 +47,7 @@ export async function callModel(
             return JSON.parse(text);
         },
         {
-            maxRetries: options?.maxRetries ?? 3,
+            maxRetries: options?.maxRetries ?? 1,
             label,
         }
     );

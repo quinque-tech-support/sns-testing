@@ -2,16 +2,17 @@ import { auth } from '@/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Instagram, ArrowRight, ShieldCheck, Zap, BarChart3 } from 'lucide-react'
+import { AuthRedirectGuard } from '@/app/components/AuthRedirectGuard'
 
 export default async function Home() {
-  const session = await auth()
-
-  if (session) {
+  const session = await auth();
+  if (session?.user?.id) {
     redirect('/dashboard')
   }
 
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans selection:bg-purple-100 italic-none">
+      <AuthRedirectGuard />
       {/* Simple Header */}
       <header className="h-20 flex items-center justify-between px-8 max-w-7xl mx-auto w-full">
         <div className="flex items-center gap-2.5">

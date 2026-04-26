@@ -1,20 +1,17 @@
-import { auth } from '@/auth'
+import { requirePageAuth } from '@/lib/auth.utils'
 import { prisma } from '@/lib/prisma'
-import { redirect } from 'next/navigation'
 import CalendarClient from './CalendarClient'
 
 export const dynamic = 'force-dynamic'
 
 export default async function CalendarPage() {
-    const session = await auth()
-    if (!session?.user?.id) {
-        redirect('/signin')
-    }
+    const session = await requirePageAuth();
+    const userId = session.user.id
 
     // Fetch all schedules for the user (we pass all and let the client filter by week)
     const schedules = await prisma.schedule.findMany({
         where: {
-            post: { userId: session.user.id }
+            post: { userId: userId }
         },
         include: {
             post: {

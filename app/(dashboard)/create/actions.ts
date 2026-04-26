@@ -9,7 +9,6 @@ import { ActionResult } from '@/lib/types'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const MAX_FILE_SIZE = 500 * 1024 * 1024 // 500 MB
 const IG_GRAPH_BASE = 'https://graph.facebook.com/v19.0'
 const CONTAINER_POLL_INTERVAL_MS = 5_000
 const CONTAINER_MAX_ATTEMPTS_IMAGE = 12   // ~60 s
