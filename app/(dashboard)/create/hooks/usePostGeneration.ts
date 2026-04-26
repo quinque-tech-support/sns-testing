@@ -3,7 +3,7 @@ import { ActionResult } from '@/lib/types'
 
 import { useState } from 'react'
 import { MediaItem } from '../types'
-import {  } from '../actions'
+import type { ImageAnalysis, PatternAnalysis } from '@/lib/ai/types'
 
 interface CaptionOption {
     caption: string
@@ -11,6 +11,12 @@ interface CaptionOption {
     rationale?: string
     style?: string
     score?: number
+}
+
+export interface AnalysisResults {
+    imageAnalysis?: ImageAnalysis;
+    patternAnalysis?: PatternAnalysis;
+    pastCaptionsUsed?: string[];
 }
 
 export function usePostGeneration() {
@@ -21,6 +27,7 @@ export function usePostGeneration() {
     const [selectedOptionIndex, setSelectedOptionIndex] = useState(0)
     const [isGeneratingAI, setIsGeneratingAI] = useState(false)
     const [generationError, setGenerationError] = useState<string | null>(null)
+    const [analysisResults, setAnalysisResults] = useState<AnalysisResults | null>(null)
 
     /** Convert file-based media items to base64 for the AI pipeline */
     const getImagePayloads = async (
@@ -37,8 +44,21 @@ export function usePostGeneration() {
                     reader.readAsDataURL(item.file)
                 })
                 images.push({ base64: dataUrl, mimeType: item.file.type })
+            } else if (item.type === 'url' && !item.isVideo) {
+                try {
+                    const res = await fetch(item.url)
+                    const blob = await res.blob()
+                    const dataUrl = await new Promise<string>((resolve, reject) => {
+                        const reader = new FileReader()
+                        reader.onload = () => resolve(reader.result as string)
+                        reader.onerror = reject
+                        reader.readAsDataURL(blob)
+                    })
+                    images.push({ base64: dataUrl, mimeType: blob.type })
+                } catch (err) {
+                    console.error('Failed to fetch image URL for AI:', err)
+                }
             }
-            // URL-based images (library/history) cannot be sent as base64 to the AI pipeline
         }
 
         return images
@@ -57,6 +77,7 @@ export function usePostGeneration() {
 
         setIsGeneratingAI(true)
         setGenerationError(null)
+        setAnalysisResults(null)
 
         try {
             const images = await getImagePayloads(mediaItems)
@@ -97,6 +118,10 @@ export function usePostGeneration() {
                 setCaption(combinedCaption)
                 setHashtags(fallbackTags)
             }
+
+            if (json.analysis) {
+                setAnalysisResults(json.analysis)
+            }
         } catch (error) {
             const message = error instanceof Error ? error.message : 'AIの生成に失敗しました。'
             console.error('[usePostGeneration] AI gen error:', error)
@@ -130,6 +155,7 @@ export function usePostGeneration() {
         isGeneratingAI,
         generationError,
         setGenerationError,
+        analysisResults,
         generateCaption,
         applyCaptionOption
     }

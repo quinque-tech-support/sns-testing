@@ -83,6 +83,11 @@ export interface CaptionResult {
 
 export interface PipelineOutput {
     caption: CaptionResult;
+    analysis?: {
+        imageAnalysis?: ImageAnalysis;
+        patternAnalysis?: PatternAnalysis;
+        pastCaptionsUsed?: string[];
+    };
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
