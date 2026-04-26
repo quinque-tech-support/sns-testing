@@ -102,6 +102,7 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
         isGeneratingAI,
         generationError,
         setGenerationError,
+        analysisResults,
         generateCaption,
         applyCaptionOption
     } = usePostGeneration()
@@ -262,9 +263,10 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
             ) : (
                 <form id="create-post-form" onSubmit={(e) => { e.preventDefault(); handlePublishAction('now'); }} className="bg-white border border-gray-200 rounded-2xl overflow-hidden p-6 md:p-8 space-y-6 shadow-sm">
 
-                    {/* Project Selector — inside form */}
+                    {/* Project Selector & AI Badge */}
                     {!isProjectsLoading && projects.length > 0 && (
-                        <div className="relative" ref={projectDropdownRef}>
+                        <div className="flex flex-wrap items-center gap-3 w-full">
+                            <div className="relative" ref={projectDropdownRef}>
                             <button
                                 type="button"
                                 onClick={() => setIsProjectDropdownOpen(prev => !prev)}
@@ -319,6 +321,13 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
                                     </div>
                                 </div>
                             )}
+                            </div>
+                            
+                            <div className="ml-auto text-[11px] font-bold bg-indigo-50 text-indigo-600 px-2.5 py-1.5 rounded-lg border border-indigo-100 shadow-sm">
+                                {aiUsageOption === 'No AI' ? 'AI無効' : 
+                                 aiUsageOption === 'Slight AI' ? 'アイデア生成のみ (AI)' : 
+                                 aiUsageOption === 'Complete AI' ? '完全自動化 (AI)' : '標準生成 (AI)'}
+                            </div>
                         </div>
                     )}
 
@@ -513,7 +522,9 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
                                             disabled={isWorking || mediaItems.length === 0}
                                             className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all border shrink-0 bg-white border-gray-200 text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 hover:shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            {isGeneratingAI ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                            <span className="flex items-center w-4 h-4 mr-0.5">
+                                                {isGeneratingAI ? <Loader2 className="w-full h-full animate-spin" /> : null}
+                                            </span>
                                             <span>自動生成</span>
                                         </button>
                                     </div>
@@ -544,6 +555,53 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Analysis Breakdown */}
+                            {analysisResults && (
+                                <div className="mt-2 bg-gradient-to-br from-indigo-50/50 to-purple-50/50 border border-indigo-100 rounded-xl p-4 shadow-sm animate-in fade-in slide-in-from-top-2">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-2">
+                                            <h4 className="text-sm font-bold text-gray-800">AI分析レポート</h4>
+                                        </div>
+                                        <span className="text-[10px] font-bold text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full">舞台裏のデータ</span>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {analysisResults.imageAnalysis && (
+                                            <div className="space-y-1.5 bg-white/60 rounded-lg p-3 border border-indigo-50">
+                                                <div className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-2">画像認識 (Vision)</div>
+                                                <div className="text-xs text-gray-700 flex gap-2"><span className="font-semibold text-gray-900 w-16">シーン:</span> <span className="flex-1 truncate" title={analysisResults.imageAnalysis.scene}>{analysisResults.imageAnalysis.scene}</span></div>
+                                                <div className="text-xs text-gray-700 flex gap-2"><span className="font-semibold text-gray-900 w-16">ムード:</span> <span className="flex-1 truncate" title={analysisResults.imageAnalysis.mood}>{analysisResults.imageAnalysis.mood}</span></div>
+                                                <div className="text-xs text-gray-700 flex gap-2"><span className="font-semibold text-gray-900 w-16">被写体:</span> <span className="flex-1 truncate" title={analysisResults.imageAnalysis.primary_subject}>{analysisResults.imageAnalysis.primary_subject}</span></div>
+                                            </div>
+                                        )}
+                                        {analysisResults.patternAnalysis && (
+                                            <div className="space-y-1.5 bg-white/60 rounded-lg p-3 border border-indigo-50">
+                                                <div className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-2">過去の傾向 (Pattern)</div>
+                                                <div className="text-xs text-gray-700 flex gap-2"><span className="font-semibold text-gray-900 w-12">トーン:</span> <span className="flex-1 truncate" title={analysisResults.patternAnalysis.tone}>{analysisResults.patternAnalysis.tone}</span></div>
+                                                <div className="text-xs text-gray-700 flex gap-2"><span className="font-semibold text-gray-900 w-12">フック:</span> <span className="flex-1 truncate" title={analysisResults.patternAnalysis.hook_style}>{analysisResults.patternAnalysis.hook_style}</span></div>
+                                                <div className="text-xs text-gray-700 flex gap-2"><span className="font-semibold text-gray-900 w-12">長さ:</span> <span className="flex-1 truncate" title={analysisResults.patternAnalysis.avg_length}>{analysisResults.patternAnalysis.avg_length}</span></div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    {analysisResults.patternAnalysis?.pattern_summary && (
+                                        <div className="mt-3 text-[11px] text-gray-600 bg-white/60 p-2.5 rounded-lg border border-indigo-50 italic">
+                                            "{analysisResults.patternAnalysis.pattern_summary}"
+                                        </div>
+                                    )}
+                                    {analysisResults.pastCaptionsUsed && analysisResults.pastCaptionsUsed.length > 0 && (
+                                        <div className="mt-3 bg-white/60 rounded-lg p-3 border border-indigo-50">
+                                            <div className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-2">学習に使用した過去の投稿 ({analysisResults.pastCaptionsUsed.length}件)</div>
+                                            <div className="space-y-2">
+                                                {analysisResults.pastCaptionsUsed.map((cap, i) => (
+                                                    <div key={i} className="text-[10px] text-gray-500 bg-gray-50 p-2 rounded border border-gray-100 line-clamp-2">
+                                                        {cap}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
 

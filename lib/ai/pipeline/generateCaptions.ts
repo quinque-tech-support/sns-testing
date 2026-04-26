@@ -131,6 +131,11 @@ export async function generateCaptions(input: PipelineInput): Promise<PipelineOu
             hashtags: result.hashtags,
             rationale: `Generated from image analysis + ${patternData ? 'learned patterns' : 'baseline patterns'}${input.projectContext ? ' + project context' : ''}${input.userPrompt ? ' + user prompt' : ''}.`,
         },
+        analysis: {
+            imageAnalysis: anchorAnalysis,
+            patternAnalysis: patternData,
+            pastCaptionsUsed: input.pastCaptions || [],
+        }
     };
 }
 

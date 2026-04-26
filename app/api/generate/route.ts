@@ -109,6 +109,7 @@ export async function POST(req: Request) {
             // flat structure for backward compat
             caption: result.caption.text,
             hashtags: result.caption.hashtags || [],
+            analysis: result.analysis,
         });
     } catch (error: any) {
         if (error?.isAuthError) return apiError("Unauthorized", 401)
