@@ -12,46 +12,45 @@ export default async function DashboardPage() {
     const session = await requirePageAuth();
     const userId = session.user.id
 
-    const [accountsCount, publishedCount, connectedAccount] = await Promise.all([
+    const [accountsCount, publishedCount, connectedAccount, upcomingSchedules, recentPosts] = await Promise.all([
         prisma.connectedAccount.count({ where: { userId: userId } }),
         prisma.schedule.count({ where: { post: { userId: userId }, status: 'PUBLISHED' } }),
         prisma.connectedAccount.findFirst({
             where: { userId: userId },
             select: { instagramBusinessId: true, pageAccessToken: true, username: true },
         }),
+        prisma.schedule.findMany({
+            where: { post: { userId: userId }, status: 'PENDING' },
+            include: { post: true },
+            orderBy: { scheduledFor: 'asc' },
+            take: 3,
+        }),
+        prisma.post.findMany({
+            where: { userId: userId, schedules: { some: { status: 'PUBLISHED' } } },
+            include: { schedules: true },
+            orderBy: { createdAt: 'desc' },
+            take: 50,
+        })
     ])
 
-    let totalImpressions = 0
-    let totalLikes = 0
-    let hasInsights = false
+    const insightsPromise = (async () => {
+        let totalImpressions = 0
+        let totalLikes = 0
+        let hasInsights = false
 
-    if (connectedAccount?.instagramBusinessId && connectedAccount?.pageAccessToken) {
-        const insights = await facebookService.getAccountInsights(
-            connectedAccount.instagramBusinessId,
-            connectedAccount.pageAccessToken
-        )
-        if (insights) {
-            totalImpressions = insights.totalImpressions
-            totalLikes = insights.totalLikes
-            hasInsights = true
+        if (connectedAccount?.instagramBusinessId && connectedAccount?.pageAccessToken) {
+            const insights = await facebookService.getAccountInsights(
+                connectedAccount.instagramBusinessId,
+                connectedAccount.pageAccessToken
+            )
+            if (insights) {
+                totalImpressions = insights.totalImpressions
+                totalLikes = insights.totalLikes
+                hasInsights = true
+            }
         }
-    }
-
-
-
-    const upcomingSchedules = await prisma.schedule.findMany({
-        where: { post: { userId: userId }, status: 'PENDING' },
-        include: { post: true },
-        orderBy: { scheduledFor: 'asc' },
-        take: 3,
-    })
-
-    const recentPosts = await prisma.post.findMany({
-        where: { userId: userId, schedules: { some: { status: 'PUBLISHED' } } },
-        include: { schedules: true },
-        orderBy: { createdAt: 'desc' },
-        take: 50,
-    })
+        return { totalImpressions, totalLikes, hasInsights }
+    })()
 
     const chartDays = 12
     const chartData = Array.from({ length: chartDays }).map((_, i) => {
@@ -84,9 +83,7 @@ export default async function DashboardPage() {
             chartData={chartData}
             maxViews={maxViews}
             useRealData={useRealData}
-            hasInsights={hasInsights}
-            totalImpressions={totalImpressions}
-            totalLikes={totalLikes}
+            insightsPromise={insightsPromise}
             publishedCount={publishedCount}
             accountsCount={accountsCount}
             connectedAccountUsername={connectedAccount?.username || null}

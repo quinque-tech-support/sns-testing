@@ -11,59 +11,6 @@ export function detectPostType(imageCount: number): PostType {
     return 'story-carousel';
 }
 
-/**
- * Select the anchor (primary) image from a set of analyses.
- *
- * Selection criteria (weighted):
- * 1. Highest confidence (image clarity)
- * 2. Clearest primary subject (not "unclear")
- * 3. Strongest emotional signal (mood is not "neutral")
- */
-export function selectAnchorImage(analyses: ImageAnalysis[]): {
-    anchor: ImageAnalysis;
-    anchorIndex: number;
-} {
-    if (analyses.length === 0) {
-        throw new Error('[Sequence] No image analyses to select anchor from');
-    }
-
-    if (analyses.length === 1) {
-        return { anchor: analyses[0], anchorIndex: 0 };
-    }
-
-    let bestIndex = 0;
-    let bestScore = -1;
-
-    for (let i = 0; i < analyses.length; i++) {
-        const a = analyses[i];
-        let score = 0;
-
-        // Confidence is the primary factor (0-1 scaled to 0-50)
-        score += a.confidence * 50;
-
-        // Clear subject bonus (+20)
-        if (a.primary_subject && a.primary_subject !== 'unclear') {
-            score += 20;
-        }
-
-        // Emotional signal bonus (+15)
-        if (a.mood && a.mood !== 'neutral' && a.mood !== 'unknown') {
-            score += 15;
-        }
-
-        // Rich content bonus (more objects/actions = more to write about)
-        score += Math.min(a.objects.length, 5) * 2;
-        score += Math.min(a.actions.length, 3) * 3;
-
-        if (score > bestScore) {
-            bestScore = score;
-            bestIndex = i;
-        }
-    }
-
-    console.log(`[Sequence] Anchor image selected: index ${bestIndex} (score: ${bestScore.toFixed(1)})`);
-    return { anchor: analyses[bestIndex], anchorIndex: bestIndex };
-}
 
 /**
  * Interpret a sequence of images for carousel posts.

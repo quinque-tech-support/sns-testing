@@ -5,13 +5,6 @@ import { useState } from 'react'
 import { MediaItem } from '../types'
 import type { ImageAnalysis, PatternAnalysis } from '@/lib/ai/types'
 
-interface CaptionOption {
-    caption: string
-    hashtags: string[]
-    rationale?: string
-    style?: string
-    score?: number
-}
 
 export interface AnalysisResults {
     imageAnalysis?: ImageAnalysis;
@@ -23,8 +16,6 @@ export function usePostGeneration() {
     const [caption, setCaption] = useState('')
     const [hashtags, setHashtags] = useState<string[]>([])
     const [customPrompt, setCustomPrompt] = useState('')
-    const [captionOptions, setCaptionOptions] = useState<CaptionOption[]>([])
-    const [selectedOptionIndex, setSelectedOptionIndex] = useState(0)
     const [isGeneratingAI, setIsGeneratingAI] = useState(false)
     const [generationError, setGenerationError] = useState<string | null>(null)
     const [analysisResults, setAnalysisResults] = useState<AnalysisResults | null>(null)
@@ -131,16 +122,6 @@ export function usePostGeneration() {
         }
     }
 
-    /** Apply a specific caption option to the editor */
-    const applyCaptionOption = (index: number) => {
-        const option = captionOptions[index]
-        if (!option) return
-        setCaption(option.caption)
-        setHashtags(option.hashtags || [])
-        setSelectedOptionIndex(index)
-        setCaptionOptions([])
-    }
-
     return {
         caption,
         setCaption,
@@ -148,15 +129,10 @@ export function usePostGeneration() {
         setHashtags,
         customPrompt,
         setCustomPrompt,
-        captionOptions,
-        setCaptionOptions,
-        selectedOptionIndex,
-        setSelectedOptionIndex,
         isGeneratingAI,
         generationError,
         setGenerationError,
         analysisResults,
-        generateCaption,
-        applyCaptionOption
+        generateCaption
     }
 }

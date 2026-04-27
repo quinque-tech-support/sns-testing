@@ -238,7 +238,14 @@ export const facebookService = {
 
             return { views, reach, saves, likes }
         } catch (error: any) {
-            console.error(`[FacebookService] Failed to fetch insights for media ${mediaId}:`, error.response?.data || error.message)
+            const fbError = error.response?.data?.error
+            if (fbError?.code === 100 && fbError?.error_subcode === 33) {
+                // Media likely deleted on Instagram or unsupported media type (e.g., expired story)
+                // Suppressing full error stack to avoid terminal noise
+                console.warn(`[FacebookService] Media ${mediaId} not found or unsupported (likely deleted on IG).`)
+            } else {
+                console.error(`[FacebookService] Failed to fetch insights for media ${mediaId}:`, error.response?.data || error.message)
+            }
             return null
         }
     },

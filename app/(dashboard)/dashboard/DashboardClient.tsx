@@ -44,15 +44,19 @@ interface ChartDay {
     engagement: number
 }
 
+interface InsightsData {
+    totalImpressions: number
+    totalLikes: number
+    hasInsights: boolean
+}
+
 interface DashboardClientProps {
     userName: string | null | undefined
     upcomingSchedules: UpcomingSchedule[]
     chartData: ChartDay[]
     maxViews: number
     useRealData: boolean
-    hasInsights: boolean
-    totalImpressions: number
-    totalLikes: number
+    insightsPromise: Promise<InsightsData>
     publishedCount: number
     accountsCount: number
     connectedAccountUsername: string | null
@@ -66,19 +70,21 @@ function formatNum(n: number): string {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export default function DashboardClient({
-    userName,
-    upcomingSchedules,
-    chartData,
-    maxViews,
-    useRealData,
-    hasInsights,
-    totalImpressions,
-    totalLikes,
+import { use, Suspense } from 'react'
+
+function KPIGrid({
+    insightsPromise,
     publishedCount,
     accountsCount,
     connectedAccountUsername
-}: DashboardClientProps) {
+}: {
+    insightsPromise: Promise<InsightsData>
+    publishedCount: number
+    accountsCount: number
+    connectedAccountUsername: string | null
+}) {
+    const { totalImpressions, totalLikes, hasInsights } = use(insightsPromise)
+    
     const kpis: KPI[] = [
         { label: 'リーチ（過去30日）', value: hasInsights ? formatNum(totalImpressions) : '--', sub: hasInsights ? 'リーチしたユニークアカウント数' : 'アカウントを連携してください', icon: Eye, color: 'text-blue-600', bg: 'bg-blue-50', trend: hasInsights ? '↑ ライブ' : null, isPositive: true },
         { label: 'プロフィール閲覧（過去30日）', value: hasInsights ? formatNum(totalLikes) : '--', sub: hasInsights ? 'Instagram APIより取得' : 'データなし', icon: Heart, color: 'text-pink-600', bg: 'bg-pink-50', trend: hasInsights ? '↑ ライブ' : null, isPositive: true },
@@ -86,10 +92,108 @@ export default function DashboardClient({
         { label: '連携アカウント', value: accountsCount.toString(), sub: connectedAccountUsername ? `@${connectedAccountUsername}` : 'アカウントなし', icon: UserPlus, color: 'text-orange-600', bg: 'bg-orange-50', trend: accountsCount > 0 ? `${accountsCount} アクティブ` : null, isPositive: true },
     ]
 
+    return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in duration-500">
+            {kpis.map((kpi) => (
+                <div key={kpi.label} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_1px_3px_0_rgba(0,0,0,0.02)] hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ease-out group overflow-hidden relative cursor-default">
+                    <div className={`absolute top-0 right-0 w-24 h-24 ${kpi.bg} rounded-full -mr-8 -mt-8 opacity-40 group-hover:scale-125 transition-transform duration-700 ease-out`} />
+                    <div className="relative">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className={`w-10 h-10 ${kpi.bg} rounded-xl flex items-center justify-center shadow-inner`}>
+                                <kpi.icon className={`w-5 h-5 ${kpi.color}`} />
+                            </div>
+                            {kpi.trend && (
+                                <div className="flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 px-2.5 py-1 rounded-full border border-green-100/50">
+                                    <ArrowUpRight className="w-3.5 h-3.5" />
+                                    {kpi.trend}
+                                </div>
+                            )}
+                        </div>
+                        <p className="text-sm font-medium text-gray-500">{kpi.label}</p>
+                        <p className="text-3xl font-black text-gray-900 mt-1 tracking-tight">{kpi.value}</p>
+                        <p className="text-xs text-gray-400 mt-1.5">{kpi.sub}</p>
+                    </div>
+                </div>
+            ))}
+        </div>
+    )
+}
+
+function KPIGridSkeleton() {
+    return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map(i => (
+                <div key={i} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm animate-pulse">
+                    <div className="w-10 h-10 bg-gray-100 rounded-xl mb-4" />
+                    <div className="h-4 bg-gray-100 rounded w-1/2 mb-2" />
+                    <div className="h-8 bg-gray-100 rounded w-3/4 mb-2" />
+                    <div className="h-3 bg-gray-100 rounded w-1/3" />
+                </div>
+            ))}
+        </div>
+    )
+}
+
+function Activities({
+    insightsPromise,
+    publishedCount,
+    connectedAccountUsername
+}: {
+    insightsPromise: Promise<InsightsData>
+    publishedCount: number
+    connectedAccountUsername: string | null
+}) {
+    const { hasInsights } = use(insightsPromise)
+    
     const activities: Activity[] = [
         { id: 1, user: 'システム', detail: hasInsights ? `@${connectedAccountUsername} のインサイトを同期しました` : '連携アカウントを待機中...', time: 'ライブ', icon: CheckCircle2, iconColor: 'text-green-600' },
         { id: 2, user: 'キュー', detail: `${publishedCount} 件の投稿を公開済み`, time: '累計', icon: PlayCircle, iconColor: 'text-purple-600' },
     ]
+
+    return (
+        <div className="divide-y divide-gray-50 animate-in fade-in duration-500">
+            {activities.map((activity) => (
+                <div key={activity.id} className="flex items-start gap-4 p-4 hover:bg-gray-50/50 transition-colors">
+                    <div className={`w-8 h-8 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0 mt-0.5`}>
+                        <activity.icon className={`w-4 h-4 ${activity.iconColor}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-sm text-gray-700">{activity.detail}</p>
+                        <p className="text-xs text-gray-400 mt-0.5 font-medium">{activity.time}</p>
+                    </div>
+                </div>
+            ))}
+        </div>
+    )
+}
+
+function ActivitiesSkeleton() {
+    return (
+        <div className="divide-y divide-gray-50">
+            {[1, 2].map(i => (
+                <div key={i} className="flex items-start gap-4 p-4 animate-pulse">
+                    <div className="w-8 h-8 rounded-full bg-gray-100 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                        <div className="h-4 bg-gray-100 rounded w-3/4 mb-2" />
+                        <div className="h-3 bg-gray-100 rounded w-1/4" />
+                    </div>
+                </div>
+            ))}
+        </div>
+    )
+}
+
+export default function DashboardClient({
+    userName,
+    upcomingSchedules,
+    chartData,
+    maxViews,
+    useRealData,
+    insightsPromise,
+    publishedCount,
+    accountsCount,
+    connectedAccountUsername
+}: DashboardClientProps) {
     return (
         <div className="space-y-8 animate-in fade-in duration-500 max-w-7xl mx-auto">
             {/* Greeting */}
@@ -109,29 +213,14 @@ export default function DashboardClient({
             </div>
 
             {/* KPI Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {kpis.map((kpi) => (
-                    <div key={kpi.label} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_1px_3px_0_rgba(0,0,0,0.02)] hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ease-out group overflow-hidden relative cursor-default">
-                        <div className={`absolute top-0 right-0 w-24 h-24 ${kpi.bg} rounded-full -mr-8 -mt-8 opacity-40 group-hover:scale-125 transition-transform duration-700 ease-out`} />
-                        <div className="relative">
-                            <div className="flex items-center justify-between mb-4">
-                                <div className={`w-10 h-10 ${kpi.bg} rounded-xl flex items-center justify-center shadow-inner`}>
-                                    <kpi.icon className={`w-5 h-5 ${kpi.color}`} />
-                                </div>
-                                {kpi.trend && (
-                                    <div className="flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 px-2.5 py-1 rounded-full border border-green-100/50">
-                                        <ArrowUpRight className="w-3.5 h-3.5" />
-                                        {kpi.trend}
-                                    </div>
-                                )}
-                            </div>
-                            <p className="text-sm font-medium text-gray-500">{kpi.label}</p>
-                            <p className="text-3xl font-black text-gray-900 mt-1 tracking-tight">{kpi.value}</p>
-                            <p className="text-xs text-gray-400 mt-1.5">{kpi.sub}</p>
-                        </div>
-                    </div>
-                ))}
-            </div>
+            <Suspense fallback={<KPIGridSkeleton />}>
+                <KPIGrid 
+                    insightsPromise={insightsPromise}
+                    publishedCount={publishedCount}
+                    accountsCount={accountsCount}
+                    connectedAccountUsername={connectedAccountUsername}
+                />
+            </Suspense>
 
             {/* Performance Chart */}
             <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm">
@@ -215,26 +304,20 @@ export default function DashboardClient({
                     </div>
                 </div>
 
-                {/* Activity Feed */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-                    <div className="p-6 border-b border-gray-50">
-                        <h2 className="text-lg font-bold text-gray-900">アクティビティ</h2>
-                        <p className="text-sm text-gray-500 mt-1">最近のシステムアクティビティ</p>
-                    </div>
-                    <div className="divide-y divide-gray-50">
-                        {activities.map((activity) => (
-                            <div key={activity.id} className="flex items-start gap-4 p-4 hover:bg-gray-50/50 transition-colors">
-                                <div className={`w-8 h-8 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0 mt-0.5`}>
-                                    <activity.icon className={`w-4 h-4 ${activity.iconColor}`} />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm text-gray-700">{activity.detail}</p>
-                                    <p className="text-xs text-gray-400 mt-0.5 font-medium">{activity.time}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+            {/* Activity Feed */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+                <div className="p-6 border-b border-gray-50">
+                    <h2 className="text-lg font-bold text-gray-900">アクティビティ</h2>
+                    <p className="text-sm text-gray-500 mt-1">最近のシステムアクティビティ</p>
                 </div>
+                <Suspense fallback={<ActivitiesSkeleton />}>
+                    <Activities 
+                        insightsPromise={insightsPromise}
+                        publishedCount={publishedCount}
+                        connectedAccountUsername={connectedAccountUsername}
+                    />
+                </Suspense>
+            </div>
             </div>
         </div>
     )

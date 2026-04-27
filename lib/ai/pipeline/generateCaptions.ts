@@ -3,14 +3,12 @@ import type {
     PipelineOutput,
     ImageAnalysis,
     PatternAnalysis,
-    ProjectContext,
 } from '../types';
 import { MAX_IMAGES } from '../types';
 import { analyzeImage } from '../vision/analyzeImage';
-import { detectPostType, selectAnchorImage, interpretSequence } from '../sequence/interpretSequence';
+import { detectPostType, interpretSequence } from '../sequence/interpretSequence';
 import { analyzePatterns } from '../pattern/analyzer';
 import { runWriter } from '../writer/writer';
-import { sleep, staggeredDelay } from '../utils/retry';
 import { prisma } from '@/lib/prisma';
 
 const PATTERN_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -96,10 +94,9 @@ export async function generateCaptions(input: PipelineInput): Promise<PipelineOu
 
     // ── 4. PATTERN ANALYSIS (cached — 0 or 1 API call) ──────────────────
     console.log('[Pipeline] Stage 4: Loading pattern analysis...');
-    let patternData: PatternAnalysis | undefined;
     const pastCaptions = input.pastCaptions?.filter(c => c && c.trim().length > 0) || [];
 
-    patternData = await getCachedOrFreshPatterns(
+    const patternData = await getCachedOrFreshPatterns(
         input.userId,
         input.projectId,
         pastCaptions,

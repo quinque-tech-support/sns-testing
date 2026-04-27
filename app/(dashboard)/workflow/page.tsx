@@ -48,23 +48,27 @@ export default async function WorkflowPage() {
         p.connectedAccount?.pageAccessToken
     )
 
-    if (toSync.length > 0) {
-        await Promise.all(toSync.map(async (p) => {
-            try {
-                const insights = await facebookService.getMediaInsights(p.instagramMediaId!, p.connectedAccount!.pageAccessToken!)
-                if (insights) {
-                    p.likes = insights.likes
-                    p.views = insights.views
-                    prisma.post.update({
-                        where: { id: p.id },
-                        data: { likes: insights.likes, views: insights.views, reach: insights.reach, saves: insights.saves }
-                    }).catch(() => {})
+    // Enrich published posts with live insights asynchronously
+    const insightsPromise = (async () => {
+        const results: Record<string, { likes: number, views: number }> = {}
+        if (toSync.length > 0) {
+            await Promise.all(toSync.map(async (p) => {
+                try {
+                    const insights = await facebookService.getMediaInsights(p.instagramMediaId!, p.connectedAccount!.pageAccessToken!)
+                    if (insights) {
+                        results[p.id] = { likes: insights.likes, views: insights.views }
+                        prisma.post.update({
+                            where: { id: p.id },
+                            data: { likes: insights.likes, views: insights.views, reach: insights.reach, saves: insights.saves }
+                        }).catch(() => {})
+                    }
+                } catch {
+                    // Silently ignore — don't block
                 }
-            } catch {
-                // Silently ignore — don't block page load
-            }
-        }))
-    }
+            }))
+        }
+        return results
+    })()
 
-    return <WorkflowClient posts={posts} />
+    return <WorkflowClient posts={posts} insightsPromise={insightsPromise} />
 }
