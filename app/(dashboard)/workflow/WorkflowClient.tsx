@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { use } from 'react'
 import {
     ListChecks, PlusCircle, Clock, CheckCircle2, FileText, XCircle,
     Instagram, Image as ImageIcon, Video, Calendar, Eye, Heart
@@ -24,14 +25,18 @@ interface Post {
     imageUrl: string
     mediaType: string
     createdAt: Date
-    connectedAccount: { username: string | null } | null
+    instagramMediaId: string | null
+    connectedAccount: { username: string | null; pageAccessToken: string | null } | null
     schedules: { status: string; scheduledFor: Date }[]
     likes: number
     views: number
+    reach: number
+    saves: number
 }
 
 interface WorkflowClientProps {
     posts: Post[]
+    insightsPromise: Promise<Record<string, { likes: number; views: number }>>
 }
 
 function getPostStatus(post: Post): StatusKey {
@@ -44,10 +49,19 @@ const COLUMNS: StatusKey[] = ['DRAFT', 'PENDING', 'PUBLISHED', 'FAILED']
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export default function WorkflowClient({ posts }: WorkflowClientProps) {
+export default function WorkflowClient({ posts, insightsPromise }: WorkflowClientProps) {
+    const liveInsights = use(insightsPromise)
     const groups: Record<StatusKey, Post[]> = { DRAFT: [], PENDING: [], PUBLISHED: [], FAILED: [], PROCESSING: [] }
-    for (const post of posts) groups[getPostStatus(post)].push(post)
-    const totalPosts = posts.length
+    
+    // Merge live insights into posts
+    const enrichedPosts = posts.map(p => ({
+        ...p,
+        likes: liveInsights[p.id]?.likes ?? p.likes,
+        views: liveInsights[p.id]?.views ?? p.views
+    }))
+
+    for (const post of enrichedPosts) groups[getPostStatus(post)].push(post)
+    const totalPosts = enrichedPosts.length
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
