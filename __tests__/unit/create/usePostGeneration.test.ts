@@ -4,7 +4,7 @@
  * Run with: jest --testPathPattern=usePostGeneration
  */
 
-import { renderHook, act, waitFor } from '@testing-library/react'
+import { renderHook, act } from '@testing-library/react'
 import { usePostGeneration } from '@/app/(dashboard)/create/hooks/usePostGeneration'
 import type { MediaItem } from '@/app/(dashboard)/create/types'
 
@@ -27,7 +27,11 @@ const makeUrlItem = (): MediaItem => ({
 
 describe('usePostGeneration › generateCaption', () => {
     beforeEach(() => {
-        ;(global.fetch as jest.Mock) = jest.fn()
+        ;(global.fetch as jest.Mock) = jest.fn().mockResolvedValue({
+            ok: true,
+            blob: async () => new Blob(['dummy blob data'], { type: 'image/jpeg' }),
+            json: async () => ({ options: [{ caption: 'Option A', hashtags: ['#a'] }] }),
+        })
     })
 
     it('sets error when mediaItems is empty (no network call)', async () => {
@@ -40,11 +44,6 @@ describe('usePostGeneration › generateCaption', () => {
     })
 
     it('sets isGeneratingAI=true during fetch and false after', async () => {
-        ;(global.fetch as jest.Mock) = jest.fn().mockResolvedValueOnce({
-            ok: true,
-            json: async () => ({ options: [{ caption: 'Hello', hashtags: ['#one'] }] }),
-        })
-
         const { result } = renderHook(() => usePostGeneration())
         let duringLoading = false
 
@@ -58,28 +57,19 @@ describe('usePostGeneration › generateCaption', () => {
         expect(result.current.isGeneratingAI).toBe(false)
     })
 
-    it('populates captionOptions on successful response with options', async () => {
-        ;(global.fetch as jest.Mock) = jest.fn().mockResolvedValueOnce({
-            ok: true,
-            json: async () => ({
-                options: [
-                    { caption: 'Option A', hashtags: ['#a'], style: 'casual' },
-                    { caption: 'Option B', hashtags: ['#b'], style: 'formal' },
-                ],
-            }),
-        })
-
+    it('populates caption directly on successful response with options', async () => {
         const { result } = renderHook(() => usePostGeneration())
         await act(async () => {
             await result.current.generateCaption([makeUrlItem()])
         })
-        expect(result.current.captionOptions).toHaveLength(2)
-        expect(result.current.captionOptions[0].caption).toBe('Option A')
+        expect(result.current.caption).toContain('Option A')
+        expect(result.current.hashtags).toContain('#a')
     })
 
     it('falls back to setting caption directly when no options returned', async () => {
-        ;(global.fetch as jest.Mock) = jest.fn().mockResolvedValueOnce({
+        ;(global.fetch as jest.Mock) = jest.fn().mockResolvedValue({
             ok: true,
+            blob: async () => new Blob(['dummy blob data'], { type: 'image/jpeg' }),
             json: async () => ({
                 caption: 'Direct caption',
                 hashtags: ['#direct'],
@@ -92,12 +82,12 @@ describe('usePostGeneration › generateCaption', () => {
         })
         expect(result.current.caption).toContain('Direct caption')
         expect(result.current.caption).toContain('#direct')
-        expect(result.current.captionOptions).toHaveLength(0)
     })
 
     it('sets generationError on non-ok HTTP response', async () => {
-        ;(global.fetch as jest.Mock) = jest.fn().mockResolvedValueOnce({
+        ;(global.fetch as jest.Mock) = jest.fn().mockResolvedValue({
             ok: false,
+            blob: async () => new Blob(['dummy blob data'], { type: 'image/jpeg' }),
             json: async () => ({ error: 'Rate limit exceeded' }),
         })
 
@@ -106,11 +96,10 @@ describe('usePostGeneration › generateCaption', () => {
             await result.current.generateCaption([makeUrlItem()])
         })
         expect(result.current.generationError).toBe('Rate limit exceeded')
-        expect(result.current.captionOptions).toHaveLength(0)
     })
 
     it('sets generationError on network failure', async () => {
-        ;(global.fetch as jest.Mock) = jest.fn().mockRejectedValueOnce(new Error('Network error'))
+        ;(global.fetch as jest.Mock) = jest.fn().mockRejectedValue(new Error('Network error'))
 
         const { result } = renderHook(() => usePostGeneration())
         await act(async () => {
@@ -119,91 +108,47 @@ describe('usePostGeneration › generateCaption', () => {
         expect(result.current.generationError).toBe('Network error')
     })
 
-    it('clears previous captionOptions and error before new generation', async () => {
+    it('clears previous error before new generation', async () => {
         // First call fails
         ;(global.fetch as jest.Mock) = jest.fn().mockRejectedValueOnce(new Error('fail'))
         const { result } = renderHook(() => usePostGeneration())
         await act(async () => { await result.current.generateCaption([makeUrlItem()]) })
         expect(result.current.generationError).toBeTruthy()
 
-        // Second call succeeds — error and old options should be cleared
-        ;(global.fetch as jest.Mock) = jest.fn().mockResolvedValueOnce({
+        // Second call succeeds — error should be cleared
+        ;(global.fetch as jest.Mock) = jest.fn().mockResolvedValue({
             ok: true,
+            blob: async () => new Blob(['dummy blob data'], { type: 'image/jpeg' }),
             json: async () => ({ options: [{ caption: 'Fresh', hashtags: [] }] }),
         })
         await act(async () => { await result.current.generateCaption([makeUrlItem()]) })
         expect(result.current.generationError).toBeNull()
-        expect(result.current.captionOptions).toHaveLength(1)
+        expect(result.current.caption).toContain('Fresh')
     })
 
-    it('skips base64 conversion for URL-type media items', async () => {
-        ;(global.fetch as jest.Mock) = jest.fn().mockResolvedValueOnce({
-            ok: true,
-            json: async () => ({ options: [{ caption: 'OK', hashtags: [] }] }),
-        })
+    it('fetches URL and converts to base64 for URL-type media items', async () => {
         const { result } = renderHook(() => usePostGeneration())
         await act(async () => {
-            await result.current.generateCaption([makeUrlItem()]) // no FileReader needed
+            await result.current.generateCaption([makeUrlItem()])
         })
-        const body = JSON.parse((fetch as jest.Mock).mock.calls[0][1].body)
-        // URL items don't contribute to images array
-        expect(body.images).toHaveLength(0)
+        
+        // Should fetch the URL image and then fetch the API
+        expect(fetch).toHaveBeenCalledTimes(2)
+        const fetchCalls = (fetch as jest.Mock).mock.calls
+        expect(fetchCalls[0][0]).toBe('https://cdn.example.com/img.jpg')
+        
+        const apiCallBody = JSON.parse(fetchCalls[1][1].body)
+        expect(apiCallBody.images).toHaveLength(1)
+        expect(apiCallBody.images[0].base64).toContain('data:') // base64 converted string
     })
 
     it('skips video files during base64 conversion', async () => {
-        ;(global.fetch as jest.Mock) = jest.fn().mockResolvedValueOnce({
-            ok: true,
-            json: async () => ({ options: [{ caption: 'OK', hashtags: [] }] }),
-        })
         const { result } = renderHook(() => usePostGeneration())
         const videoItem = makeFileItem('video/mp4')
         await act(async () => {
             await result.current.generateCaption([videoItem])
         })
-        const body = JSON.parse((fetch as jest.Mock).mock.calls[0][1].body)
-        expect(body.images).toHaveLength(0)
-    })
-})
-
-// ─── applyCaptionOption ───────────────────────────────────────────────────────
-
-describe('usePostGeneration › applyCaptionOption', () => {
-    it('merges caption + hashtags into the editor and clears options', async () => {
-        ;(global.fetch as jest.Mock) = jest.fn().mockResolvedValueOnce({
-            ok: true,
-            json: async () => ({
-                options: [{ caption: 'Great post', hashtags: ['#travel', '#japan'] }],
-            }),
-        })
-        const { result } = renderHook(() => usePostGeneration())
-        await act(async () => { await result.current.generateCaption([makeUrlItem()]) })
-
-        act(() => result.current.applyCaptionOption(0))
-        expect(result.current.caption).toContain('Great post')
-        expect(result.current.caption).toContain('#travel')
-        expect(result.current.captionOptions).toHaveLength(0)
-    })
-
-    it('is a no-op when index is out of bounds', async () => {
-        const { result } = renderHook(() => usePostGeneration())
-        const before = result.current.caption
-        act(() => result.current.applyCaptionOption(99))
-        expect(result.current.caption).toBe(before)
-    })
-
-    it('updates selectedOptionIndex', async () => {
-        ;(global.fetch as jest.Mock) = jest.fn().mockResolvedValueOnce({
-            ok: true,
-            json: async () => ({
-                options: [
-                    { caption: 'A', hashtags: [] },
-                    { caption: 'B', hashtags: [] },
-                ],
-            }),
-        })
-        const { result } = renderHook(() => usePostGeneration())
-        await act(async () => { await result.current.generateCaption([makeUrlItem()]) })
-        act(() => result.current.applyCaptionOption(1))
-        expect(result.current.selectedOptionIndex).toBe(1)
+        const apiCallBody = JSON.parse((fetch as jest.Mock).mock.calls[0][1].body)
+        expect(apiCallBody.images).toHaveLength(0)
     })
 })

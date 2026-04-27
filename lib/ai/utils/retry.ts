@@ -5,17 +5,9 @@
 
 const DEFAULT_MAX_RETRIES = 1;
 const DEFAULT_BASE_DELAY_MS = 2000;
-const STAGGER_INTERVAL_MS = 1500;
 
 export function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-/**
- * Calculate a staggered delay for parallel requests to avoid burst rate limits.
- */
-export function staggeredDelay(index: number): number {
-    return index * STAGGER_INTERVAL_MS;
 }
 
 /**

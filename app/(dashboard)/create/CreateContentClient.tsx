@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-    Image as ImageIcon,
     Video,
     Calendar,
     Send,
@@ -32,7 +31,8 @@ import {
     Upload,
     FileEdit,
     FolderKanban,
-    Hash
+    Hash,
+    Info
 } from 'lucide-react'
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
@@ -44,7 +44,6 @@ import { usePostGeneration } from './hooks/usePostGeneration'
 import { usePublishing } from './hooks/usePublishing'
 import { useProjectData } from './hooks/useProjectData'
 import { ConnectedAccount, HistoryItem } from './types'
-import { saveDraft } from './actions'
 import { useAccount } from '../../components/AccountContext'
 
 function cn(...inputs: ClassValue[]) {
@@ -96,15 +95,11 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
         setHashtags,
         customPrompt,
         setCustomPrompt,
-        captionOptions,
-        setCaptionOptions,
-        selectedOptionIndex,
         isGeneratingAI,
         generationError,
         setGenerationError,
         analysisResults,
-        generateCaption,
-        applyCaptionOption
+        generateCaption
     } = usePostGeneration()
 
     const {
@@ -120,6 +115,7 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
     const [showPreview, setShowPreview] = useState(false)
     const [showHistoryModal, setShowHistoryModal] = useState(false)
     const [showDraftsModal, setShowDraftsModal] = useState(false)
+    const [showAnalysis, setShowAnalysis] = useState(false)
     const [previewIndex, setPreviewIndex] = useState(0)
     const [scheduledFor, setScheduledFor] = useState('')
     const [showDatePicker, setShowDatePicker] = useState(false)
@@ -148,7 +144,6 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
         if (mediaItems.length === 0) {
             setCaption('')
             setCustomPrompt('')
-            setCaptionOptions([])
         }
     }, [mediaItems])
 
@@ -193,6 +188,8 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
             selectedProjectId,
             isVideo,
             mediaItems
+        }, () => {
+            setTimeout(() => router.push('/workflow'), 1500)
         })
     }
 
@@ -558,46 +555,60 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
 
                             {/* Analysis Breakdown */}
                             {analysisResults && (
-                                <div className="mt-2 bg-gradient-to-br from-indigo-50/50 to-purple-50/50 border border-indigo-100 rounded-xl p-4 shadow-sm animate-in fade-in slide-in-from-top-2">
-                                    <div className="flex items-center justify-between mb-3">
-                                        <div className="flex items-center gap-2">
-                                            <h4 className="text-sm font-bold text-gray-800">AI分析レポート</h4>
-                                        </div>
-                                        <span className="text-[10px] font-bold text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full">舞台裏のデータ</span>
+                                <div className="mt-2">
+                                    <div className="flex justify-end mb-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowAnalysis(!showAnalysis)}
+                                            className="flex items-center gap-1.5 text-xs font-semibold text-indigo-500 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors"
+                                        >
+                                            <Info className="w-4 h-4" />
+                                            {showAnalysis ? 'AI分析を隠す' : 'AI分析を見る'}
+                                        </button>
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {analysisResults.imageAnalysis && (
-                                            <div className="space-y-1.5 bg-white/60 rounded-lg p-3 border border-indigo-50">
-                                                <div className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-2">画像認識 (Vision)</div>
-                                                <div className="text-xs text-gray-700 flex gap-2"><span className="font-semibold text-gray-900 w-16">シーン:</span> <span className="flex-1 truncate" title={analysisResults.imageAnalysis.scene}>{analysisResults.imageAnalysis.scene}</span></div>
-                                                <div className="text-xs text-gray-700 flex gap-2"><span className="font-semibold text-gray-900 w-16">ムード:</span> <span className="flex-1 truncate" title={analysisResults.imageAnalysis.mood}>{analysisResults.imageAnalysis.mood}</span></div>
-                                                <div className="text-xs text-gray-700 flex gap-2"><span className="font-semibold text-gray-900 w-16">被写体:</span> <span className="flex-1 truncate" title={analysisResults.imageAnalysis.primary_subject}>{analysisResults.imageAnalysis.primary_subject}</span></div>
+                                    {showAnalysis && (
+                                        <div className="bg-gradient-to-br from-indigo-50/50 to-purple-50/50 border border-indigo-100 rounded-xl p-4 shadow-sm animate-in fade-in slide-in-from-top-2">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <div className="flex items-center gap-2">
+                                                    <h4 className="text-sm font-bold text-gray-800">AI分析レポート</h4>
+                                                </div>
+                                                <span className="text-[10px] font-bold text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full">舞台裏のデータ</span>
                                             </div>
-                                        )}
-                                        {analysisResults.patternAnalysis && (
-                                            <div className="space-y-1.5 bg-white/60 rounded-lg p-3 border border-indigo-50">
-                                                <div className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-2">過去の傾向 (Pattern)</div>
-                                                <div className="text-xs text-gray-700 flex gap-2"><span className="font-semibold text-gray-900 w-12">トーン:</span> <span className="flex-1 truncate" title={analysisResults.patternAnalysis.tone}>{analysisResults.patternAnalysis.tone}</span></div>
-                                                <div className="text-xs text-gray-700 flex gap-2"><span className="font-semibold text-gray-900 w-12">フック:</span> <span className="flex-1 truncate" title={analysisResults.patternAnalysis.hook_style}>{analysisResults.patternAnalysis.hook_style}</span></div>
-                                                <div className="text-xs text-gray-700 flex gap-2"><span className="font-semibold text-gray-900 w-12">長さ:</span> <span className="flex-1 truncate" title={analysisResults.patternAnalysis.avg_length}>{analysisResults.patternAnalysis.avg_length}</span></div>
-                                            </div>
-                                        )}
-                                    </div>
-                                    {analysisResults.patternAnalysis?.pattern_summary && (
-                                        <div className="mt-3 text-[11px] text-gray-600 bg-white/60 p-2.5 rounded-lg border border-indigo-50 italic">
-                                            "{analysisResults.patternAnalysis.pattern_summary}"
-                                        </div>
-                                    )}
-                                    {analysisResults.pastCaptionsUsed && analysisResults.pastCaptionsUsed.length > 0 && (
-                                        <div className="mt-3 bg-white/60 rounded-lg p-3 border border-indigo-50">
-                                            <div className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-2">学習に使用した過去の投稿 ({analysisResults.pastCaptionsUsed.length}件)</div>
-                                            <div className="space-y-2">
-                                                {analysisResults.pastCaptionsUsed.map((cap, i) => (
-                                                    <div key={i} className="text-[10px] text-gray-500 bg-gray-50 p-2 rounded border border-gray-100 line-clamp-2">
-                                                        {cap}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                {analysisResults.imageAnalysis && (
+                                                    <div className="space-y-1.5 bg-white/60 rounded-lg p-3 border border-indigo-50">
+                                                        <div className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-2">画像認識 (Vision)</div>
+                                                        <div className="text-xs text-gray-700 flex gap-2"><span className="font-semibold text-gray-900 w-16">シーン:</span> <span className="flex-1 truncate" title={analysisResults.imageAnalysis.scene}>{analysisResults.imageAnalysis.scene}</span></div>
+                                                        <div className="text-xs text-gray-700 flex gap-2"><span className="font-semibold text-gray-900 w-16">ムード:</span> <span className="flex-1 truncate" title={analysisResults.imageAnalysis.mood}>{analysisResults.imageAnalysis.mood}</span></div>
+                                                        <div className="text-xs text-gray-700 flex gap-2"><span className="font-semibold text-gray-900 w-16">被写体:</span> <span className="flex-1 truncate" title={analysisResults.imageAnalysis.primary_subject}>{analysisResults.imageAnalysis.primary_subject}</span></div>
                                                     </div>
-                                                ))}
+                                                )}
+                                                {analysisResults.patternAnalysis && (
+                                                    <div className="space-y-1.5 bg-white/60 rounded-lg p-3 border border-indigo-50">
+                                                        <div className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-2">過去の傾向 (Pattern)</div>
+                                                        <div className="text-xs text-gray-700 flex gap-2"><span className="font-semibold text-gray-900 w-12">トーン:</span> <span className="flex-1 truncate" title={analysisResults.patternAnalysis.tone}>{analysisResults.patternAnalysis.tone}</span></div>
+                                                        <div className="text-xs text-gray-700 flex gap-2"><span className="font-semibold text-gray-900 w-12">フック:</span> <span className="flex-1 truncate" title={analysisResults.patternAnalysis.hook_style}>{analysisResults.patternAnalysis.hook_style}</span></div>
+                                                        <div className="text-xs text-gray-700 flex gap-2"><span className="font-semibold text-gray-900 w-12">長さ:</span> <span className="flex-1 truncate" title={analysisResults.patternAnalysis.avg_length}>{analysisResults.patternAnalysis.avg_length}</span></div>
+                                                    </div>
+                                                )}
                                             </div>
+                                            {analysisResults.patternAnalysis?.pattern_summary && (
+                                                <div className="mt-3 text-[11px] text-gray-600 bg-white/60 p-2.5 rounded-lg border border-indigo-50 italic">
+                                                    &quot;{analysisResults.patternAnalysis.pattern_summary}&quot;
+                                                </div>
+                                            )}
+                                            {analysisResults.pastCaptionsUsed && analysisResults.pastCaptionsUsed.length > 0 && (
+                                                <div className="mt-3 bg-white/60 rounded-lg p-3 border border-indigo-50">
+                                                    <div className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-2">学習に使用した過去の投稿 ({analysisResults.pastCaptionsUsed.length}件)</div>
+                                                    <div className="space-y-2">
+                                                        {analysisResults.pastCaptionsUsed.map((cap, i) => (
+                                                            <div key={i} className="text-[10px] text-gray-500 bg-gray-50 p-2 rounded border border-gray-100 line-clamp-2">
+                                                                {cap}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
