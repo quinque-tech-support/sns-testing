@@ -10,11 +10,11 @@ const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-export function useProjectData() {
+export function useProjectData(initialProjects: Project[] = []) {
     // Projects
-    const [projects, setProjects] = useState<Project[]>([])
-    const [selectedProjectId, setSelectedProjectId] = useState<string>('')
-    const [isProjectsLoading, setIsProjectsLoading] = useState(true)
+    const [projects, setProjects] = useState<Project[]>(initialProjects)
+    const [selectedProjectId, setSelectedProjectId] = useState<string>(initialProjects.length > 0 ? initialProjects[0].id : '')
+    const [isProjectsLoading, setIsProjectsLoading] = useState(false)
 
     // History & Drafts
     const [history, setHistory] = useState<HistoryItem[]>([])
@@ -29,24 +29,13 @@ export function useProjectData() {
     const [isLibraryUploading, setIsLibraryUploading] = useState(false)
     const [libraryUploadProgress, setLibraryUploadProgress] = useState(0)
 
-    // Fetch projects on mount
+    // Sync initial projects if they change
     useEffect(() => {
-        const fetchProjects = async () => {
-            try {
-                const res = await fetch('/api/projects')
-                if (res.ok) {
-                    const data = await res.json()
-                    setProjects(data)
-                    if (data.length > 0 && !selectedProjectId) {
-                        setSelectedProjectId(data[0].id)
-                    }
-                }
-            } finally {
-                setIsProjectsLoading(false)
-            }
+        setProjects(initialProjects)
+        if (initialProjects.length > 0 && !selectedProjectId) {
+            setSelectedProjectId(initialProjects[0].id)
         }
-        fetchProjects()
-    }, [])
+    }, [initialProjects])
 
     // Fetch project-scoped data whenever project changes
     useEffect(() => {
