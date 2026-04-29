@@ -29,7 +29,7 @@ export default async function DashboardLayout({
     return (
         <AccountProvider accounts={connectedAccounts}>
             <SidebarProvider>
-                <div className="flex flex-col h-screen bg-gray-50 overflow-hidden font-sans">
+                <div className="flex flex-col h-screen bg-[var(--background)] overflow-hidden font-sans">
                     <Topbar user={session.user} />
                     <div className="flex-1 flex min-h-0 overflow-hidden">
                         <Sidebar user={session.user} />
