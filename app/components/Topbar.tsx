@@ -59,9 +59,9 @@ export function Topbar({ user }: TopbarProps) {
                             onClick={() => setIsAccountMenuOpen(!isAccountMenuOpen)}
                             className="flex items-center gap-2.5 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-all duration-200 ease-out active:scale-95 group"
                         >
-                            <div className="w-6 h-6 rounded-full instagram-gradient flex items-center justify-center p-0.5 shadow-sm">
+                            <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-gray-900 to-gray-600 flex items-center justify-center p-0.5 shadow-sm">
                                 <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
-                                    <Instagram className="w-3.5 h-3.5 instagram-text-gradient" />
+                                    <Instagram className="w-3.5 h-3.5 text-gray-800" />
                                 </div>
                             </div>
                             <span className="text-sm font-semibold text-gray-800 hidden sm:inline">
@@ -104,7 +104,7 @@ export function Topbar({ user }: TopbarProps) {
 
                 {/* Profile Toggle (Mobile/Mini) */}
                 <button className="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-all duration-200 ease-out active:scale-95 sm:hidden">
-                    <div className="w-7 h-7 rounded-lg bg-purple-500 text-white flex items-center justify-center text-xs font-bold">
+                    <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-gray-900 to-gray-600 text-white flex items-center justify-center text-xs font-bold">
                         {initials}
                     </div>
                 </button>

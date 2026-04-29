@@ -79,19 +79,19 @@ export function Sidebar({ user }: SidebarProps) {
                             key={item.name}
                             href={item.href}
                             className={`flex items-center px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ease-out active:scale-[0.98] group relative ${isActive
-                                ? 'bg-purple-50 text-purple-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),_0_1px_2px_rgba(0,0,0,0.02)]'
+                                ? 'bg-gray-100 text-gray-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),_0_1px_2px_rgba(0,0,0,0.02)]'
                                 : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                                 } ${!isOpen ? 'lg:justify-center' : ''}`}
                             title={!isOpen ? item.name : undefined}
                         >
-                            <item.icon className={`w-5 h-5 shrink-0 transition-colors ${isActive ? 'text-purple-600' : 'text-gray-400 group-hover:text-gray-600'
+                            <item.icon className={`w-5 h-5 shrink-0 transition-colors ${isActive ? 'text-gray-900' : 'text-gray-400 group-hover:text-gray-600'
                                 }`} />
                             
                             <span className={`ml-3 whitespace-nowrap transition-all duration-200 ${isOpen ? 'opacity-100 flex-1' : 'lg:hidden opacity-0 w-0'}`}>
                                 {item.name}
                             </span>
                             
-                            {isActive && isOpen && <div className="w-1.5 h-1.5 rounded-full bg-purple-600 shadow-[0_0_8px_rgba(147,51,234,0.5)] shrink-0 ml-auto" />}
+                            {isActive && isOpen && <div className="w-1.5 h-1.5 rounded-full bg-gray-900 shadow-[0_0_8px_rgba(0,0,0,0.5)] shrink-0 ml-auto" />}
                         </Link>
                     )
                 })}
@@ -112,7 +112,7 @@ export function Sidebar({ user }: SidebarProps) {
 
                 <div className={`mt-4 bg-gray-50 rounded-xl border border-gray-100 cursor-pointer hover:bg-white transition-all duration-200 ease-out hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] ring-1 ring-transparent hover:ring-gray-200 active:scale-[0.98] group ${isOpen ? 'p-3' : 'lg:p-1.5 p-3'}`} title={!isOpen ? user?.name || 'User' : undefined}>
                     <div className={`flex items-center ${!isOpen ? 'lg:justify-center' : 'gap-3'}`}>
-                        <div className={`rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white font-bold shadow-sm overflow-hidden group-hover:shadow-md transition-shadow shrink-0 ${isOpen ? 'w-10 h-10' : 'lg:w-8 lg:h-8 w-10 h-10 text-xs'}`}>
+                        <div className={`rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center text-white font-bold shadow-sm overflow-hidden group-hover:shadow-md transition-shadow shrink-0 ${isOpen ? 'w-10 h-10' : 'lg:w-8 lg:h-8 w-10 h-10 text-xs'}`}>
                             {user?.image ? (
                                 <img src={user.image} alt="User avatar" className="w-full h-full object-cover" />
                             ) : (

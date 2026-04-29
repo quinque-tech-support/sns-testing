@@ -98,7 +98,7 @@ function SignUpForm() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
-                    className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-medium text-gray-900 placeholder:text-gray-400"
+                    className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 transition-all font-medium text-gray-900 placeholder:text-gray-400"
                     placeholder="John Doe"
                 />
             </div>
@@ -113,7 +113,7 @@ function SignUpForm() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-medium text-gray-900 placeholder:text-gray-400"
+                    className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 transition-all font-medium text-gray-900 placeholder:text-gray-400"
                     placeholder="you@example.com"
                 />
             </div>
@@ -128,7 +128,7 @@ function SignUpForm() {
                     value={password}
                     onChange={(e) => handlePasswordChange(e.target.value)}
                     required
-                    className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-medium text-gray-900 placeholder:text-gray-400"
+                    className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 transition-all font-medium text-gray-900 placeholder:text-gray-400"
                     placeholder="••••••••"
                 />
                 <div className="pt-2 grid grid-cols-2 gap-2">
@@ -149,7 +149,7 @@ function SignUpForm() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-medium text-gray-900 placeholder:text-gray-400"
+                    className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 transition-all font-medium text-gray-900 placeholder:text-gray-400"
                     placeholder="••••••••"
                 />
             </div>
@@ -157,7 +157,7 @@ function SignUpForm() {
             <button
                 type="submit"
                 disabled={loading}
-                className="w-full instagram-gradient text-white py-4 px-4 rounded-2xl font-bold shadow-lg shadow-purple-500/20 hover:opacity-90 transition-all active:scale-95 flex items-center justify-center gap-2 mt-4"
+                className="w-full bg-gray-900 text-white py-4 px-4 rounded-2xl font-bold shadow-lg shadow-gray-900/20 hover:bg-gray-800 transition-all active:scale-95 flex items-center justify-center gap-2 mt-4"
             >
                 {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> アカウント作成中...</> : '無料で登録する'}
             </button>
@@ -177,35 +177,35 @@ export default function SignUp() {
 
     if (status === 'loading' || status === 'authenticated') {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+            <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
+                <Loader2 className="w-8 h-8 animate-spin text-gray-900" />
             </div>
         )
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 font-sans selection:bg-purple-100 relative">
+        <div className="min-h-screen flex items-center justify-center bg-[var(--background)] p-4 font-sans selection:bg-gray-200 relative">
             <Link href="/" className="absolute top-8 left-8 flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-gray-900 transition-colors">
                 <ArrowLeft className="w-4 h-4" /> ホームに戻る
             </Link>
 
             <div className="max-w-md w-full bg-white rounded-[2rem] border border-gray-100 p-8 shadow-xl shadow-gray-200/50 my-12">
                 <div className="flex flex-col items-center text-center mb-8">
-                    <div className="w-14 h-14 rounded-2xl instagram-gradient flex items-center justify-center shadow-lg shadow-purple-500/20 mb-6 -rotate-12 hover:rotate-0 transition-transform duration-300">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-gray-900 to-gray-600 flex items-center justify-center shadow-lg shadow-gray-900/20 mb-6 -rotate-12 hover:rotate-0 transition-transform duration-300">
                         <Instagram className="w-8 h-8 text-white" />
                     </div>
                     <h1 className="text-2xl font-bold text-gray-900 tracking-tight">アカウント作成</h1>
                     <p className="text-sm font-medium text-gray-500 mt-2">今日からコンテンツ管理を始めましょう</p>
                 </div>
 
-                <Suspense fallback={<div className="h-64 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-purple-500" /></div>}>
+                <Suspense fallback={<div className="h-64 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-gray-900" /></div>}>
                     <SignUpForm />
                 </Suspense>
 
                 <div className="mt-8 pt-6 border-t border-gray-100 text-center">
                     <p className="text-sm font-medium text-gray-500">
                         すでにアカウントをお持ちですか？{' '}
-                        <Link href="/signin" className="text-purple-600 font-bold hover:text-purple-700 transition-colors">
+                        <Link href="/signin" className="text-gray-900 font-bold hover:text-gray-700 transition-colors">
                             サインイン
                         </Link>
                     </p>
