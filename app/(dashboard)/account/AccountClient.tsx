@@ -141,12 +141,12 @@ export default function AccountClient({ connectedAccounts, error, success }: Acc
                     </div>
                 ) : (
                     <div className="bg-white rounded-3xl border border-gray-100 p-20 text-center shadow-sm">
-                        <div className="w-20 h-20 instagram-gradient rounded-[2.5rem] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-purple-500/20 rotate-12">
+                        <div className="w-20 h-20 instagram-gradient rounded-[2.5rem] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-gray-900/20 rotate-12">
                             <Instagram className="w-10 h-10 text-white" />
                         </div>
                         <h3 className="text-2xl font-bold text-gray-900">Instagramアカウント未連携</h3>
                         <p className="text-gray-500 mt-2 max-w-sm mx-auto leading-relaxed">最初のInstagramビジネスアカウントを連携して、今日からコンテンツ戦略の自動化を始めましょう。</p>
-                        <button className="mt-8 px-8 py-4 instagram-gradient text-white rounded-2xl font-bold shadow-lg shadow-purple-500/20 hover:-translate-y-1 hover:shadow-xl transition-all duration-200 ease-out active:scale-95 inline-flex items-center gap-2">
+                        <button className="mt-8 px-8 py-4 instagram-gradient text-white rounded-2xl font-bold shadow-lg shadow-gray-900/20 hover:-translate-y-1 hover:shadow-xl transition-all duration-200 ease-out active:scale-95 inline-flex items-center gap-2">
                             今すぐ連携する<ArrowRight className="w-5 h-5" />
                         </button>
                     </div>

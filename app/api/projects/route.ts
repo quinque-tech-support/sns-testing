@@ -1,6 +1,6 @@
 import { requireAuth } from '@/lib/auth.utils'
 import { prisma } from '@/lib/prisma'
-import { apiError, apiSuccess, toErrorMessage } from '@/lib/api.utils'
+import { apiError, apiSuccess } from '@/lib/api.utils'
 
 export async function GET() {
     try {
@@ -24,16 +24,40 @@ export async function POST(req: Request) {
         const userId = await requireAuth()
 
         const body = await req.json()
-        const { name, description, keywords, defaultHashtags } = body
+        const { 
+            name, description, objective,
+            ageRange, gender, location, profession,
+            toneStyle, writingStyleNotes, exampleCaptions,
+            postingFrequency, preferredTimeSlots, campaignDuration,
+            preferredCtaTypes, wordsToAvoid, toneRestrictions,
+            customPromptNotes, campaignSpecificInstructions,
+            defaultHashtags
+        } = body
+        
         if (!name) return apiError('Name is required', 400)
 
         const project = await prisma.project.create({
             data: {
-                userId: userId,
+                userId,
                 name,
                 description,
-                keywords,
-                defaultHashtags: Array.isArray(defaultHashtags) ? defaultHashtags : []
+                objective,
+                ageRange,
+                gender,
+                location,
+                profession,
+                toneStyle,
+                writingStyleNotes,
+                exampleCaptions,
+                postingFrequency,
+                preferredTimeSlots,
+                campaignDuration,
+                preferredCtaTypes,
+                wordsToAvoid,
+                toneRestrictions,
+                customPromptNotes,
+                campaignSpecificInstructions,
+                defaultHashtags: Array.isArray(defaultHashtags) ? defaultHashtags : [],
             }
         })
 

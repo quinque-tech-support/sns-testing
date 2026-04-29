@@ -60,18 +60,48 @@ model Post {
 }
 
 model Project {
-  id          String         @id @default(cuid())
-  userId      String
-  name        String
-  description String?
-  keywords    String?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  posts       Post[]
-  images      ProjectImage[]
-  defaultHashtags   String[]
-  patternCaches     PatternCache[]
+  id              String         @id @default(cuid())
+  userId          String
+  name            String
+  description     String?
+  
+  // Basic Info
+  objective       String?        // awareness / engagement / sales / leads
+  defaultHashtags String[]
+  
+  // Target Audience
+  ageRange        String?
+  gender          String?
+  location        String?
+  profession      String?
+  
+  // Brand Voice & Tone
+  toneStyle       String?        // casual / professional / witty / bold / inspirational
+  writingStyleNotes String?
+  exampleCaptions String?        // 2-3 samples
+  
+  // Posting Plan
+  postingFrequency String?
+  preferredTimeSlots String?
+  campaignDuration String?
+  
+  // CTA
+  preferredCtaTypes String?      // DM / link in bio / comment / share
+  
+  // Constraints / Avoidances
+  wordsToAvoid    String?
+  toneRestrictions String?
+  
+  // Extra Instructions
+  customPromptNotes String?
+  campaignSpecificInstructions String?
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  posts           Post[]
+  images          ProjectImage[]
+  patternCaches   PatternCache[]
 }
 
 model ProjectImage {

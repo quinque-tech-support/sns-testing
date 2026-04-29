@@ -3,7 +3,7 @@
 :root {
   --background: #f9fafb;
   --foreground: #111827;
-  --instagram-gradient: linear-gradient(135deg, #7C3AED 0%, #9333EA 40%, #A855F7 70%, #C084FC 100%);
+  --instagram-gradient: linear-gradient(135deg, #000000 0%, #333333 50%, #000000 100%);
 }
 
 @theme inline {

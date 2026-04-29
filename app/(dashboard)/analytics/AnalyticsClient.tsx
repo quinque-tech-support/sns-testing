@@ -48,7 +48,7 @@ export default function AnalyticsClient({ postsCount, publishedCount, pendingCou
                     <div className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-100 rounded-xl shadow-sm text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-50 transition-all duration-200 ease-out active:scale-95">
                         <Calendar className="w-4 h-4 text-gray-400" />過去30日間<ChevronDown className="w-4 h-4 text-gray-400" />
                     </div>
-                    <button className="flex items-center gap-2 px-4 py-2 instagram-gradient text-white rounded-xl text-sm font-bold shadow-lg shadow-purple-500/20 hover:opacity-90 transition-all duration-200 ease-out active:scale-95">
+                    <button className="flex items-center gap-2 px-4 py-2 instagram-gradient text-white rounded-xl text-sm font-bold shadow-lg shadow-gray-900/20 hover:opacity-90 transition-all duration-200 ease-out active:scale-95">
                         <Download className="w-4 h-4" />CSVをエクスポート
                     </button>
                 </div>
@@ -192,7 +192,7 @@ export default function AnalyticsClient({ postsCount, publishedCount, pendingCou
                     </div>
                 ) : (
                     <div className="bg-white rounded-2xl border-2 border-dashed border-gray-100 p-16 text-center">
-                        <div className="w-14 h-14 instagram-gradient rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-purple-500/20">
+                        <div className="w-14 h-14 instagram-gradient rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-gray-900/20">
                             <BarChart3 className="w-7 h-7 text-white" />
                         </div>
                         <p className="text-base font-bold text-gray-900">投稿がまだありません</p>

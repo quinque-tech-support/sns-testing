@@ -38,8 +38,30 @@ function buildContextBlock(ctx: WriterContext): string {
     if (ctx.projectContext) {
         text += `[プロジェクト情報]\n`;
         text += `プロジェクト名: ${ctx.projectContext.title}\n`;
-        if (ctx.projectContext.description) text += `ガイドライン: ${ctx.projectContext.description}\n`;
-        if (ctx.projectContext.keywords) text += `キーワード: ${ctx.projectContext.keywords}\n`;
+        if (ctx.projectContext.description) text += `説明: ${ctx.projectContext.description}\n`;
+        if (ctx.projectContext.objective) text += `目的: ${ctx.projectContext.objective}\n`;
+        
+        const details = [
+            ctx.projectContext.ageRange && `年齢層: ${ctx.projectContext.ageRange}`,
+            ctx.projectContext.gender && `性別: ${ctx.projectContext.gender}`,
+            ctx.projectContext.location && `地域: ${ctx.projectContext.location}`,
+            ctx.projectContext.profession && `職業: ${ctx.projectContext.profession}`
+        ].filter(Boolean).join(', ');
+        if (details) text += `ターゲット層: ${details}\n`;
+
+        if (ctx.projectContext.toneStyle) text += `トーン: ${ctx.projectContext.toneStyle}\n`;
+        if (ctx.projectContext.writingStyleNotes) text += `執筆ルール: ${ctx.projectContext.writingStyleNotes}\n`;
+
+        if (ctx.projectContext.wordsToAvoid) text += `NGワード: ${ctx.projectContext.wordsToAvoid}\n`;
+        if (ctx.projectContext.toneRestrictions) text += `制限事項: ${ctx.projectContext.toneRestrictions}\n`;
+
+        if (ctx.projectContext.customPromptNotes) text += `カスタム指示: ${ctx.projectContext.customPromptNotes}\n`;
+        if (ctx.projectContext.campaignSpecificInstructions) text += `キャンペーン指示: ${ctx.projectContext.campaignSpecificInstructions}\n`;
+
+        if (ctx.projectContext.defaultHashtags && ctx.projectContext.defaultHashtags.length > 0) {
+            text += `デフォルトタグ: ${ctx.projectContext.defaultHashtags.join(' ')}\n`;
+        }
+        
         text += '\n';
     }
 

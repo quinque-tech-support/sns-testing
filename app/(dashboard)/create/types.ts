@@ -13,7 +13,6 @@ export interface Project {
     id: string
     name: string
     description: string | null
-    keywords: string | null
     defaultHashtags: string[]
 }
 

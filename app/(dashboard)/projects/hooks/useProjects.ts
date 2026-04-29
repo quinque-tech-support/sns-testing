@@ -5,8 +5,23 @@ export interface Project {
     id: string
     name: string
     description?: string | null
-    keywords?: string | null
+    objective?: string | null
     defaultHashtags: string[]
+    ageRange?: string | null
+    gender?: string | null
+    location?: string | null
+    profession?: string | null
+    toneStyle?: string | null
+    writingStyleNotes?: string | null
+    exampleCaptions?: string | null
+    postingFrequency?: string | null
+    preferredTimeSlots?: string | null
+    campaignDuration?: string | null
+    preferredCtaTypes?: string | null
+    wordsToAvoid?: string | null
+    toneRestrictions?: string | null
+    customPromptNotes?: string | null
+    campaignSpecificInstructions?: string | null
 }
 
 export function useProjects(initialProjects: Project[]) {
@@ -20,8 +35,23 @@ export function useProjects(initialProjects: Project[]) {
     // Form fields
     const [name, setName] = useState('')
     const [description, setDescription] = useState('')
-    const [keywords, setKeywords] = useState('')
+    const [objective, setObjective] = useState('')
     const [hashtags, setHashtags] = useState('')
+    const [ageRange, setAgeRange] = useState('')
+    const [gender, setGender] = useState('')
+    const [location, setLocation] = useState('')
+    const [profession, setProfession] = useState('')
+    const [toneStyle, setToneStyle] = useState('')
+    const [writingStyleNotes, setWritingStyleNotes] = useState('')
+    const [exampleCaptions, setExampleCaptions] = useState('')
+    const [postingFrequency, setPostingFrequency] = useState('')
+    const [preferredTimeSlots, setPreferredTimeSlots] = useState('')
+    const [campaignDuration, setCampaignDuration] = useState('')
+    const [preferredCtaTypes, setPreferredCtaTypes] = useState('')
+    const [wordsToAvoid, setWordsToAvoid] = useState('')
+    const [toneRestrictions, setToneRestrictions] = useState('')
+    const [customPromptNotes, setCustomPromptNotes] = useState('')
+    const [campaignSpecificInstructions, setCampaignSpecificInstructions] = useState('')
 
     const openModal = (proj?: Project) => {
         setError('')
@@ -29,14 +59,44 @@ export function useProjects(initialProjects: Project[]) {
             setEditingProject(proj)
             setName(proj.name)
             setDescription(proj.description || '')
-            setKeywords(proj.keywords || '')
+            setObjective(proj.objective || '')
             setHashtags(proj.defaultHashtags?.join(' ') || '')
+            setAgeRange(proj.ageRange || '')
+            setGender(proj.gender || '')
+            setLocation(proj.location || '')
+            setProfession(proj.profession || '')
+            setToneStyle(proj.toneStyle || '')
+            setWritingStyleNotes(proj.writingStyleNotes || '')
+            setExampleCaptions(proj.exampleCaptions || '')
+            setPostingFrequency(proj.postingFrequency || '')
+            setPreferredTimeSlots(proj.preferredTimeSlots || '')
+            setCampaignDuration(proj.campaignDuration || '')
+            setPreferredCtaTypes(proj.preferredCtaTypes || '')
+            setWordsToAvoid(proj.wordsToAvoid || '')
+            setToneRestrictions(proj.toneRestrictions || '')
+            setCustomPromptNotes(proj.customPromptNotes || '')
+            setCampaignSpecificInstructions(proj.campaignSpecificInstructions || '')
         } else {
             setEditingProject(null)
             setName('')
             setDescription('')
-            setKeywords('')
+            setObjective('')
             setHashtags('')
+            setAgeRange('')
+            setGender('')
+            setLocation('')
+            setProfession('')
+            setToneStyle('')
+            setWritingStyleNotes('')
+            setExampleCaptions('')
+            setPostingFrequency('')
+            setPreferredTimeSlots('')
+            setCampaignDuration('')
+            setPreferredCtaTypes('')
+            setWordsToAvoid('')
+            setToneRestrictions('')
+            setCustomPromptNotes('')
+            setCampaignSpecificInstructions('')
         }
         setIsModalOpen(true)
     }
@@ -50,7 +110,6 @@ export function useProjects(initialProjects: Project[]) {
         setError('')
         setIsSaving(true)
 
-        // Parse hashtags (split by space or comma, add # if missing)
         const parsedTags = hashtags
             .split(/[\s,]+/)
             .map(t => t.trim())
@@ -63,7 +122,27 @@ export function useProjects(initialProjects: Project[]) {
             const res = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, description, keywords, defaultHashtags: parsedTags })
+                body: JSON.stringify({
+                    name,
+                    description,
+                    objective,
+                    defaultHashtags: parsedTags,
+                    ageRange,
+                    gender,
+                    location,
+                    profession,
+                    toneStyle,
+                    writingStyleNotes,
+                    exampleCaptions,
+                    postingFrequency,
+                    preferredTimeSlots,
+                    campaignDuration,
+                    preferredCtaTypes,
+                    wordsToAvoid,
+                    toneRestrictions,
+                    customPromptNotes,
+                    campaignSpecificInstructions,
+                })
             })
 
             if (!res.ok) throw new Error('プロジェクトの保存に失敗しました。')
@@ -98,18 +177,26 @@ export function useProjects(initialProjects: Project[]) {
     }
 
     return {
-        projects,
-        isModalOpen,
-        editingProject,
-        isSaving,
-        error,
+        projects, isModalOpen, editingProject, isSaving, error,
         name, setName,
         description, setDescription,
-        keywords, setKeywords,
+        objective, setObjective,
         hashtags, setHashtags,
-        openModal,
-        closeModal,
-        handleSave,
-        handleDelete
+        ageRange, setAgeRange,
+        gender, setGender,
+        location, setLocation,
+        profession, setProfession,
+        toneStyle, setToneStyle,
+        writingStyleNotes, setWritingStyleNotes,
+        exampleCaptions, setExampleCaptions,
+        postingFrequency, setPostingFrequency,
+        preferredTimeSlots, setPreferredTimeSlots,
+        campaignDuration, setCampaignDuration,
+        preferredCtaTypes, setPreferredCtaTypes,
+        wordsToAvoid, setWordsToAvoid,
+        toneRestrictions, setToneRestrictions,
+        customPromptNotes, setCustomPromptNotes,
+        campaignSpecificInstructions, setCampaignSpecificInstructions,
+        openModal, closeModal, handleSave, handleDelete
     }
 }

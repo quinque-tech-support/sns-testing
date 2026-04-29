@@ -1,6 +1,5 @@
 import { apiError } from '@/lib/api.utils'
 import { requireAuth } from '@/lib/auth.utils'
-import { toErrorMessage } from '@/lib/api.utils'
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 
@@ -10,7 +9,15 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
         const userId = await requireAuth()
 
         const body = await req.json()
-        const { name, description, keywords, defaultHashtags } = body
+        const { 
+            name, description, objective,
+            ageRange, gender, location, profession,
+            toneStyle, writingStyleNotes, exampleCaptions,
+            postingFrequency, preferredTimeSlots, campaignDuration,
+            preferredCtaTypes, wordsToAvoid, toneRestrictions,
+            customPromptNotes, campaignSpecificInstructions,
+            defaultHashtags
+        } = body
 
         if (!name) return new NextResponse('Name is required', { status: 400 })
 
@@ -18,9 +25,24 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
             where: { id: params.id, userId: userId },
             data: { 
                 name, 
-                description, 
-                keywords,
-                defaultHashtags: Array.isArray(defaultHashtags) ? defaultHashtags : undefined
+                description,
+                objective,
+                ageRange,
+                gender,
+                location,
+                profession,
+                toneStyle,
+                writingStyleNotes,
+                exampleCaptions,
+                postingFrequency,
+                preferredTimeSlots,
+                campaignDuration,
+                preferredCtaTypes,
+                wordsToAvoid,
+                toneRestrictions,
+                customPromptNotes,
+                campaignSpecificInstructions,
+                defaultHashtags: Array.isArray(defaultHashtags) ? defaultHashtags : undefined,
             }
         })
 
