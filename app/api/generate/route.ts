@@ -63,7 +63,19 @@ export async function POST(req: Request) {
             projectContext = {
                 title: project.name,
                 description: project.description || undefined,
-                keywords: project.keywords || undefined,
+                objective: project.objective || undefined,
+                defaultHashtags: project.defaultHashtags,
+                ageRange: project.ageRange || undefined,
+                gender: project.gender || undefined,
+                location: project.location || undefined,
+                profession: project.profession || undefined,
+                toneStyle: project.toneStyle || undefined,
+                writingStyleNotes: project.writingStyleNotes || undefined,
+                exampleCaptions: project.exampleCaptions || undefined,
+                wordsToAvoid: project.wordsToAvoid || undefined,
+                toneRestrictions: project.toneRestrictions || undefined,
+                customPromptNotes: project.customPromptNotes || undefined,
+                campaignSpecificInstructions: project.campaignSpecificInstructions || undefined,
             };
 
             // Fetch published posts for this project to extract past captions
