@@ -10,13 +10,34 @@ export interface ImagePart {
 export interface ProjectContext {
     title: string;
     description?: string;
-    keywords?: string;
+    objective?: string;
+    defaultHashtags?: string[];
+    ageRange?: string;
+    gender?: string;
+    location?: string;
+    profession?: string;
+    toneStyle?: string;
+    writingStyleNotes?: string;
+    exampleCaptions?: string;
+    wordsToAvoid?: string;
+    toneRestrictions?: string;
+    customPromptNotes?: string;
+    campaignSpecificInstructions?: string;
+    postingPlan?: {
+        frequency?: string;
+        recommendedPostingTime?: string;
+        campaignPeriod?: string;
+    };
+    instructions?: {
+        customPromptInstructions?: string;
+        campaignSpecificInstructions?: string;
+    };
 }
 
 export interface PipelineInput {
     /** Base64 encoded images with mimeType */
     images: ImagePart[];
-    /** Project-level context (title, description, keywords) */
+    /** Project-level context (demographics, brand voice, strategy) */
     projectContext?: ProjectContext;
     /** User's free-text prompt — highest priority override */
     userPrompt?: string;
