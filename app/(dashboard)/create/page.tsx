@@ -9,7 +9,7 @@ export default async function CreateContentPage() {
     const session = await requirePageAuth();
     const userId = session.user.id
 
-    const [user, accounts] = await Promise.all([
+    const [user, accounts, projects] = await Promise.all([
         prisma.user.findUnique({
             where: { id: userId },
             select: { aiUsageOption: true }
@@ -22,8 +22,12 @@ export default async function CreateContentPage() {
                 pageId: true,
             },
             orderBy: { createdAt: 'desc' }
+        }),
+        prisma.project.findMany({
+            where: { userId: userId },
+            orderBy: { updatedAt: 'desc' }
         })
     ])
 
-    return <CreateContentClient accounts={accounts} aiUsageOption={user?.aiUsageOption} />
+    return <CreateContentClient accounts={accounts} aiUsageOption={user?.aiUsageOption} projects={projects as any} />
 }

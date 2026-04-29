@@ -50,7 +50,7 @@ function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs))
 }
 
-export default function CreateContentClient({ accounts: _ignored, aiUsageOption = 'Normal AI Use' }: { accounts?: ConnectedAccount[], aiUsageOption?: string }) {
+export default function CreateContentClient({ accounts: _ignored, aiUsageOption = 'Normal AI Use', projects: initialProjects = [] }: { accounts?: ConnectedAccount[], aiUsageOption?: string, projects?: any[] }) {
     const router = useRouter()
     const { selectedAccountId, accounts } = useAccount()
 
@@ -75,7 +75,7 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
         libraryUploadProgress,
         handleLibraryUpload,
         deleteProjectImage
-    } = useProjectData()
+    } = useProjectData(initialProjects)
 
     const {
         mediaItems,
