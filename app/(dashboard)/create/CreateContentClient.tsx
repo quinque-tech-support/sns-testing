@@ -544,7 +544,7 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
 
                                     {/* AI Analysis info icon — top right of textarea */}
                                     {analysisResults && (
-                                        <div className="absolute top-2.5 right-2.5 z-20 group/analysis">
+                                        <div className="absolute top-2.5 right-2.5 z-20 group/analysis opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                             <button
                                                 type="button"
                                                 className="w-7 h-7 rounded-full bg-indigo-100 hover:bg-indigo-200 text-indigo-600 flex items-center justify-center transition-colors shadow-sm border border-indigo-200"
