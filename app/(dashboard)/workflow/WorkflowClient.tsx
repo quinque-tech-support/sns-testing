@@ -7,6 +7,15 @@ import {
     Instagram, Image as ImageIcon, Video, Calendar, Eye, Heart
 } from 'lucide-react'
 
+/** Safely extract the first image URL from a plain URL or a serialized JSON array */
+function firstImageUrl(imageUrl: string): string {
+    if (!imageUrl) return ''
+    if (imageUrl.startsWith('[')) {
+        try { return JSON.parse(imageUrl)[0] ?? '' } catch { return '' }
+    }
+    return imageUrl
+}
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 const statusConfig = {
@@ -133,7 +142,7 @@ export default function WorkflowClient({ posts, insightsPromise }: WorkflowClien
                                                 <div className="aspect-[4/3] relative overflow-hidden bg-gray-100">
                                                     {isVideo ? (
                                                         <div className="w-full h-full bg-gray-900 flex items-center justify-center relative">
-                                                            <img src={post.imageUrl} alt="" className="w-full h-full object-cover opacity-50" />
+                                                            <img src={firstImageUrl(post.imageUrl)} alt="" className="w-full h-full object-cover opacity-50" />
                                                             <div className="absolute inset-0 flex items-center justify-center">
                                                                 <div className="w-10 h-10 rounded-full bg-white/30 backdrop-blur flex items-center justify-center">
                                                                     <Video className="w-5 h-5 text-white" />
@@ -141,7 +150,7 @@ export default function WorkflowClient({ posts, insightsPromise }: WorkflowClien
                                                             </div>
                                                         </div>
                                                     ) : (
-                                                        <img src={post.imageUrl} alt={post.caption || 'Post'} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                                                        <img src={firstImageUrl(post.imageUrl)} alt={post.caption || 'Post'} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                                                     )}
                                                     {post.connectedAccount?.username && (
                                                         <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 bg-black/50 backdrop-blur-sm rounded-lg border border-white/20">
