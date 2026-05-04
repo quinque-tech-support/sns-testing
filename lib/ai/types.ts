@@ -51,6 +51,8 @@ export interface PipelineInput {
     userId?: string;
     /** Project ID for pattern caching */
     projectId?: string;
+    /** AI usage mode (Normal AI Use, Slight AI, etc) */
+    aiUsageOption?: string;
 }
 
 export type PostType = 'single' | 'small-carousel' | 'story-carousel';

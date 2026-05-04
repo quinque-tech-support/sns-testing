@@ -35,8 +35,11 @@ export async function generateCaptions(input: PipelineInput): Promise<PipelineOu
     // ── 1. VISION ANALYSIS — analyze only the anchor image ──────────────
     const imagesToAnalyze = input.images.slice(0, MAX_IMAGES);
     let anchorAnalysis: ImageAnalysis;
+    
+    // Skip image analysis for Normal and Slight AI modes
+    const skipImageAnalysis = input.aiUsageOption === 'Normal AI Use' || input.aiUsageOption === 'Slight AI' || input.aiUsageOption === 'Slight AI Use';
 
-    if (imagesToAnalyze.length > 0) {
+    if (!skipImageAnalysis && imagesToAnalyze.length > 0) {
         console.log('[Pipeline] Stage 1: Analyzing anchor image...');
         try {
             anchorAnalysis = await analyzeImage(imagesToAnalyze[0], apiKey);
@@ -52,6 +55,7 @@ export async function generateCaptions(input: PipelineInput): Promise<PipelineOu
             };
         }
     } else {
+        console.log(`[Pipeline] Stage 1: Skipping image analysis (Mode: ${input.aiUsageOption || 'text-only'})`);
         anchorAnalysis = {
             objects: [],
             scene: 'no image provided',
@@ -68,7 +72,7 @@ export async function generateCaptions(input: PipelineInput): Promise<PipelineOu
 
     // ── 3. SEQUENCE INTERPRETATION (multi-image only — 1 API call) ──────
     let sequenceSummary = '';
-    if (postType !== 'single' && imagesToAnalyze.length > 1) {
+    if (!skipImageAnalysis && postType !== 'single' && imagesToAnalyze.length > 1) {
         console.log('[Pipeline] Stage 3: Running sequence interpreter...');
         try {
             // Build lightweight analyses for non-anchor images from the anchor data
@@ -96,25 +100,35 @@ export async function generateCaptions(input: PipelineInput): Promise<PipelineOu
     console.log('[Pipeline] Stage 4: Loading pattern analysis...');
     const pastCaptions = input.pastCaptions?.filter(c => c && c.trim().length > 0) || [];
 
-    const patternData = await getCachedOrFreshPatterns(
+    let patternData = await getCachedOrFreshPatterns(
         input.userId,
         input.projectId,
         pastCaptions,
         apiKey
     );
+    
+    // Explicitly update pattern_summary to act as the "What we learned from past posts" section.
+    if (patternData && pastCaptions.length > 0) {
+        patternData.pattern_summary = `We analyzed ${pastCaptions.length} of your past successful posts. We learned that your audience responds well to a ${patternData.tone} tone and ${patternData.avg_length} captions. We will apply this specific hook style (${patternData.hook_style}) to your new caption.`;
+    }
+
+    // Determine if we should skip project context based on Slight AI mode
+    const isSlightAI = input.aiUsageOption === 'Slight AI' || input.aiUsageOption === 'Slight AI Use';
+    const activeProjectContext = isSlightAI ? undefined : input.projectContext;
 
     // ── 5. BUILD CONTEXT + WRITE CAPTION (1 API call) ───────────────────
     console.log('[Pipeline] Stage 5: Generating caption...');
 
     const result = await runWriter({
-        anchorAnalysis,
+        anchorAnalysis: skipImageAnalysis ? undefined : anchorAnalysis,
         postType,
         sequenceSummary,
         patternData,
-        projectContext: input.projectContext,
+        projectContext: activeProjectContext,
         userPrompt: input.userPrompt,
         currentCaption: input.currentCaption,
         imageCount: imagesToAnalyze.length,
+        aiUsageOption: input.aiUsageOption,
     }, apiKey);
 
     console.log('═══════════════════════════════════════');
