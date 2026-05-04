@@ -310,5 +310,23 @@ export const facebookService = {
             console.error(`[FacebookService] Failed to fetch account insights for ${igBusinessId}:`, error.response?.data || error.message)
             return null
         }
+    },
+
+    /**
+     * Fetch followers count for an Instagram Business Account
+     */
+    async getInstagramFollowersCount(igBusinessId: string, accessToken: string): Promise<number | null> {
+        try {
+            const response = await graphApi.get(`/${igBusinessId}`, {
+                params: {
+                    fields: 'followers_count',
+                    access_token: accessToken,
+                }
+            })
+            return response.data.followers_count || 0
+        } catch (error: any) {
+            console.error(`[FacebookService] Failed to fetch followers for ${igBusinessId}:`, error.response?.data || error.message)
+            return null
+        }
     }
 }

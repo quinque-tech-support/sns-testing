@@ -6,7 +6,7 @@ import { validateCaptionDraft } from '../utils/validators';
  * Input context for the writer — everything it needs in a single object.
  */
 export interface WriterContext {
-    anchorAnalysis: ImageAnalysis;
+    anchorAnalysis?: ImageAnalysis;
     postType: PostType;
     sequenceSummary: string;
     patternData?: PatternAnalysis;
@@ -14,6 +14,7 @@ export interface WriterContext {
     userPrompt?: string;
     currentCaption?: string;
     imageCount: number;
+    aiUsageOption?: string;
 }
 
 /**
@@ -66,18 +67,20 @@ function buildContextBlock(ctx: WriterContext): string {
     }
 
     // 4. Image Analysis
-    text += `[画像分析]\n`;
-    text += `投稿タイプ: ${ctx.postType} (${ctx.imageCount}枚)\n`;
-    text += `主題: ${ctx.anchorAnalysis.primary_subject}\n`;
-    text += `シーン: ${ctx.anchorAnalysis.scene}\n`;
-    text += `雰囲気: ${ctx.anchorAnalysis.mood}\n`;
-    if (ctx.anchorAnalysis.objects.length > 0) {
-        text += `オブジェクト: ${ctx.anchorAnalysis.objects.join(', ')}\n`;
+    if (ctx.anchorAnalysis) {
+        text += `[画像分析]\n`;
+        text += `投稿タイプ: ${ctx.postType} (${ctx.imageCount}枚)\n`;
+        text += `主題: ${ctx.anchorAnalysis.primary_subject}\n`;
+        text += `シーン: ${ctx.anchorAnalysis.scene}\n`;
+        text += `雰囲気: ${ctx.anchorAnalysis.mood}\n`;
+        if (ctx.anchorAnalysis.objects.length > 0) {
+            text += `オブジェクト: ${ctx.anchorAnalysis.objects.join(', ')}\n`;
+        }
+        if (ctx.anchorAnalysis.actions.length > 0) {
+            text += `アクション: ${ctx.anchorAnalysis.actions.join(', ')}\n`;
+        }
+        text += '\n';
     }
-    if (ctx.anchorAnalysis.actions.length > 0) {
-        text += `アクション: ${ctx.anchorAnalysis.actions.join(', ')}\n`;
-    }
-    text += '\n';
 
     // 5. Sequence Summary (carousels)
     if (ctx.sequenceSummary) {
@@ -110,8 +113,17 @@ export async function runWriter(
 ): Promise<CaptionDraft> {
     const contextBlock = buildContextBlock(ctx);
 
-    const prompt = `あなたはInstagramの日本市場に特化したプロのコピーライターです。
-以下のコンテキストを元に、エンゲージメント率の高いキャプションを1つ作成してください。
+    const isSlightAI = ctx.aiUsageOption === 'Slight AI' || ctx.aiUsageOption === 'Slight AI Use';
+    const isNormalAI = ctx.aiUsageOption === 'Normal AI Use';
+
+    const systemInstruction = isSlightAI
+        ? "あなたは過去の投稿データのみに基づき、ユーザーの指示に沿って軽く調整を行うだけのアシスタントです。過度な創造性は控え、シンプルにまとめてください。"
+        : isNormalAI
+        ? "あなたはInstagramのコピーライターです。過度な装飾は避け、過去の分析データとプロジェクト設定を元に、自然で読みやすいキャプションを作成してください。"
+        : "あなたはInstagramの日本市場に特化したプロのコピーライターです。以下のコンテキストを元に、エンゲージメント率の高い魅力的なキャプションを作成してください。";
+
+    const prompt = `${systemInstruction}
+以下のコンテキストを元に、キャプションを1つ作成してください。
 
 出力はすべて日本語で書いてください。
 
@@ -127,6 +139,7 @@ ${contextBlock}
 5. ハッシュタグは日本語と英語を混ぜ、広いものとニッチなものを8〜15個
 ${ctx.patternData ? '6. 過去の投稿パターンに合わせて一貫性を保つこと' : ''}
 ${ctx.userPrompt ? '7. ユーザーの指示を最優先で反映すること' : ''}
+${isSlightAI ? '8. 画像の分析データが提供されていないため、過去のパターンのトーンとユーザーのプロンプトだけに集中すること。' : ''}
 
 出力形式（JSON）:
 {

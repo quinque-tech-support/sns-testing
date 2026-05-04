@@ -16,6 +16,9 @@ interface AnalyticsClientProps {
     accountsCount: number
     chartData: ChartDataPoint[]
     topPosts: TopPost[]
+    bottomPosts: TopPost[]
+    projects: { id: string, name: string }[]
+    selectedProjectId: string
 }
 
 function formatNumber(n: number): string {
@@ -23,7 +26,7 @@ function formatNumber(n: number): string {
     return n.toString()
 }
 
-export default function AnalyticsClient({ postsCount, publishedCount, pendingCount, accountsCount, chartData, topPosts }: AnalyticsClientProps) {
+export default function AnalyticsClient({ postsCount, publishedCount, pendingCount, accountsCount, chartData, topPosts, bottomPosts, projects, selectedProjectId }: AnalyticsClientProps) {
     const stats: Stat[] = [
         { label: '総投稿数', value: formatNumber(postsCount), trend: postsCount > 0 ? '+' + postsCount : '0', icon: BarChart3, color: 'text-blue-600', bg: 'bg-blue-50' },
         { label: '公開済み', value: formatNumber(publishedCount), trend: publishedCount > 0 ? '+' + publishedCount : '0', icon: TrendingUp, color: 'text-purple-600', bg: 'bg-purple-50' },
@@ -36,6 +39,11 @@ export default function AnalyticsClient({ postsCount, publishedCount, pendingCou
         { label: '公開済み', value: publishedCount, max: Math.max(postsCount, 1), color: 'bg-orange-500', icon: Bookmark },
         { label: '予約済み', value: pendingCount, max: Math.max(postsCount, 1), color: 'bg-blue-500', icon: Share2 },
     ]
+    
+    // Compute summary of analysis
+    const totalLikes = topPosts.concat(bottomPosts).reduce((acc, p) => acc + p.likes, 0)
+    const totalComments = topPosts.concat(bottomPosts).reduce((acc, p) => acc + p.comments, 0)
+
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Header */}
@@ -45,11 +53,32 @@ export default function AnalyticsClient({ postsCount, publishedCount, pendingCou
                     <p className="text-gray-500 mt-1">コンテンツのパフォーマンスとオーディエンス成長を分析しましょう。</p>
                 </div>
                 <div className="flex items-center gap-3">
+                    <div className="relative">
+                        <select 
+                            className="appearance-none flex items-center gap-2 pl-4 pr-10 py-2 bg-white border border-gray-100 rounded-xl shadow-sm text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                            value={selectedProjectId}
+                            onChange={(e) => {
+                                const url = new URL(window.location.href);
+                                if (e.target.value) {
+                                    url.searchParams.set('projectId', e.target.value);
+                                } else {
+                                    url.searchParams.delete('projectId');
+                                }
+                                window.location.href = url.toString();
+                            }}
+                        >
+                            <option value="">すべてのプロジェクト</option>
+                            {projects.map(p => (
+                                <option key={p.id} value={p.id}>{p.name}</option>
+                            ))}
+                        </select>
+                        <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
                     <div className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-100 rounded-xl shadow-sm text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-50 transition-all duration-200 ease-out active:scale-95">
                         <Calendar className="w-4 h-4 text-gray-400" />過去30日間<ChevronDown className="w-4 h-4 text-gray-400" />
                     </div>
                     <button className="flex items-center gap-2 px-4 py-2 instagram-gradient text-white rounded-xl text-sm font-bold shadow-lg shadow-gray-900/20 hover:opacity-90 transition-all duration-200 ease-out active:scale-95">
-                        <Download className="w-4 h-4" />CSVをエクスポート
+                        <Download className="w-4 h-4" />CSV
                     </button>
                 </div>
             </div>
@@ -147,17 +176,17 @@ export default function AnalyticsClient({ postsCount, publishedCount, pendingCou
                             <TrendingUp className="w-5 h-5 text-purple-600" />
                         </div>
                         <p className="text-xs text-purple-700">
-                            {postsCount === 0 ? 'まだ投稿がありません。最初の投稿を作成して始めましょう！' : `${postsCount} 件の投稿を追跡中です。`}
+                            {postsCount === 0 ? 'まだ投稿がありません。最初の投稿を作成して始めましょう！' : `${postsCount} 件の投稿を追跡中。このプロジェクトの分析: いいね計 ${totalLikes} 回、コメント計 ${totalComments} 件`}
                         </p>
                     </div>
                 </div>
             </div>
 
-            {/* Recent Posts */}
+            {/* Top Posts */}
             <div id="recent-posts" className="scroll-mt-8">
                 <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-lg font-bold text-gray-900 px-1">最近の投稿</h2>
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{postsCount} 件合計</span>
+                    <h2 className="text-lg font-bold text-gray-900 px-1">トップパフォーマンスの投稿</h2>
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{topPosts.length} 件</span>
                 </div>
                 {topPosts.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -177,11 +206,11 @@ export default function AnalyticsClient({ postsCount, publishedCount, pendingCou
                                     </div>
                                     <div className="p-4 space-y-4">
                                         <div className="grid grid-cols-2 gap-4">
-                                            <div><p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status</p>
-                                                <p className={`text-sm font-bold mt-1 ${statusLabel === 'Published' ? 'text-green-600' : statusLabel === 'Scheduled' ? 'text-purple-600' : statusLabel === 'Failed' ? 'text-red-600' : 'text-gray-500'}`}>{statusLabel}</p>
+                                            <div><p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">いいね</p>
+                                                <p className={`text-sm font-bold mt-1 text-gray-900`}>{post.likes}</p>
                                             </div>
-                                            <div className="text-right"><p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Created</p>
-                                                <p className="text-sm font-bold text-gray-900 mt-1">{new Date(post.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
+                                            <div className="text-right"><p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">コメント</p>
+                                                <p className="text-sm font-bold text-gray-900 mt-1">{post.comments}</p>
                                             </div>
                                         </div>
                                         {post.caption && <p className="text-xs text-gray-500 leading-relaxed line-clamp-2 italic">"{post.caption}"</p>}
@@ -200,6 +229,43 @@ export default function AnalyticsClient({ postsCount, publishedCount, pendingCou
                     </div>
                 )}
             </div>
+
+            {/* Bottom Posts */}
+            {bottomPosts.length > 0 && (
+                <div className="scroll-mt-8 mt-12">
+                    <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-lg font-bold text-gray-900 px-1">改善が必要な投稿 (ワースト)</h2>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{bottomPosts.length} 件</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {bottomPosts.map((post) => {
+                            const schedule = post.schedules[0]
+                            return (
+                                <div key={post.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden group hover:border-red-200 hover:shadow-md transition-all opacity-80 hover:opacity-100">
+                                    <div className="aspect-square relative overflow-hidden bg-gray-100 grayscale hover:grayscale-0 transition-all">
+                                        <img src={post.imageUrl} alt={post.caption || 'Post'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                        <div className="absolute top-3 left-3 px-2 py-1 bg-black/50 backdrop-blur-md rounded-lg flex items-center gap-1 border border-white/20">
+                                            <Instagram className="w-3 h-3 text-white" />
+                                            <span className="text-[10px] font-bold text-white uppercase tracking-wider">{post.connectedAccount?.username ? `@${post.connectedAccount.username}` : 'Post'}</span>
+                                        </div>
+                                    </div>
+                                    <div className="p-4 space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div><p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">いいね</p>
+                                                <p className={`text-sm font-bold mt-1 text-gray-900`}>{post.likes}</p>
+                                            </div>
+                                            <div className="text-right"><p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">コメント</p>
+                                                <p className="text-sm font-bold text-gray-900 mt-1">{post.comments}</p>
+                                            </div>
+                                        </div>
+                                        {post.caption && <p className="text-xs text-gray-500 leading-relaxed line-clamp-2 italic">"{post.caption}"</p>}
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

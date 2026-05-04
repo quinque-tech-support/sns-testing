@@ -2,8 +2,8 @@
 
 import Link from 'next/link'
 import {
-    Eye, Heart, PlayCircle, CheckCircle2, UserPlus,
-    ArrowUpRight, MoreHorizontal, Calendar, Instagram
+    Eye, Heart, PlayCircle, CheckCircle2, Users,
+    ArrowUpRight, MoreHorizontal, Calendar
 } from 'lucide-react'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -47,6 +47,7 @@ interface ChartDay {
 interface InsightsData {
     totalImpressions: number
     totalLikes: number
+    followersCount: number
     hasInsights: boolean
 }
 
@@ -75,21 +76,19 @@ import { use, Suspense } from 'react'
 function KPIGrid({
     insightsPromise,
     publishedCount,
-    accountsCount,
     connectedAccountUsername
 }: {
     insightsPromise: Promise<InsightsData>
     publishedCount: number
-    accountsCount: number
     connectedAccountUsername: string | null
 }) {
-    const { totalImpressions, totalLikes, hasInsights } = use(insightsPromise)
+    const { totalImpressions, totalLikes, followersCount, hasInsights } = use(insightsPromise)
     
     const kpis: KPI[] = [
         { label: 'リーチ（過去30日）', value: hasInsights ? formatNum(totalImpressions) : '--', sub: hasInsights ? 'リーチしたユニークアカウント数' : 'アカウントを連携してください', icon: Eye, color: 'text-blue-600', bg: 'bg-blue-50', trend: hasInsights ? '↑ ライブ' : null, isPositive: true },
         { label: 'プロフィール閲覧（過去30日）', value: hasInsights ? formatNum(totalLikes) : '--', sub: hasInsights ? 'Instagram APIより取得' : 'データなし', icon: Heart, color: 'text-pink-600', bg: 'bg-pink-50', trend: hasInsights ? '↑ ライブ' : null, isPositive: true },
         { label: '公開済み投稿数', value: publishedCount.toString(), sub: '累計・自動投稿', icon: PlayCircle, color: 'text-purple-600', bg: 'bg-purple-50', trend: publishedCount > 0 ? `+${publishedCount}` : null, isPositive: true },
-        { label: '連携アカウント', value: accountsCount.toString(), sub: connectedAccountUsername ? `@${connectedAccountUsername}` : 'アカウントなし', icon: UserPlus, color: 'text-orange-600', bg: 'bg-orange-50', trend: accountsCount > 0 ? `${accountsCount} アクティブ` : null, isPositive: true },
+        { label: 'フォロワー数', value: hasInsights ? formatNum(followersCount) : '--', sub: connectedAccountUsername ? `@${connectedAccountUsername}` : 'アカウントなし', icon: Users, color: 'text-orange-600', bg: 'bg-orange-50', trend: hasInsights ? '↑ ライブ' : null, isPositive: true },
     ]
 
     return (
@@ -217,7 +216,6 @@ export default function DashboardClient({
                 <KPIGrid 
                     insightsPromise={insightsPromise}
                     publishedCount={publishedCount}
-                    accountsCount={accountsCount}
                     connectedAccountUsername={connectedAccountUsername}
                 />
             </Suspense>

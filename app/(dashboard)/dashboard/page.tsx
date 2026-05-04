@@ -36,20 +36,25 @@ export default async function DashboardPage() {
     const insightsPromise = (async () => {
         let totalImpressions = 0
         let totalLikes = 0
+        let followersCount = 0
         let hasInsights = false
 
         if (connectedAccount?.instagramBusinessId && connectedAccount?.pageAccessToken) {
-            const insights = await facebookService.getAccountInsights(
-                connectedAccount.instagramBusinessId,
-                connectedAccount.pageAccessToken
-            )
+            const [insights, followers] = await Promise.all([
+                facebookService.getAccountInsights(connectedAccount.instagramBusinessId, connectedAccount.pageAccessToken),
+                facebookService.getInstagramFollowersCount(connectedAccount.instagramBusinessId, connectedAccount.pageAccessToken)
+            ])
             if (insights) {
                 totalImpressions = insights.totalImpressions
                 totalLikes = insights.totalLikes
                 hasInsights = true
             }
+            if (followers !== null) {
+                followersCount = followers
+                hasInsights = true // consider having followers as having some insights
+            }
         }
-        return { totalImpressions, totalLikes, hasInsights }
+        return { totalImpressions, totalLikes, followersCount, hasInsights }
     })()
 
     const chartDays = 12

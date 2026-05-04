@@ -28,6 +28,7 @@ export function useProjects(initialProjects: Project[]) {
     const router = useRouter()
     const [projects, setProjects] = useState<Project[]>(initialProjects)
     const [isModalOpen, setIsModalOpen] = useState(false)
+    const [viewingProject, setViewingProject] = useState<Project | null>(null)
     const [editingProject, setEditingProject] = useState<Project | null>(null)
     const [isSaving, setIsSaving] = useState(false)
     const [error, setError] = useState('')
@@ -105,6 +106,14 @@ export function useProjects(initialProjects: Project[]) {
         setIsModalOpen(false)
     }
 
+    const openViewModal = (proj: Project) => {
+        setViewingProject(proj)
+    }
+
+    const closeViewModal = () => {
+        setViewingProject(null)
+    }
+
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault()
         setError('')
@@ -177,7 +186,7 @@ export function useProjects(initialProjects: Project[]) {
     }
 
     return {
-        projects, isModalOpen, editingProject, isSaving, error,
+        projects, isModalOpen, viewingProject, editingProject, isSaving, error,
         name, setName,
         description, setDescription,
         objective, setObjective,
@@ -197,6 +206,6 @@ export function useProjects(initialProjects: Project[]) {
         toneRestrictions, setToneRestrictions,
         customPromptNotes, setCustomPromptNotes,
         campaignSpecificInstructions, setCampaignSpecificInstructions,
-        openModal, closeModal, handleSave, handleDelete
+        openModal, closeModal, openViewModal, closeViewModal, handleSave, handleDelete
     }
 }

@@ -33,25 +33,40 @@ function get30DayActivityData(posts: { createdAt: Date; schedules: { status: str
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
-export default async function AnalyticsPage() {
+export default async function AnalyticsPage(props: { searchParams: Promise<{ projectId?: string }> }) {
+    const searchParams = await props.searchParams
+    const projectId = searchParams.projectId
+    
     const session = await requirePageAuth();
     const userId = session.user.id
 
-    const [postsCount, publishedCount, pendingCount, accountsCount, topPosts, activityPosts] = await Promise.all([
-        prisma.post.count({ where: { userId: userId } }),
-        prisma.schedule.count({ where: { post: { userId: userId }, status: 'PUBLISHED' } }),
-        prisma.schedule.count({ where: { post: { userId: userId }, status: 'PENDING' } }),
+    const baseWhere = { userId: userId, ...(projectId ? { projectId } : {}) }
+
+    const [postsCount, publishedCount, pendingCount, accountsCount, topPosts, bottomPosts, activityPosts, projects] = await Promise.all([
+        prisma.post.count({ where: baseWhere }),
+        prisma.schedule.count({ where: { post: baseWhere, status: 'PUBLISHED' } }),
+        prisma.schedule.count({ where: { post: baseWhere, status: 'PENDING' } }),
         prisma.connectedAccount.count({ where: { userId: userId } }),
         prisma.post.findMany({
-            where: { userId: userId },
+            where: { ...baseWhere, schedules: { some: { status: 'PUBLISHED' } } },
             include: { schedules: { orderBy: { createdAt: 'desc' }, take: 1 }, connectedAccount: { select: { username: true } } },
-            orderBy: { createdAt: 'desc' },
+            orderBy: [{ likes: 'desc' }, { views: 'desc' }],
             take: 4,
         }),
         prisma.post.findMany({
-            where: { userId: userId, createdAt: { gte: new Date(new Date().setDate(new Date().getDate() - 30)) } },
+            where: { ...baseWhere, schedules: { some: { status: 'PUBLISHED' } } },
+            include: { schedules: { orderBy: { createdAt: 'desc' }, take: 1 }, connectedAccount: { select: { username: true } } },
+            orderBy: [{ likes: 'asc' }, { views: 'asc' }],
+            take: 4,
+        }),
+        prisma.post.findMany({
+            where: { ...baseWhere, createdAt: { gte: new Date(new Date().setDate(new Date().getDate() - 30)) } },
             select: { createdAt: true, schedules: { select: { status: true } } },
         }),
+        prisma.project.findMany({
+            where: { userId: userId },
+            select: { id: true, name: true }
+        })
     ])
 
     const chartData = get30DayActivityData(activityPosts)
@@ -64,6 +79,9 @@ export default async function AnalyticsPage() {
             accountsCount={accountsCount}
             chartData={chartData}
             topPosts={topPosts}
+            bottomPosts={bottomPosts}
+            projects={projects}
+            selectedProjectId={projectId || ''}
         />
     )
 }

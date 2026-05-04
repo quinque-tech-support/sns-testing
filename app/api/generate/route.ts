@@ -51,6 +51,13 @@ export async function POST(req: Request) {
         }
 
         // ── 2. Fetch project context + historical data ───────────────────
+        // ── 2. Fetch user settings, project context + historical data ───────────────────
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { aiUsageOption: true }
+        })
+        const aiUsageOption = user?.aiUsageOption || 'Normal AI Use';
+
         let projectContext: ProjectContext | undefined;
         let pastCaptions: string[] = [];
 
@@ -107,6 +114,7 @@ export async function POST(req: Request) {
             apiKey,
             userId,
             projectId: projectId || undefined,
+            aiUsageOption,
         };
 
         const result = await generateCaptions(pipelineInput);

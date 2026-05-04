@@ -25,4 +25,6 @@ export interface TopPost {
     createdAt: Date
     connectedAccount: { username: string | null } | null
     schedules: { status: string; scheduledFor: Date | null }[]
+    likes: number
+    comments: number
 }
