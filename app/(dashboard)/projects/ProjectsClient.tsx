@@ -68,7 +68,7 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
         customPromptNotes, setCustomPromptNotes,
         campaignSpecificInstructions, setCampaignSpecificInstructions,
         hashtags, setHashtags,
-        openModal, closeModal, handleSave, handleDelete
+        openModal, closeModal, viewingProject, openViewModal, closeViewModal, handleSave, handleDelete
     } = useProjects(initialProjects)
 
     return (
@@ -101,7 +101,7 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {projects.map(proj => (
-                        <div key={proj.id} className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow relative group">
+                        <div key={proj.id} onClick={() => openViewModal(proj)} className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow relative group cursor-pointer hover:border-indigo-200">
                             <div className="flex items-center gap-2 mb-2">
                                 <h2 className="text-xl font-bold text-gray-900 truncate pr-10">{proj.name}</h2>
                             </div>
@@ -120,11 +120,6 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
                                         {TONE_STYLE_OPTIONS.find(o => o.value === proj.toneStyle)?.label || proj.toneStyle}
                                     </span>
                                 )}
-                            </div>
-
-                            <div className="absolute top-4 right-4 flex opacity-0 group-hover:opacity-100 transition-opacity gap-1">
-                                <button type="button" onClick={() => openModal(proj)} className="p-2 bg-white text-gray-400 hover:text-gray-900 rounded-lg border border-gray-200 shadow-sm transition-colors"><Edit2 className="w-4 h-4" /></button>
-                                <button type="button" onClick={(e) => handleDelete(proj.id, e)} className="p-2 bg-white text-gray-400 hover:text-red-600 rounded-lg border border-gray-200 shadow-sm transition-colors"><Trash2 className="w-4 h-4" /></button>
                             </div>
                         </div>
                     ))}
@@ -333,6 +328,72 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
                             </button>
                         </div>
                     </form>
+                </div>
+            )}
+
+            {viewingProject && (
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+                    <div className="bg-white rounded-2xl p-8 w-full max-w-2xl shadow-2xl animate-in zoom-in-95 overflow-hidden flex flex-col max-h-[90vh]">
+                        <div className="flex items-center justify-between mb-6 shrink-0">
+                            <h2 className="text-2xl font-bold flex items-center gap-2 text-gray-900">
+                                <FolderKanban className="w-6 h-6 text-indigo-600" />
+                                {viewingProject.name}
+                            </h2>
+                            <div className="flex items-center gap-2">
+                                <button type="button" onClick={() => { closeViewModal(); openModal(viewingProject); }} className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-transparent hover:border-indigo-100"><Edit2 className="w-4 h-4" /></button>
+                                <button type="button" onClick={(e) => { closeViewModal(); handleDelete(viewingProject.id, e); }} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100"><Trash2 className="w-4 h-4" /></button>
+                                <div className="w-px h-6 bg-gray-200 mx-1" />
+                                <button type="button" onClick={closeViewModal} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"><X className="w-5 h-5"/></button>
+                            </div>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto pr-2 -mr-2 scrollbar-thin space-y-6">
+                            {viewingProject.description && (
+                                <div>
+                                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">プロジェクト説明</h3>
+                                    <p className="text-gray-700 whitespace-pre-wrap text-sm leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100">{viewingProject.description}</p>
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                {viewingProject.objective && (
+                                    <div>
+                                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">目的</h3>
+                                        <p className="text-sm font-semibold text-gray-900">{PURPOSE_OPTIONS.find(o => o.value === viewingProject.objective)?.label || viewingProject.objective}</p>
+                                    </div>
+                                )}
+                                {viewingProject.toneStyle && (
+                                    <div>
+                                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">トーン＆スタイル</h3>
+                                        <p className="text-sm font-semibold text-gray-900">{TONE_STYLE_OPTIONS.find(o => o.value === viewingProject.toneStyle)?.label || viewingProject.toneStyle}</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {viewingProject.defaultHashtags && viewingProject.defaultHashtags.length > 0 && (
+                                <div>
+                                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">デフォルトハッシュタグ</h3>
+                                    <div className="flex flex-wrap gap-2">
+                                        {viewingProject.defaultHashtags.map((tag, i) => (
+                                            <span key={i} className="px-2.5 py-1 bg-indigo-50 text-indigo-600 text-xs font-bold rounded-lg border border-indigo-100">{tag}</span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {(viewingProject.ageRange || viewingProject.gender || viewingProject.location || viewingProject.profession) && (
+                                <div>
+                                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-100 pb-2">ターゲット層</h3>
+                                    <div className="grid grid-cols-2 gap-4 mt-3">
+                                        {viewingProject.ageRange && <div><span className="text-xs text-gray-500 block mb-0.5">年齢層</span><span className="text-sm font-semibold text-gray-900">{viewingProject.ageRange}</span></div>}
+                                        {viewingProject.gender && <div><span className="text-xs text-gray-500 block mb-0.5">性別</span><span className="text-sm font-semibold text-gray-900">{viewingProject.gender}</span></div>}
+                                        {viewingProject.location && <div><span className="text-xs text-gray-500 block mb-0.5">地域</span><span className="text-sm font-semibold text-gray-900">{viewingProject.location}</span></div>}
+                                        {viewingProject.profession && <div><span className="text-xs text-gray-500 block mb-0.5">職業</span><span className="text-sm font-semibold text-gray-900">{viewingProject.profession}</span></div>}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

@@ -321,8 +321,8 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
                             
                             <div className="ml-auto text-[11px] font-bold bg-indigo-50 text-indigo-600 px-2.5 py-1.5 rounded-lg border border-indigo-100 shadow-sm">
                                 {aiUsageOption === 'No AI' ? 'AI無効' : 
-                                 aiUsageOption === 'Slight AI' ? 'アイデア生成のみ (AI)' : 
-                                 aiUsageOption === 'Complete AI' ? '完全自動化 (AI)' : '標準生成 (AI)'}
+                                 (aiUsageOption === 'Slight AI' || aiUsageOption === 'Slight AI Use') ? '最小限のAI支援' : 
+                                 aiUsageOption === 'Complete AI' ? '完全なAI自動化' : '標準的なAI支援'}
                             </div>
                         </div>
                     )}
@@ -581,19 +581,13 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
                                                         )}
                                                     </div>
                                                     {analysisResults.patternAnalysis?.pattern_summary && (
-                                                        <div className="mt-3 text-[11px] text-gray-600 bg-white/60 p-2.5 rounded-lg border border-indigo-50 italic">
-                                                            &quot;{analysisResults.patternAnalysis.pattern_summary}&quot;
-                                                        </div>
-                                                    )}
-                                                    {analysisResults.pastCaptionsUsed && analysisResults.pastCaptionsUsed.length > 0 && (
-                                                        <div className="mt-3 bg-white/60 rounded-lg p-3 border border-indigo-50">
-                                                            <div className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-2">学習に使用した過去の投稿 ({analysisResults.pastCaptionsUsed.length}件)</div>
-                                                            <div className="space-y-2 max-h-[120px] overflow-y-auto">
-                                                                {analysisResults.pastCaptionsUsed.map((cap, i) => (
-                                                                    <div key={i} className="text-[10px] text-gray-500 bg-gray-50 p-2 rounded border border-gray-100 line-clamp-2">
-                                                                        {cap}
-                                                                    </div>
-                                                                ))}
+                                                        <div className="mt-3 bg-indigo-50/50 rounded-lg p-3 border border-indigo-100">
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+                                                                <div className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">過去の投稿から学習したこと</div>
+                                                            </div>
+                                                            <div className="text-xs text-indigo-900 leading-relaxed font-medium">
+                                                                {analysisResults.patternAnalysis.pattern_summary}
                                                             </div>
                                                         </div>
                                                     )}
