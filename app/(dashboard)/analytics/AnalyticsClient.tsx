@@ -26,6 +26,15 @@ function formatNumber(n: number): string {
     return n.toString()
 }
 
+/** Safely extract the first image URL from a plain URL or a serialized JSON array */
+function firstImageUrl(imageUrl: string): string {
+    if (!imageUrl) return ''
+    if (imageUrl.startsWith('[')) {
+        try { return JSON.parse(imageUrl)[0] ?? '' } catch { return '' }
+    }
+    return imageUrl
+}
+
 export default function AnalyticsClient({ postsCount, publishedCount, pendingCount, accountsCount, chartData, topPosts, bottomPosts, projects, selectedProjectId }: AnalyticsClientProps) {
     const stats: Stat[] = [
         { label: '総投稿数', value: formatNumber(postsCount), trend: postsCount > 0 ? '+' + postsCount : '0', icon: BarChart3, color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -198,7 +207,7 @@ export default function AnalyticsClient({ postsCount, publishedCount, pendingCou
                             return (
                                 <div key={post.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden group hover:border-purple-200 hover:shadow-md transition-all">
                                     <div className="aspect-square relative overflow-hidden bg-gray-100">
-                                        <img src={post.imageUrl} alt={post.caption || 'Post'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                        <img src={firstImageUrl(post.imageUrl)} alt={post.caption || 'Post'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                                         <div className="absolute top-3 left-3 px-2 py-1 bg-black/50 backdrop-blur-md rounded-lg flex items-center gap-1 border border-white/20">
                                             <Instagram className="w-3 h-3 text-white" />
                                             <span className="text-[10px] font-bold text-white uppercase tracking-wider">{post.connectedAccount?.username ? `@${post.connectedAccount.username}` : 'Post'}</span>
@@ -243,7 +252,7 @@ export default function AnalyticsClient({ postsCount, publishedCount, pendingCou
                             return (
                                 <div key={post.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden group hover:border-red-200 hover:shadow-md transition-all opacity-80 hover:opacity-100">
                                     <div className="aspect-square relative overflow-hidden bg-gray-100 grayscale hover:grayscale-0 transition-all">
-                                        <img src={post.imageUrl} alt={post.caption || 'Post'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                        <img src={firstImageUrl(post.imageUrl)} alt={post.caption || 'Post'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                                         <div className="absolute top-3 left-3 px-2 py-1 bg-black/50 backdrop-blur-md rounded-lg flex items-center gap-1 border border-white/20">
                                             <Instagram className="w-3 h-3 text-white" />
                                             <span className="text-[10px] font-bold text-white uppercase tracking-wider">{post.connectedAccount?.username ? `@${post.connectedAccount.username}` : 'Post'}</span>

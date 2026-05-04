@@ -6,6 +6,15 @@ import {
     ArrowUpRight, MoreHorizontal, Calendar
 } from 'lucide-react'
 
+/** Safely extract the first image URL from a plain URL or a serialized JSON array */
+function firstImageUrl(imageUrl: string): string {
+    if (!imageUrl) return ''
+    if (imageUrl.startsWith('[')) {
+        try { return JSON.parse(imageUrl)[0] ?? '' } catch { return '' }
+    }
+    return imageUrl
+}
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface KPI {
@@ -284,7 +293,7 @@ export default function DashboardClient({
                         ) : upcomingSchedules.map((s) => (
                             <div key={s.id} className="flex items-center gap-4 p-4 hover:bg-gray-50/50 transition-colors">
                                 <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-100 shrink-0">
-                                    <img src={s.post.imageUrl} alt="" className="w-full h-full object-cover" />
+                                    <img src={firstImageUrl(s.post.imageUrl)} alt="" className="w-full h-full object-cover" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-bold text-gray-900 truncate">{s.post.caption || 'キャプションなし'}</p>

@@ -71,6 +71,15 @@ function statusLabel(status: string) {
     }
 }
 
+/** Safely extract the first image URL from a plain URL or a serialized JSON array */
+function firstImageUrl(imageUrl: string): string {
+    if (!imageUrl) return ''
+    if (imageUrl.startsWith('[')) {
+        try { return JSON.parse(imageUrl)[0] ?? '' } catch { return '' }
+    }
+    return imageUrl
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function CalendarClient({ schedules, weekOffset: initialOffset }: CalendarClientProps) {
@@ -154,7 +163,7 @@ export default function CalendarClient({ schedules, weekOffset: initialOffset }:
                                     >
                                         <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-2 relative">
                                             <img
-                                                src={schedule.post.imageUrl}
+                                                src={firstImageUrl(schedule.post.imageUrl)}
                                                 alt=""
                                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                             />
@@ -207,7 +216,7 @@ export default function CalendarClient({ schedules, weekOffset: initialOffset }:
 
                         <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-8 no-scrollbar">
                             <div className="aspect-square rounded-3xl bg-gray-100 overflow-hidden shadow-inner border border-gray-100">
-                                <img src={selectedPost.post.imageUrl} className="w-full h-full object-cover" alt="" />
+                                <img src={firstImageUrl(selectedPost.post.imageUrl)} className="w-full h-full object-cover" alt="" />
                             </div>
 
                             <div className="space-y-6">
