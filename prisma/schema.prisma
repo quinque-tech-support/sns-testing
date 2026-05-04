@@ -52,6 +52,7 @@ model Post {
   saves              Int              @default(0)
   views              Int              @default(0)
   likes              Int              @default(0)
+  comments           Int              @default(0)
   mediaType          MediaType        @default(IMAGE)
   connectedAccount   ConnectedAccount @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
   user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
