@@ -9,7 +9,7 @@ import {
     Heart,
     Video
 } from 'lucide-react'
-import { HistoryItem } from '../types'
+import { HistoryItem, parseImageUrls } from '../types'
 
 interface HistorySelectionModalProps {
     show: boolean
@@ -71,7 +71,7 @@ export function HistorySelectionModal({
                                             }}
                                             className="group relative aspect-[4/5] bg-gray-200 rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl hover:ring-2 hover:ring-blue-500 hover:-translate-y-1 transition-all duration-300"
                                         >
-                                            <img src={hist.imageUrl} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                            <img src={parseImageUrls(hist.imageUrl)[0]} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80" />
                                             
                                             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 bg-black/20 backdrop-blur-[2px]">
