@@ -14,6 +14,22 @@ export interface Project {
     name: string
     description: string | null
     defaultHashtags: string[]
+    objective?: string | null
+    ageRange?: string | null
+    gender?: string | null
+    location?: string | null
+    profession?: string | null
+    toneStyle?: string | null
+    writingStyleNotes?: string | null
+    exampleCaptions?: string | null
+    postingFrequency?: string | null
+    preferredTimeSlots?: string | null
+    campaignDuration?: string | null
+    preferredCtaTypes?: string | null
+    wordsToAvoid?: string | null
+    toneRestrictions?: string | null
+    customPromptNotes?: string | null
+    campaignSpecificInstructions?: string | null
 }
 
 export interface HistoryItem {
