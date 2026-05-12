@@ -1,11 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { use, useState } from 'react'
+import { use, useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import {
     ListChecks, PlusCircle, Clock, CheckCircle2, FileText, XCircle,
     Instagram, Image as ImageIcon, Video, Calendar, Eye, Heart,
-    ChevronDown, ChevronUp
+    ChevronDown, ChevronUp, Trash2, AlertTriangle, Loader2
 } from 'lucide-react'
 
 /** Safely extract the first image URL from a plain URL or a serialized JSON array */
@@ -47,6 +48,8 @@ interface Post {
 interface WorkflowClientProps {
     posts: Post[]
     insightsPromise: Promise<Record<string, { likes: number; views: number }>>
+    currentPage: number
+    totalPages: number
 }
 
 function getPostStatus(post: Post): StatusKey {
@@ -56,15 +59,25 @@ function getPostStatus(post: Post): StatusKey {
 }
 
 const COLUMNS: StatusKey[] = ['DRAFT', 'PENDING', 'PUBLISHED', 'FAILED']
+const DELETABLE: StatusKey[] = ['DRAFT', 'PENDING', 'FAILED']
 
 // ─── Post Card ────────────────────────────────────────────────────────────────
 
-function PostCard({ post, statusKey }: { post: Post; statusKey: StatusKey }) {
+function PostCard({
+    post,
+    statusKey,
+    onDeleteRequest,
+}: {
+    post: Post
+    statusKey: StatusKey
+    onDeleteRequest: (id: string, caption: string | null) => void
+}) {
     const schedule = post.schedules[0]
     const isVideo = post.mediaType === 'VIDEO'
+    const canDelete = DELETABLE.includes(statusKey)
 
     return (
-        <div className="bg-card rounded-2xl border border-card-border shadow-sm overflow-hidden group hover:border-purple-200 hover:shadow-md transition-all">
+        <div className="bg-card rounded-2xl border border-card-border shadow-sm overflow-hidden group hover:border-purple-200 hover:shadow-md transition-all relative">
             <div className="aspect-[4/3] relative overflow-hidden bg-surface">
                 {isVideo ? (
                     <div className="w-full h-full bg-gray-900 flex items-center justify-center relative">
@@ -91,6 +104,18 @@ function PostCard({ post, statusKey }: { post: Post; statusKey: StatusKey }) {
                 <div className="absolute top-2 right-2 w-6 h-6 rounded-lg bg-black/40 backdrop-blur flex items-center justify-center border border-white/20">
                     {isVideo ? <Video className="w-3 h-3 text-white" /> : <ImageIcon className="w-3 h-3 text-white" />}
                 </div>
+
+                {/* Delete button — visible on hover, only for deletable statuses */}
+                {canDelete && (
+                    <button
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDeleteRequest(post.id, post.caption) }}
+                        className="absolute bottom-2 right-2 flex items-center gap-1 px-2 py-1 bg-red-600/90 backdrop-blur-sm hover:bg-red-700 text-white rounded-lg border border-red-400/40 opacity-0 group-hover:opacity-100 transition-all duration-200 active:scale-95 shadow-lg"
+                        title="削除"
+                    >
+                        <Trash2 className="w-3 h-3" />
+                        <span className="text-[9px] font-bold">削除</span>
+                    </button>
+                )}
             </div>
             <div className="p-3 space-y-2">
                 <p className="text-xs text-muted-text line-clamp-2 leading-relaxed">
@@ -127,15 +152,81 @@ function PostCard({ post, statusKey }: { post: Post; statusKey: StatusKey }) {
     )
 }
 
+// ─── Confirm Delete Modal ─────────────────────────────────────────────────────
+
+function ConfirmDeleteModal({
+    caption,
+    isDeleting,
+    onConfirm,
+    onCancel,
+}: {
+    caption: string | null
+    isDeleting: boolean
+    onConfirm: () => void
+    onCancel: () => void
+}) {
+    return (
+        <div
+            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+            onClick={onCancel}
+        >
+            <div
+                className="bg-card rounded-2xl border border-card-border shadow-2xl p-6 max-w-sm w-full space-y-4 animate-in zoom-in-95 duration-200"
+                onClick={e => e.stopPropagation()}
+            >
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+                        <AlertTriangle className="w-5 h-5 text-red-500" />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-foreground text-sm">投稿を削除しますか？</h3>
+                        <p className="text-xs text-muted-text mt-0.5">この操作は取り消せません。</p>
+                    </div>
+                </div>
+                {caption && (
+                    <p className="text-xs text-muted-text bg-surface border border-card-border rounded-xl px-3 py-2 line-clamp-2 italic">
+                        &quot;{caption}&quot;
+                    </p>
+                )}
+                <div className="flex gap-3 pt-1">
+                    <button
+                        onClick={onCancel}
+                        disabled={isDeleting}
+                        className="flex-1 py-2.5 rounded-xl border border-card-border bg-surface text-foreground/80 text-sm font-bold hover:bg-gray-100 transition-all active:scale-95 disabled:opacity-50"
+                    >
+                        キャンセル
+                    </button>
+                    <button
+                        onClick={onConfirm}
+                        disabled={isDeleting}
+                        className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                        {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                        削除する
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
 // ─── Workflow Column ──────────────────────────────────────────────────────────
 
-function WorkflowColumn({ statusKey, posts }: { statusKey: StatusKey; posts: Post[] }) {
+function WorkflowColumn({
+    statusKey,
+    posts,
+    onDeleteRequest,
+}: {
+    statusKey: StatusKey
+    posts: Post[]
+    onDeleteRequest: (id: string, caption: string | null) => void
+}) {
     const cfg = statusConfig[statusKey]
     const Icon = cfg.icon
     const [olderOpen, setOlderOpen] = useState(false)
 
-    const pinned = posts[0] ?? null   // latest — always rendered
-    const older  = posts.slice(1)     // rest — only rendered when expanded
+    const pinned = posts[0] ?? null
+    const older  = posts.slice(1)
 
     return (
         <div className="space-y-3">
@@ -156,10 +247,8 @@ function WorkflowColumn({ statusKey, posts }: { statusKey: StatusKey; posts: Pos
                 </div>
             ) : (
                 <div className="space-y-3">
-                    {/* Latest post — always visible */}
-                    {pinned && <PostCard post={pinned} statusKey={statusKey} />}
+                    {pinned && <PostCard post={pinned} statusKey={statusKey} onDeleteRequest={onDeleteRequest} />}
 
-                    {/* Collapsible older posts — only mounted when open */}
                     {older.length > 0 && (
                         <div>
                             <button
@@ -177,11 +266,10 @@ function WorkflowColumn({ statusKey, posts }: { statusKey: StatusKey; posts: Pos
                                 }
                             </button>
 
-                            {/* Lazy render: only mount DOM when expanded */}
                             {olderOpen && (
                                 <div className="mt-2 space-y-3 max-h-[520px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                                     {older.map(post => (
-                                        <PostCard key={post.id} post={post} statusKey={statusKey} />
+                                        <PostCard key={post.id} post={post} statusKey={statusKey} onDeleteRequest={onDeleteRequest} />
                                     ))}
                                 </div>
                             )}
@@ -195,8 +283,13 @@ function WorkflowColumn({ statusKey, posts }: { statusKey: StatusKey; posts: Pos
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function WorkflowClient({ posts, insightsPromise }: WorkflowClientProps) {
+export default function WorkflowClient({ posts, insightsPromise, currentPage, totalPages }: WorkflowClientProps) {
     const liveInsights = use(insightsPromise)
+    const router = useRouter()
+
+    const [confirmDelete, setConfirmDelete] = useState<{ id: string; caption: string | null } | null>(null)
+    const [isDeleting, setIsDeleting] = useState(false)
+
     const groups: Record<StatusKey, Post[]> = { DRAFT: [], PENDING: [], PUBLISHED: [], FAILED: [], PROCESSING: [] }
 
     const enrichedPosts = posts.map(p => ({
@@ -207,6 +300,29 @@ export default function WorkflowClient({ posts, insightsPromise }: WorkflowClien
 
     for (const post of enrichedPosts) groups[getPostStatus(post)].push(post)
     const totalPosts = enrichedPosts.length
+
+    const handleDeleteRequest = useCallback((id: string, caption: string | null) => {
+        setConfirmDelete({ id, caption })
+    }, [])
+
+    const handleConfirmDelete = async () => {
+        if (!confirmDelete) return
+        setIsDeleting(true)
+        try {
+            const res = await fetch(`/api/posts/${confirmDelete.id}`, { method: 'DELETE' })
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}))
+                alert(data?.error || '削除に失敗しました')
+            } else {
+                setConfirmDelete(null)
+                router.refresh()
+            }
+        } catch {
+            alert('削除に失敗しました')
+        } finally {
+            setIsDeleting(false)
+        }
+    }
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
@@ -253,11 +369,54 @@ export default function WorkflowClient({ posts, insightsPromise }: WorkflowClien
                     </Link>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-                    {COLUMNS.map((key) => (
-                        <WorkflowColumn key={key} statusKey={key} posts={groups[key]} />
-                    ))}
+                <div className="space-y-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+                        {COLUMNS.map((key) => (
+                            <WorkflowColumn key={key} statusKey={key} posts={groups[key]} onDeleteRequest={handleDeleteRequest} />
+                        ))}
+                    </div>
+
+                    {/* Pagination Controls */}
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-center gap-4 mt-8 pt-4">
+                            <Link
+                                href={`?page=${Math.max(1, currentPage - 1)}`}
+                                className={`px-4 py-2 text-sm font-bold rounded-xl border border-card-border bg-card transition-colors ${
+                                    currentPage <= 1
+                                        ? 'opacity-50 pointer-events-none'
+                                        : 'text-muted-text/80 hover:bg-surface/80 hover:text-gray-600 hover:border-gray-200'
+                                }`}
+                                aria-disabled={currentPage <= 1}
+                            >
+                                前のページ
+                            </Link>
+                            <span className="text-sm font-bold text-muted-text">
+                                {currentPage} / {totalPages}
+                            </span>
+                            <Link
+                                href={`?page=${Math.min(totalPages, currentPage + 1)}`}
+                                className={`px-4 py-2 text-sm font-bold rounded-xl border border-card-border bg-card transition-colors ${
+                                    currentPage >= totalPages
+                                        ? 'opacity-50 pointer-events-none'
+                                        : 'text-muted-text/80 hover:bg-surface/80 hover:text-gray-600 hover:border-gray-200'
+                                }`}
+                                aria-disabled={currentPage >= totalPages}
+                            >
+                                次のページ
+                            </Link>
+                        </div>
+                    )}
                 </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {confirmDelete && (
+                <ConfirmDeleteModal
+                    caption={confirmDelete.caption}
+                    isDeleting={isDeleting}
+                    onConfirm={handleConfirmDelete}
+                    onCancel={() => !isDeleting && setConfirmDelete(null)}
+                />
             )}
         </div>
     )

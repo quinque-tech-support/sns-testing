@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import {
-    ChevronLeft, ChevronRight, Filter, Instagram,
-    Clock, Plus, Search, X, CheckCircle2
+    ChevronLeft, ChevronRight, Instagram,
+    Clock, Plus, X, CheckCircle2, Trash2, Loader2, AlertTriangle
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -82,10 +83,31 @@ function firstImageUrl(imageUrl: string): string {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export default function CalendarClient({ schedules, weekOffset: initialOffset }: CalendarClientProps) {
-    const [weekOffset, setWeekOffset] = useState(initialOffset)
+export default function CalendarClient({ schedules, weekOffset }: CalendarClientProps) {
+    const router = useRouter()
     const [selectedPost, setSelectedPost] = useState<Schedule | null>(null)
     const [searchQuery, setSearchQuery] = useState('')
+    const [confirmDelete, setConfirmDelete] = useState<Schedule | null>(null)
+    const [isDeleting, setIsDeleting] = useState(false)
+
+    const handleDelete = async (schedule: Schedule) => {
+        setIsDeleting(true)
+        try {
+            const res = await fetch(`/api/posts/${schedule.post.id}`, { method: 'DELETE' })
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}))
+                alert(data?.error || '削除に失敗しました')
+            } else {
+                setConfirmDelete(null)
+                setSelectedPost(null)
+                router.refresh()
+            }
+        } catch {
+            alert('削除に失敗しました')
+        } finally {
+            setIsDeleting(false)
+        }
+    }
 
     const weekDays = useMemo(() => getWeekDays(weekOffset), [weekOffset])
     const weekLabel = `${weekDays[0].date} – ${weekDays[6].date}, ${weekDays[6].fullDate.getFullYear()}`
@@ -119,19 +141,19 @@ export default function CalendarClient({ schedules, weekOffset: initialOffset }:
                     <h1 className="text-2xl font-bold text-foreground">コンテンツカレンダー</h1>
                 </div>
                 <div className="flex items-center gap-3 bg-card p-1 rounded-xl shadow-sm border border-card-border">
-                    <button
-                        onClick={() => setWeekOffset(prev => prev - 1)}
+                    <Link
+                        href={`?week=${weekOffset - 1}`}
                         className="p-2 hover:bg-surface/80 dark:hover:bg-surface/50 rounded-lg transition-all duration-200 ease-out active:scale-95"
                     >
                         <ChevronLeft className="w-4 h-4" />
-                    </button>
+                    </Link>
                     <span className="text-sm font-bold px-2 whitespace-nowrap">{weekLabel}</span>
-                    <button
-                        onClick={() => setWeekOffset(prev => prev + 1)}
+                    <Link
+                        href={`?week=${weekOffset + 1}`}
                         className="p-2 hover:bg-surface/80 dark:hover:bg-surface/50 rounded-lg transition-all duration-200 ease-out active:scale-95"
                     >
                         <ChevronRight className="w-4 h-4" />
-                    </button>
+                    </Link>
                 </div>
             </div>
 
@@ -263,18 +285,67 @@ export default function CalendarClient({ schedules, weekOffset: initialOffset }:
                             </div>
                         </div>
 
-                        <div className="pt-8 mt-auto border-t border-card-border grid grid-cols-2 gap-4">
-                            <Link
-                                href="/create"
-                                className="py-3 bg-purple-600 text-white rounded-xl font-bold shadow-lg shadow-purple-600/20 hover:shadow-xl hover:-translate-y-0.5 hover:bg-purple-700 transition-all duration-200 ease-out active:scale-95 text-center text-sm"
-                            >
-                                投稿を編集
-                            </Link>
+                        <div className="pt-8 mt-auto border-t border-card-border space-y-3">
+                            {/* Only allow deleting PENDING posts from the calendar */}
+                            {selectedPost.status === 'PENDING' && (
+                                <button
+                                    onClick={() => setConfirmDelete(selectedPost)}
+                                    className="w-full py-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-bold border border-red-100 transition-all duration-200 ease-out active:scale-95 text-sm flex items-center justify-center gap-2"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                    予約を削除
+                                </button>
+                            )}
                             <button
                                 onClick={() => setSelectedPost(null)}
-                                className="py-3 bg-surface text-foreground/80 rounded-xl font-bold hover:bg-gray-200 transition-all duration-200 ease-out active:scale-95 text-sm"
+                                className="w-full py-3 bg-surface text-foreground/80 rounded-xl font-bold hover:bg-gray-200 transition-all duration-200 ease-out active:scale-95 text-sm"
                             >
                                 閉じる
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {confirmDelete && (
+                <div
+                    className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+                    onClick={() => !isDeleting && setConfirmDelete(null)}
+                >
+                    <div
+                        className="bg-card rounded-2xl border border-card-border shadow-2xl p-6 max-w-sm w-full space-y-4 animate-in zoom-in-95 duration-200"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+                                <AlertTriangle className="w-5 h-5 text-red-500" />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-foreground text-sm">予約投稿を削除しますか？</h3>
+                                <p className="text-xs text-muted-text mt-0.5">この操作は取り消せません。</p>
+                            </div>
+                        </div>
+                        {confirmDelete.post.caption && (
+                            <p className="text-xs text-muted-text bg-surface border border-card-border rounded-xl px-3 py-2 line-clamp-2 italic">
+                                &quot;{confirmDelete.post.caption}&quot;
+                            </p>
+                        )}
+                        <div className="flex gap-3 pt-1">
+                            <button
+                                onClick={() => setConfirmDelete(null)}
+                                disabled={isDeleting}
+                                className="flex-1 py-2.5 rounded-xl border border-card-border bg-surface text-foreground/80 text-sm font-bold hover:bg-gray-100 transition-all active:scale-95 disabled:opacity-50"
+                            >
+                                キャンセル
+                            </button>
+                            <button
+                                onClick={() => handleDelete(confirmDelete)}
+                                disabled={isDeleting}
+                                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                <span className="w-4 h-4">{isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}</span>
+                                <span>削除する</span>
                             </button>
                         </div>
                     </div>

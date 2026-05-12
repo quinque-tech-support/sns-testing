@@ -82,12 +82,6 @@ export default function AnalyticsClient({ postsCount, publishedCount, pendingCou
                         </select>
                         <ChevronDown className="w-4 h-4 text-muted-text/80 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
-                    <div className="flex items-center gap-2 px-4 py-2 bg-card border border-card-border rounded-xl shadow-sm text-sm font-semibold text-foreground/80 cursor-pointer hover:bg-surface/80 dark:hover:bg-surface/50 transition-all duration-200 ease-out active:scale-95">
-                        <Calendar className="w-4 h-4 text-muted-text/80" />過去30日間<ChevronDown className="w-4 h-4 text-muted-text/80" />
-                    </div>
-                    <button className="flex items-center gap-2 px-4 py-2 instagram-gradient text-white rounded-xl text-sm font-bold shadow-lg shadow-gray-900/20 hover:opacity-90 transition-all duration-200 ease-out active:scale-95">
-                        <Download className="w-4 h-4" />CSV
-                    </button>
                 </div>
             </div>
 

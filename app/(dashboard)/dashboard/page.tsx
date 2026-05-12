@@ -26,10 +26,17 @@ export default async function DashboardPage() {
             take: 3,
         }),
         prisma.post.findMany({
-            where: { userId: userId, schedules: { some: { status: 'PUBLISHED' } } },
+            where: { 
+                userId: userId, 
+                schedules: { 
+                    some: { 
+                        status: 'PUBLISHED',
+                        scheduledFor: { gte: new Date(new Date().setDate(new Date().getDate() - 12)) }
+                    } 
+                } 
+            },
             include: { schedules: true },
             orderBy: { createdAt: 'desc' },
-            take: 50,
         })
     ])
 

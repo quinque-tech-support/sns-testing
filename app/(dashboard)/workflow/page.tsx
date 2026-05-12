@@ -27,25 +27,47 @@ function getPostStatus(post: Post): string {
     return latest.status
 }
 
-export default async function WorkflowPage() {
+export default async function WorkflowPage({
+    searchParams
+}: {
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
     const session = await requirePageAuth();
     const userId = session.user.id
 
-    const posts = await prisma.post.findMany({
-        where: { userId: userId },
-        include: {
-            schedules: { orderBy: { createdAt: 'desc' }, take: 1 },
-            connectedAccount: { select: { username: true, pageAccessToken: true } },
-        },
-        orderBy: { createdAt: 'desc' },
-    }) as Post[]
+    const params = await searchParams;
+    const pageParam = typeof params?.page === 'string' ? parseInt(params.page, 10) : 1;
+    const currentPage = Math.max(1, isNaN(pageParam) ? 1 : pageParam);
+    const limit = 15;
+    const skip = (currentPage - 1) * limit;
+
+    const [totalPosts, postsData] = await Promise.all([
+        prisma.post.count({ where: { userId: userId } }),
+        prisma.post.findMany({
+            where: { userId: userId },
+            include: {
+                schedules: { orderBy: { createdAt: 'desc' }, take: 1 },
+                connectedAccount: { select: { username: true, pageAccessToken: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+            skip,
+            take: limit,
+        })
+    ]);
+    
+    const posts = postsData as Post[];
+    const totalPages = Math.max(1, Math.ceil(totalPosts / limit));
+
+    const sevenDaysAgo = new Date()
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
 
     // Enrich published posts with live insights
     const toSync = posts.filter(p =>
         getPostStatus(p) === 'PUBLISHED' &&
         p.instagramMediaId &&
         !p.instagramMediaId.startsWith('test_') &&
-        p.connectedAccount?.pageAccessToken
+        p.connectedAccount?.pageAccessToken &&
+        p.schedules[0] && new Date(p.schedules[0].scheduledFor) > sevenDaysAgo
     )
 
     // Enrich published posts with live insights asynchronously
@@ -70,5 +92,5 @@ export default async function WorkflowPage() {
         return results
     })()
 
-    return <WorkflowClient posts={posts} insightsPromise={insightsPromise} />
+    return <WorkflowClient posts={posts} insightsPromise={insightsPromise} currentPage={currentPage} totalPages={totalPages} />
 }
