@@ -122,17 +122,34 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
     // Auto-fill schedule when project with preferredTimeSlots is selected
     useEffect(() => {
         const timeStr = selectedProject?.preferredTimeSlots
-        if (!timeStr) return
+
+        // If the new project has no preferred time, clear the schedule picker
+        if (!timeStr) {
+            setScheduledFor('')
+            setShowDatePicker(false)
+            return
+        }
+
         // Parse the first time from strings like "19:00-21:00" or "19:00"
         const match = timeStr.match(/(\d{1,2}):(\d{2})/)
-        if (!match) return
+        if (!match) {
+            setScheduledFor('')
+            setShowDatePicker(false)
+            return
+        }
+
         const [, h, m] = match
-        const now = new Date()
-        now.setHours(parseInt(h, 10), parseInt(m, 10), 0, 0)
-        // If the time has already passed today, schedule for tomorrow
-        if (now <= new Date()) now.setDate(now.getDate() + 1)
-        const offset = now.getTimezoneOffset() * 60000
-        const localISO = new Date(now.getTime() - offset).toISOString().slice(0, 16)
+        const currentTime = new Date()           // stable reference point
+        const scheduled = new Date(currentTime)  // copy to mutate
+        scheduled.setHours(parseInt(h, 10), parseInt(m, 10), 0, 0)
+
+        // If the time has already passed today (or is right now), schedule for tomorrow
+        if (scheduled <= currentTime) {
+            scheduled.setDate(scheduled.getDate() + 1)
+        }
+
+        const offset = scheduled.getTimezoneOffset() * 60000
+        const localISO = new Date(scheduled.getTime() - offset).toISOString().slice(0, 16)
         setScheduledFor(localISO)
         setShowDatePicker(true)
     }, [selectedProjectId])

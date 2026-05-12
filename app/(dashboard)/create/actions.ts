@@ -71,7 +71,8 @@ function extractPublishFields(formData: FormData) {
     const isVideo = formData.get('isVideo') === 'true'
     const projectId = (formData.get('projectId') as string) || null
     const libraryImageId = (formData.get('libraryImageId') as string) || null
-    return { caption, connectedAccountId, mediaUrls, mediaUrl, isVideo, projectId, libraryImageId }
+    const editPostId = (formData.get('editPostId') as string) || null
+    return { caption, connectedAccountId, mediaUrls, mediaUrl, isVideo, projectId, libraryImageId, editPostId }
 }
 
 // ─── Signed Upload URLs ───────────────────────────────────────────────────────
@@ -177,6 +178,10 @@ export async function saveDraft(formData: FormData): Promise<ActionResult<{ post
             ? serializeImageUrls(mediaUrls)
             : (mediaUrl || 'https://placeholder.co/1080x1080')
 
+        if (editPostId) {
+            await prisma.post.deleteMany({ where: { id: editPostId, userId } }).catch(() => {})
+        }
+
         const post = await prisma.post.create({
             data: {
                 userId,
@@ -275,6 +280,10 @@ export async function publishNow(formData: FormData): Promise<ActionResult<{ pos
                 return { error: `IG Publish Error: ${publishData.error?.message ?? 'Unknown'}` }
             }
 
+            if (editPostId) {
+                await prisma.post.deleteMany({ where: { id: editPostId, userId } }).catch(() => {})
+            }
+
             const post = await prisma.post.create({
                 data: {
                     userId,
@@ -341,6 +350,10 @@ export async function publishNow(formData: FormData): Promise<ActionResult<{ pos
             await sleep(5_000)
         }
 
+        if (editPostId) {
+            await prisma.post.deleteMany({ where: { id: editPostId, userId } }).catch(() => {})
+        }
+
         const post = await prisma.post.create({
             data: {
                 userId,
@@ -384,6 +397,11 @@ export async function schedulePost(formData: FormData): Promise<ActionResult<{ p
     if (scheduledFor <= new Date()) {
         return { error: 'Scheduled time must be in the future.' }
     }
+
+        if (editPostId) {
+            await prisma.post.deleteMany({ where: { id: editPostId, userId } }).catch(() => {})
+        }
+
         const post = await prisma.post.create({
             data: {
                 userId,
