@@ -5,16 +5,9 @@ import CreateContentClient from './CreateContentClient'
 
 export const dynamic = 'force-dynamic'
 
-export default async function CreateContentPage({
-    searchParams
-}: {
-    searchParams: Promise<{ [key: string]: string | string[] | undefined }>
-}) {
+export default async function CreateContentPage() {
     const session = await requirePageAuth();
     const userId = session.user.id
-
-    const params = await searchParams
-    const editPostId = typeof params?.editPostId === 'string' ? params.editPostId : undefined
 
     const [user, accounts, projects] = await Promise.all([
         prisma.user.findUnique({
@@ -36,5 +29,5 @@ export default async function CreateContentPage({
         })
     ])
 
-    return <CreateContentClient accounts={accounts} aiUsageOption={user?.aiUsageOption} projects={projects as any} editPostId={editPostId} />
+    return <CreateContentClient accounts={accounts} aiUsageOption={user?.aiUsageOption} projects={projects as any} />
 }

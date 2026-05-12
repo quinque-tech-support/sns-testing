@@ -19,7 +19,6 @@ interface PublishOptions {
     isVideo: boolean
     scheduledFor?: string
     mediaItems: MediaItem[]
-    editPostId?: string
 }
 
 export function usePublishing() {
@@ -75,7 +74,7 @@ export function usePublishing() {
     /** Builds the FormData payload for server actions */
     const buildFormData = (
         mediaUrls: string[],
-        { caption, hashtags, selectedAccountId, selectedProjectId, isVideo, mediaItems, editPostId }: PublishOptions
+        { caption, hashtags, selectedAccountId, selectedProjectId, isVideo, mediaItems }: PublishOptions
     ): FormData => {
         const fd = new FormData()
         
@@ -88,7 +87,6 @@ export function usePublishing() {
         fd.set('connectedAccountId', selectedAccountId)
         fd.set('isVideo', isVideo.toString())
         if (selectedProjectId) fd.set('projectId', selectedProjectId)
-        if (editPostId) fd.set('editPostId', editPostId)
 
         // Attach libraryImageId if the first media item is a library image
         const libraryItem = mediaItems.find(item => item.type === 'url') as Extract<MediaItem, { type: 'url' }> | undefined
