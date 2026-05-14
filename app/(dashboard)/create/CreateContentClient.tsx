@@ -45,6 +45,7 @@ import { usePublishing } from './hooks/usePublishing'
 import { useProjectData } from './hooks/useProjectData'
 import { ConnectedAccount, HistoryItem } from './types'
 import { useAccount } from '../../components/AccountContext'
+import ConfirmModal from '../../components/ConfirmModal'
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs))
@@ -62,7 +63,6 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
         selectedProjectId,
         setSelectedProjectId,
         selectedProject,
-        isProjectsLoading,
         history,
         isLoadingHistory,
         drafts,
@@ -82,7 +82,6 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
         isVideo,
         handleFiles,
         removeMedia,
-        clearMedia,
         loadFromDraft,
         loadFromHistory,
         loadFromLibrary
@@ -91,8 +90,6 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
     const {
         caption,
         setCaption,
-        hashtags,
-        setHashtags,
         customPrompt,
         setCustomPrompt,
         isGeneratingAI,
@@ -110,6 +107,9 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
         publish,
         saveAsDraft
     } = usePublishing()
+
+    const errorRef = useRef<HTMLDivElement>(null)
+    const [imageToDelete, setImageToDelete] = useState<string | null>(null)
 
     // Modal visibility
     const [showPreview, setShowPreview] = useState(false)
@@ -189,6 +189,13 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
         }
     }, [generationError])
 
+    // Scroll to error
+    useEffect(() => {
+        if (result?.error && errorRef.current) {
+            errorRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+    }, [result?.error])
+
 
     const handleSelectDraft = (draft: HistoryItem) => {
         loadFromDraft(draft)
@@ -203,7 +210,6 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
     const handlePublishAction = (mode: 'now' | 'schedule') => {
         publish(mode, {
             caption,
-            hashtags: [],  // hashtags are already in caption text
             selectedAccountId,
             selectedProjectId,
             isVideo,
@@ -217,7 +223,6 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
     const handleSaveDraft = () => {
         saveAsDraft({
             caption,
-            hashtags: [],  // hashtags are already in caption text
             selectedAccountId,
             selectedProjectId,
             isVideo,
@@ -262,7 +267,7 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
 
             {/* Error / Success Banner */}
             {result && (
-                <div className={cn(
+                <div ref={errorRef} className={cn(
                     'flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium',
                     result.success ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'
                 )}>
@@ -273,7 +278,7 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
             )}
 
             {/* Form Container */}
-            {projects.length === 0 && !isProjectsLoading ? (
+            {projects.length === 0 ? (
                 <div className="bg-card border border-card-border rounded-2xl overflow-hidden p-10 flex flex-col items-center justify-center space-y-4 shadow-sm min-h-[400px]">
                     <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center">
                         <FolderPlus className="w-8 h-8 text-indigo-500" />
@@ -295,7 +300,7 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
                 <form id="create-post-form" onSubmit={(e) => { e.preventDefault(); handlePublishAction('now'); }} className="bg-card border border-card-border rounded-2xl overflow-hidden p-6 md:p-8 space-y-6 shadow-sm">
 
                     {/* Project Selector & AI Badge */}
-                    {!isProjectsLoading && projects.length > 0 && (
+                    {projects.length > 0 && (
                         <div className="flex flex-wrap items-center gap-3 w-full">
                             <div className="relative" ref={projectDropdownRef}>
                             <button
@@ -356,8 +361,8 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
                             
                             <div className="ml-auto text-[11px] font-bold bg-indigo-50 text-indigo-600 px-2.5 py-1.5 rounded-lg border border-indigo-100 shadow-sm">
                                 {aiUsageOption === 'No AI' ? 'AI無効' : 
-                                 (aiUsageOption === 'Slight AI' || aiUsageOption === 'Slight AI Use') ? '最小限のAI支援' : 
-                                 aiUsageOption === 'Complete AI' ? '完全なAI自動化' : '標準的なAI支援'}
+                                 aiUsageOption === 'Slight AI Use' ? '最小限のAI支援' : 
+                                 aiUsageOption === 'Strong AI Use' ? '高度なAI支援' : '標準的なAI支援'}
                             </div>
                         </div>
                     )}
@@ -493,7 +498,7 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
                                                                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[1px]">
                                                                                 <span className="text-[10px] font-bold text-white bg-black/60 px-2 py-1 rounded-full border border-white/20">使う</span>
                                                                             </div>
-                                                                            <button type="button" onClick={(e) => deleteProjectImage(img.id, e)} className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/50 hover:bg-red-500 rounded flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all border border-white/20">
+                                                                            <button type="button" onClick={(e) => { e.stopPropagation(); setImageToDelete(img.id); }} className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/50 hover:bg-red-500 rounded flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all border border-white/20">
                                                                                 <Trash2 className="w-3 h-3" />
                                                                             </button>
                                                                         </div>
@@ -749,6 +754,20 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
                 previewIndex={previewIndex}
                 setPreviewIndex={setPreviewIndex}
                 account={actAccount}
+            />
+
+            <ConfirmModal
+                isOpen={!!imageToDelete}
+                title="画像の削除"
+                message="ライブラリからこの画像を削除しますか？"
+                confirmText="削除する"
+                onCancel={() => setImageToDelete(null)}
+                onConfirm={() => {
+                    if (imageToDelete) {
+                        deleteProjectImage(imageToDelete)
+                        setImageToDelete(null)
+                    }
+                }}
             />
         </div>
     )

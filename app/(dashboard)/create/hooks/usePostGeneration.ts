@@ -14,7 +14,6 @@ export interface AnalysisResults {
 
 export function usePostGeneration() {
     const [caption, setCaption] = useState('')
-    const [hashtags, setHashtags] = useState<string[]>([])
     const [customPrompt, setCustomPrompt] = useState('')
     const [isGeneratingAI, setIsGeneratingAI] = useState(false)
     const [generationError, setGenerationError] = useState<string | null>(null)
@@ -98,7 +97,6 @@ export function usePostGeneration() {
                     : opt.caption
 
                 setCaption(combinedCaption)
-                setHashtags(allTags)
             } else {
                 // Fallback
                 const fallbackTags = Array.from(new Set([...(Array.isArray(json.hashtags) ? json.hashtags : []), ...projectHashtags]))
@@ -107,7 +105,6 @@ export function usePostGeneration() {
                     : (json.caption || '')
                     
                 setCaption(combinedCaption)
-                setHashtags(fallbackTags)
             }
 
             if (json.analysis) {
@@ -125,8 +122,6 @@ export function usePostGeneration() {
     return {
         caption,
         setCaption,
-        hashtags,
-        setHashtags,
         customPrompt,
         setCustomPrompt,
         isGeneratingAI,

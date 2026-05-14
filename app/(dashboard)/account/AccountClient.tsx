@@ -7,6 +7,8 @@ import {
     ArrowRight, LinkIcon
 } from 'lucide-react'
 import { disconnectAccount } from './actions'
+import ConfirmModal from '../../components/ConfirmModal'
+import { useState, useRef, useEffect, useTransition } from 'react'
 
 interface ConnectedAccount {
     id: string
@@ -23,6 +25,16 @@ interface AccountClientProps {
 }
 
 export default function AccountClient({ connectedAccounts, error, success }: AccountClientProps) {
+    const [disconnectId, setDisconnectId] = useState<string | null>(null)
+    const [isPending, startTransition] = useTransition()
+    const errorRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        if (error && errorRef.current) {
+            errorRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+    }, [error])
+
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Header */}
@@ -39,7 +51,7 @@ export default function AccountClient({ connectedAccounts, error, success }: Acc
 
             {/* Status banners */}
             {error && (
-                <div className="p-4 bg-red-50 border border-red-100 text-red-700 rounded-2xl flex items-center gap-3">
+                <div ref={errorRef} className="p-4 bg-red-50 border border-red-100 text-red-700 rounded-2xl flex items-center gap-3">
                     <AlertCircle className="w-5 h-5 shrink-0" />
                     <p className="text-sm font-medium">{error}</p>
                 </div>
@@ -129,11 +141,12 @@ export default function AccountClient({ connectedAccounts, error, success }: Acc
                                     <button className="flex-1 py-3 bg-surface border border-card-border text-foreground/80 rounded-xl text-sm font-bold hover:bg-surface dark:hover:bg-surface/80 transition-all duration-200 ease-out active:scale-95 flex items-center justify-center gap-2">
                                         <RefreshCw className="w-4 h-4" />更新
                                     </button>
-                                    <form action={async () => { await disconnectAccount(account.id) }} className="flex-1">
-                                        <button className="w-full py-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm font-bold hover:bg-red-100 transition-all duration-200 ease-out active:scale-95 flex items-center justify-center gap-2">
-                                            <LogOut className="w-4 h-4" />切断する
-                                        </button>
-                                    </form>
+                                    <button 
+                                        onClick={() => setDisconnectId(account.id)}
+                                        className="flex-1 py-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm font-bold hover:bg-red-100 transition-all duration-200 ease-out active:scale-95 flex items-center justify-center gap-2"
+                                    >
+                                        <LogOut className="w-4 h-4" />切断する
+                                    </button>
                                 </div>
                             </div>
                         ))}
@@ -214,6 +227,21 @@ export default function AccountClient({ connectedAccounts, error, success }: Acc
                     </div>
                 </div>
             </div>
+
+            <ConfirmModal
+                isOpen={!!disconnectId}
+                title="アカウント連携解除"
+                message="本当にこのInstagramアカウントの連携を解除しますか？この操作は元に戻せません。"
+                confirmText={isPending ? "処理中..." : "切断する"}
+                onCancel={() => setDisconnectId(null)}
+                onConfirm={() => {
+                    if (disconnectId) {
+                        startTransition(() => {
+                            disconnectAccount(disconnectId).then(() => setDisconnectId(null))
+                        })
+                    }
+                }}
+            />
         </div>
     )
 }

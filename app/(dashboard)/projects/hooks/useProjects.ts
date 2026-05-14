@@ -171,9 +171,8 @@ export function useProjects(initialProjects: Project[]) {
         }
     }
 
-    const handleDelete = async (id: string, e: React.MouseEvent) => {
-        e.stopPropagation()
-        if (!confirm('このプロジェクトを削除しますか？\n関連付けられたデータも削除される可能性があります。')) return
+    const handleDelete = async (id: string, e?: React.MouseEvent) => {
+        if (e) e.stopPropagation()
 
         try {
             const res = await fetch(`/api/projects/${id}`, { method: 'DELETE' })
@@ -181,7 +180,7 @@ export function useProjects(initialProjects: Project[]) {
             setProjects(projects.filter(p => p.id !== id))
             router.refresh()
         } catch (err: any) {
-            alert(err.message)
+            setError(err.message)
         }
     }
 

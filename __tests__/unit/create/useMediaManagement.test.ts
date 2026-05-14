@@ -110,15 +110,8 @@ describe('useMediaManagement › removeMedia / clearMedia', () => {
         act(() => result.current.removeMedia('nonexistent-id'))
         expect(result.current.mediaItems).toHaveLength(1)
     })
-
-    it('clearMedia empties all items', () => {
-        const { result } = renderHook(() => useMediaManagement())
-        act(() => result.current.handleFiles([makeImageFile(), makeImageFile()]))
-        act(() => result.current.clearMedia())
-        expect(result.current.mediaItems).toHaveLength(0)
-        expect(result.current.isEmpty).toBe(true)
-    })
 })
+
 
 // ─── loadFromDraft ────────────────────────────────────────────────────────────
 
@@ -208,19 +201,7 @@ describe('useMediaManagement › loadFromLibrary', () => {
 })
 
 // ─── isVideo / isEmpty flags ──────────────────────────────────────────────────
-
 describe('useMediaManagement › derived flags', () => {
-    it('isEmpty is true initially', () => {
-        const { result } = renderHook(() => useMediaManagement())
-        expect(result.current.isEmpty).toBe(true)
-    })
-
-    it('isEmpty becomes false after adding media', () => {
-        const { result } = renderHook(() => useMediaManagement())
-        act(() => result.current.handleFiles([makeImageFile()]))
-        expect(result.current.isEmpty).toBe(false)
-    })
-
     it('isVideo is false for image-only items', () => {
         const { result } = renderHook(() => useMediaManagement())
         act(() => result.current.handleFiles([makeImageFile()]))

@@ -1,4 +1,5 @@
 import axios, { AxiosError } from 'axios'
+import { IG_GRAPH_BASE } from '@/lib/constants'
 
 export class FacebookApiError extends Error {
     constructor(
@@ -17,7 +18,7 @@ const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID!
 const FACEBOOK_APP_SECRET = process.env.FACEBOOK_APP_SECRET
 
 const graphApi = axios.create({
-    baseURL: 'https://graph.facebook.com/v19.0',
+    baseURL: IG_GRAPH_BASE,
 })
 
 export interface AccessTokenResponse {
@@ -62,7 +63,7 @@ export const facebookService = {
      */
     async exchangeCodeForToken(code: string, redirectUri: string): Promise<string> {
         try {
-            const response = await axios.get<AccessTokenResponse>(`https://graph.facebook.com/v19.0/oauth/access_token`, {
+            const response = await axios.get<AccessTokenResponse>(`${IG_GRAPH_BASE}/oauth/access_token`, {
                 params: {
                     client_id: FACEBOOK_APP_ID,
                     client_secret: FACEBOOK_APP_SECRET,
@@ -92,7 +93,7 @@ export const facebookService = {
      */
     async exchangeForLongLivedToken(shortLivedToken: string): Promise<AccessTokenResponse> {
         try {
-            const response = await axios.get<AccessTokenResponse>(`https://graph.facebook.com/v19.0/oauth/access_token`, {
+            const response = await axios.get<AccessTokenResponse>(`${IG_GRAPH_BASE}/oauth/access_token`, {
                 params: {
                     grant_type: 'fb_exchange_token',
                     client_id: FACEBOOK_APP_ID,

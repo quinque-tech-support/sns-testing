@@ -9,15 +9,9 @@ import {
     Trash2, AlertTriangle, Loader2, ChevronLeft, ChevronRight,
     ChevronDown, ChevronUp
 } from 'lucide-react'
+import { firstImageUrl } from '@/lib/utils'
 
-/** Safely extract the first image URL from a plain URL or a serialized JSON array */
-function firstImageUrl(imageUrl: string): string {
-    if (!imageUrl) return ''
-    if (imageUrl.startsWith('[')) {
-        try { return JSON.parse(imageUrl)[0] ?? '' } catch { return '' }
-    }
-    return imageUrl
-}
+
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -26,7 +20,6 @@ const statusConfig = {
     PENDING:    { label: '予約済み', color: 'text-purple-600',  bg: 'bg-purple-50',  border: 'border-purple-100',  dot: 'bg-purple-500', icon: Clock,        pageParam: 'pending_page'   },
     PUBLISHED:  { label: '公開済み', color: 'text-green-600',   bg: 'bg-green-50',   border: 'border-green-100',   dot: 'bg-green-500',  icon: CheckCircle2, pageParam: 'published_page' },
     FAILED:     { label: '失敗',     color: 'text-red-600',     bg: 'bg-red-50',     border: 'border-red-100',     dot: 'bg-red-500',    icon: XCircle,      pageParam: 'failed_page'    },
-    PROCESSING: { label: '処理中',   color: 'text-blue-600',    bg: 'bg-blue-50',    border: 'border-blue-100',    dot: 'bg-blue-500',   icon: Clock,        pageParam: 'processing_page' },
 } as const
 
 type StatusKey = keyof typeof statusConfig

@@ -5,6 +5,7 @@ import {
     BarChart3, TrendingUp, Clock, Users, Heart, Bookmark, Share2,
     Instagram, Calendar, Download, ChevronDown
 } from 'lucide-react'
+import { firstImageUrl } from '@/lib/utils'
 
 interface Stat { label: string; value: string; trend: string; icon: React.ElementType; color: string; bg: string }
 interface EngagementItem { label: string; value: number; max: number; color: string; icon: React.ElementType }
@@ -27,15 +28,7 @@ export function formatNumber(n: number): string {
     return n.toString()
 }
 
-/** Safely extract the first image URL from a plain URL or a serialized JSON array */
-/* @testable */
-export function firstImageUrl(imageUrl: string): string {
-    if (!imageUrl) return ''
-    if (imageUrl.startsWith('[')) {
-        try { return JSON.parse(imageUrl)[0] ?? '' } catch { return '' }
-    }
-    return imageUrl
-}
+
 
 export default function AnalyticsClient({ postsCount, publishedCount, pendingCount, accountsCount, chartData, topPosts, bottomPosts, projects, selectedProjectId }: AnalyticsClientProps) {
     const stats: Stat[] = [

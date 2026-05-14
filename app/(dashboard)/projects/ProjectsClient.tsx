@@ -3,6 +3,8 @@
 import React from 'react'
 import { FolderKanban, Plus, Edit2, Trash2, X, AlertCircle, Target, MessageCircle, Calendar, ShieldAlert, Sparkles, Hash } from 'lucide-react'
 import { useProjects, type Project } from './hooks/useProjects'
+import ConfirmModal from '../../components/ConfirmModal'
+import { useState, useRef, useEffect } from 'react'
 
 interface ProjectsClientProps {
     initialProjects: Project[]
@@ -76,6 +78,15 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
         openModal, closeModal, viewingProject, openViewModal, closeViewModal, handleSave, handleDelete
     } = useProjects(initialProjects)
 
+    const [projectToDelete, setProjectToDelete] = useState<string | null>(null)
+    const errorRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        if (error && errorRef.current) {
+            errorRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+    }, [error])
+
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -138,7 +149,7 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
                         </div>
                         
                         {error && (
-                            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm flex items-center justify-center gap-2 shrink-0">
+                            <div ref={errorRef} className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm flex items-center justify-center gap-2 shrink-0">
                                 <AlertCircle className="w-4 h-4" /> {error}
                             </div>
                         )}
@@ -363,7 +374,7 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
                             </h2>
                             <div className="flex items-center gap-2">
                                 <button type="button" onClick={() => { closeViewModal(); openModal(viewingProject); }} className="p-2 text-muted-text hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-transparent hover:border-indigo-100"><Edit2 className="w-4 h-4" /></button>
-                                <button type="button" onClick={(e) => { closeViewModal(); handleDelete(viewingProject.id, e); }} className="p-2 text-muted-text hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100"><Trash2 className="w-4 h-4" /></button>
+                                <button type="button" onClick={() => { closeViewModal(); setProjectToDelete(viewingProject.id); }} className="p-2 text-muted-text hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100"><Trash2 className="w-4 h-4" /></button>
                                 <div className="w-px h-6 bg-gray-200 mx-1" />
                                 <button type="button" onClick={closeViewModal} className="p-2 text-muted-text/80 hover:text-gray-600 hover:bg-surface dark:hover:bg-surface/80 rounded-lg transition-colors"><X className="w-5 h-5"/></button>
                             </div>
@@ -514,6 +525,20 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
                     </div>
                 </div>
             )}
+
+            <ConfirmModal
+                isOpen={!!projectToDelete}
+                title="プロジェクトの削除"
+                message={"本当にこのプロジェクトを削除しますか？\n関連付けられたデータも削除される可能性があります。"}
+                confirmText="削除する"
+                onCancel={() => setProjectToDelete(null)}
+                onConfirm={() => {
+                    if (projectToDelete) {
+                        handleDelete(projectToDelete)
+                        setProjectToDelete(null)
+                    }
+                }}
+            />
         </div>
     )
 }
