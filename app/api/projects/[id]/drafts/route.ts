@@ -1,6 +1,5 @@
 import { apiError } from '@/lib/api.utils'
 import { requireAuth } from '@/lib/auth.utils'
-import { toErrorMessage } from '@/lib/api.utils'
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 

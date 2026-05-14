@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { Settings, CreditCard, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react'
+import { useEffect, useRef } from 'react'
 import { useSettings } from './hooks/useSettings'
 
 interface SettingsClientProps {
@@ -22,14 +23,33 @@ const AI_OPTIONS = [
 export default function SettingsClient({ user }: SettingsClientProps) {
     const {
         selectedAiOption, setSelectedAiOption,
-        isSaving, message, handleSaveAiOption
+        isSaving, message, error, handleSaveAiOption
     } = useSettings(user.aiUsageOption)
+
+    const errorRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        if (error && errorRef.current) {
+            errorRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+    }, [error])
 
     return (
         <div className="w-full max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
             <div>
                 <h1 className="text-3xl font-bold text-foreground tracking-tight">システム設定</h1>
             </div>
+
+            {/* Error Banner */}
+            {error && (
+                <div 
+                    ref={errorRef}
+                    className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3 animate-in slide-in-from-top-2 duration-300"
+                >
+                    <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                    <p className="text-sm font-bold text-red-700">{error}</p>
+                </div>
+            )}
 
             {/* AI Preferences */}
             <div className="bg-card border border-card-border rounded-2xl overflow-hidden shadow-sm">

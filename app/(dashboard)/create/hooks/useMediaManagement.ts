@@ -12,8 +12,6 @@ export function useMediaManagement() {
             : mediaItems[0].isVideo
     )
 
-    // When media is cleared, signal back to consumers
-    const isEmpty = mediaItems.length === 0
 
     /** Accept newly dropped/selected files. Videos are limited to 1; images can be many. */
     const handleFiles = (incoming: File[]) => {
@@ -124,10 +122,8 @@ export function useMediaManagement() {
         mediaItems,
         setMediaItems,
         isVideo,
-        isEmpty,
         handleFiles,
         removeMedia,
-        clearMedia,
         loadFromDraft,
         loadFromHistory,
         loadFromLibrary

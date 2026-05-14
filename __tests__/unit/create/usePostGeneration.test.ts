@@ -63,7 +63,6 @@ describe('usePostGeneration › generateCaption', () => {
             await result.current.generateCaption([makeUrlItem()])
         })
         expect(result.current.caption).toContain('Option A')
-        expect(result.current.hashtags).toContain('#a')
     })
 
     it('falls back to setting caption directly when no options returned', async () => {
@@ -71,8 +70,7 @@ describe('usePostGeneration › generateCaption', () => {
             ok: true,
             blob: async () => new Blob(['dummy blob data'], { type: 'image/jpeg' }),
             json: async () => ({
-                caption: 'Direct caption',
-                hashtags: ['#direct'],
+                caption: 'Direct caption #direct',
             }),
         })
 

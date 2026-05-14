@@ -5,15 +5,9 @@ import {
     Eye, Heart, PlayCircle, CheckCircle2, Users,
     ArrowUpRight, MoreHorizontal, Calendar
 } from 'lucide-react'
+import { firstImageUrl } from '@/lib/utils'
 
-/** Safely extract the first image URL from a plain URL or a serialized JSON array */
-function firstImageUrl(imageUrl: string): string {
-    if (!imageUrl) return ''
-    if (imageUrl.startsWith('[')) {
-        try { return JSON.parse(imageUrl)[0] ?? '' } catch { return '' }
-    }
-    return imageUrl
-}
+
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -210,7 +204,7 @@ export default function DashboardClient({
                     <h1 className="text-2xl font-bold tracking-tight text-foreground">ダッシュボード概要</h1>
                 </div>
                 <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium text-muted-text">過去7日間</span>
+                    <span className="text-sm font-medium text-muted-text">過去12日間</span>
                     <button className="p-2 bg-card hover:bg-surface/80 dark:hover:bg-surface/50 rounded-lg border border-card-border shadow-sm transition-all duration-200 ease-out active:scale-95 group">
                         <MoreHorizontal className="w-4 h-4 text-muted-text group-hover:text-gray-800" />
                     </button>
@@ -308,20 +302,20 @@ export default function DashboardClient({
                     </div>
                 </div>
 
-            {/* Activity Feed */}
-            <div className="bg-card rounded-2xl border border-card-border shadow-sm">
-                <div className="p-6 border-b border-card-border">
-                    <h2 className="text-lg font-bold text-foreground">アクティビティ</h2>
-                    <p className="text-sm text-muted-text mt-1">最近のシステムアクティビティ</p>
+                {/* Activity Feed */}
+                <div className="bg-card rounded-2xl border border-card-border shadow-sm">
+                    <div className="p-6 border-b border-card-border">
+                        <h2 className="text-lg font-bold text-foreground">アクティビティ</h2>
+                        <p className="text-sm text-muted-text mt-1">最近のシステムアクティビティ</p>
+                    </div>
+                    <Suspense fallback={<ActivitiesSkeleton />}>
+                        <Activities 
+                            insightsPromise={insightsPromise}
+                            publishedCount={publishedCount}
+                            connectedAccountUsername={connectedAccountUsername}
+                        />
+                    </Suspense>
                 </div>
-                <Suspense fallback={<ActivitiesSkeleton />}>
-                    <Activities 
-                        insightsPromise={insightsPromise}
-                        publishedCount={publishedCount}
-                        connectedAccountUsername={connectedAccountUsername}
-                    />
-                </Suspense>
-            </div>
             </div>
         </div>
     )

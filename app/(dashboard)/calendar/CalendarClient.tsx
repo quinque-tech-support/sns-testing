@@ -7,6 +7,7 @@ import {
     Clock, Plus, X, CheckCircle2, Trash2, Loader2, AlertTriangle
 } from 'lucide-react'
 import Link from 'next/link'
+import { firstImageUrl } from '@/lib/utils'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -75,22 +76,13 @@ export function statusLabel(status: string) {
     }
 }
 
-/** Safely extract the first image URL from a plain URL or a serialized JSON array */
-/* @testable */
-export function firstImageUrl(imageUrl: string): string {
-    if (!imageUrl) return ''
-    if (imageUrl.startsWith('[')) {
-        try { return JSON.parse(imageUrl)[0] ?? '' } catch { return '' }
-    }
-    return imageUrl
-}
+
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function CalendarClient({ schedules, weekOffset }: CalendarClientProps) {
     const router = useRouter()
     const [selectedPost, setSelectedPost] = useState<Schedule | null>(null)
-    const [searchQuery, setSearchQuery] = useState('')
     const [confirmDelete, setConfirmDelete] = useState<Schedule | null>(null)
     const [isDeleting, setIsDeleting] = useState(false)
 
@@ -130,10 +122,7 @@ export default function CalendarClient({ schedules, weekOffset }: CalendarClient
         const dayEnd = new Date(day.fullDate); dayEnd.setHours(23, 59, 59, 999)
         return weekSchedules.filter(s => {
             const d = new Date(s.scheduledFor)
-            const matchesSearch = !searchQuery ||
-                s.post.caption?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                s.status.toLowerCase().includes(searchQuery.toLowerCase())
-            return d >= dayStart && d <= dayEnd && matchesSearch
+            return d >= dayStart && d <= dayEnd
         })
     }
 

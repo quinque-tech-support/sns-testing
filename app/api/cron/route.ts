@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 import { facebookService } from '@/lib/services/facebook.service'
 import { verifySignatureAppRouter } from '@upstash/qstash/nextjs'
+import { IG_GRAPH_BASE } from '@/lib/constants'
 
 // Important: This route should be secured in production so that only authorized cron jobs can trigger it.
 // For now, it's open for easy testing.
@@ -38,7 +39,7 @@ async function processSchedule(scheduleId: string) {
         console.log(`[Cron] Processing post ${post.id} (${isVideo ? 'VIDEO/Reel' : 'IMAGE'}) for IG account ${instagramBusinessId}...`)
 
         // Step 1: Create Media Container (image or Reel)
-        const containerUrl = `https://graph.facebook.com/v19.0/${instagramBusinessId}/media`
+        const containerUrl = `${IG_GRAPH_BASE}/${instagramBusinessId}/media`
         const containerBody = isVideo
             ? {
                 video_url: post.imageUrl,
@@ -76,7 +77,7 @@ async function processSchedule(scheduleId: string) {
         for (let i = 0; i < maxAttempts; i++) {
             if (process.env.NODE_ENV !== 'test') await new Promise(r => setTimeout(r, 5000))
             const statusRes = await fetch(
-                `https://graph.facebook.com/v19.0/${creationId}?fields=status_code&access_token=${pageAccessToken}`
+                `${IG_GRAPH_BASE}/${creationId}?fields=status_code&access_token=${pageAccessToken}`
             )
             const statusData = await statusRes.json()
             console.log(`[Cron] Container status (attempt ${i + 1}): ${statusData.status_code}`)
@@ -86,7 +87,7 @@ async function processSchedule(scheduleId: string) {
         if (!ready) throw new Error(`Timed out waiting for IG ${isVideo ? 'video' : 'image'} container to finish processing`)
 
         // Step 3: Publish the Media
-        const publishUrl = `https://graph.facebook.com/v19.0/${instagramBusinessId}/media_publish`
+        const publishUrl = `${IG_GRAPH_BASE}/${instagramBusinessId}/media_publish`
         const publishRes = await fetch(publishUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

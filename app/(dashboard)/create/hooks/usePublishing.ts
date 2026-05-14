@@ -13,7 +13,6 @@ const supabase = createClient(
 
 interface PublishOptions {
     caption: string
-    hashtags: string[]
     selectedAccountId: string
     selectedProjectId: string
     isVideo: boolean
@@ -74,16 +73,11 @@ export function usePublishing() {
     /** Builds the FormData payload for server actions */
     const buildFormData = (
         mediaUrls: string[],
-        { caption, hashtags, selectedAccountId, selectedProjectId, isVideo, mediaItems }: PublishOptions
+        { caption, selectedAccountId, selectedProjectId, isVideo, mediaItems }: PublishOptions
     ): FormData => {
         const fd = new FormData()
         
-        // Combine caption and hashtags just before sending
-        const combinedCaption = hashtags.length > 0 
-            ? `${caption.trim()}\n\n${hashtags.join(' ')}`.trim()
-            : caption.trim()
-            
-        fd.set('caption', combinedCaption)
+        fd.set('caption', caption.trim())
         fd.set('connectedAccountId', selectedAccountId)
         fd.set('isVideo', isVideo.toString())
         if (selectedProjectId) fd.set('projectId', selectedProjectId)
@@ -158,8 +152,6 @@ export function usePublishing() {
         result,
         setResult,
         clearResult,
-        isUploading,
-        isPending,
         isPublishing,
         publish,
         saveAsDraft

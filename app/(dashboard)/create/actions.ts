@@ -6,10 +6,10 @@ import { revalidatePath } from 'next/cache'
 import { serializeImageUrls } from './types'
 import { requireAuth } from '@/lib/auth.utils'
 import { ActionResult } from '@/lib/types'
+import { IG_GRAPH_BASE } from '@/lib/constants'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const IG_GRAPH_BASE = 'https://graph.facebook.com/v19.0'
 const CONTAINER_POLL_INTERVAL_MS = 5_000
 const CONTAINER_MAX_ATTEMPTS_IMAGE = 12   // ~60 s
 const CONTAINER_MAX_ATTEMPTS_VIDEO = 60   // ~5 min
@@ -390,7 +390,9 @@ export async function schedulePost(formData: FormData): Promise<ActionResult<{ p
                 userId,
                 connectedAccountId,
                 caption,
-                imageUrl: serializeImageUrls(mediaUrls.length > 1 ? mediaUrls : [mediaUrl]),
+                imageUrl: mediaUrls.length > 1
+                    ? serializeImageUrls(mediaUrls)
+                    : (mediaUrl || 'https://placeholder.co/1080x1080'),
                 mediaType: isVideo ? 'VIDEO' : 'IMAGE',
                 projectId,
             },

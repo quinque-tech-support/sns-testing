@@ -101,26 +101,7 @@ export function isVideoItem(item: MediaItem): boolean {
  *
  * Always returns a non-empty array.
  */
-export function parseImageUrls(imageUrl: string): string[] {
-    if (!imageUrl) return []
-    if (imageUrl.startsWith('[')) {
-        try {
-            const parsed = JSON.parse(imageUrl)
-            if (Array.isArray(parsed) && parsed.length > 0) return parsed
-        } catch {
-            // fall through
-        }
-    }
-    return [imageUrl]
-}
+import { parseImageUrls as _parse, serializeImageUrls as _serialize } from '@/lib/utils'
 
-/**
- * Serialise an array of URLs for storage:
- * - 1 URL  → stored as plain string (backwards-compatible)
- * - 2+ URLs → stored as JSON array string
- */
-export function serializeImageUrls(urls: string[]): string {
-    if (urls.length === 0) return ''
-    if (urls.length === 1) return urls[0]
-    return JSON.stringify(urls)
-}
+export const parseImageUrls = _parse
+export const serializeImageUrls = _serialize

@@ -14,7 +14,6 @@ export function useProjectData(initialProjects: Project[] = []) {
     // Projects
     const [projects, setProjects] = useState<Project[]>(initialProjects)
     const [selectedProjectId, setSelectedProjectId] = useState<string>(initialProjects.length > 0 ? initialProjects[0].id : '')
-    const [isProjectsLoading, setIsProjectsLoading] = useState(false)
 
     // History & Drafts
     const [history, setHistory] = useState<HistoryItem[]>([])
@@ -31,11 +30,15 @@ export function useProjectData(initialProjects: Project[] = []) {
 
     // Sync initial projects if they change
     useEffect(() => {
-        setProjects(initialProjects)
+        setProjects(prev => {
+            if (prev === initialProjects) return prev
+            const isSame = prev.length === initialProjects.length && prev.every((p, i) => p.id === initialProjects[i].id)
+            return isSame ? prev : initialProjects
+        })
         if (initialProjects.length > 0 && !selectedProjectId) {
             setSelectedProjectId(initialProjects[0].id)
         }
-    }, [initialProjects])
+    }, [initialProjects, selectedProjectId])
 
     // Fetch project-scoped data whenever project changes
     useEffect(() => {
@@ -51,7 +54,7 @@ export function useProjectData(initialProjects: Project[] = []) {
             setIsLoadingHistory(true)
             try {
                 const res = await fetch(`/api/projects/${selectedProjectId}/history`)
-                if (res.ok) {
+                if (res && res.ok) {
                     const data = await res.json()
                     setHistory(data.history || [])
                 }
@@ -64,7 +67,7 @@ export function useProjectData(initialProjects: Project[] = []) {
             setIsLoadingDrafts(true)
             try {
                 const res = await fetch(`/api/projects/${selectedProjectId}/drafts`)
-                if (res.ok) {
+                if (res && res.ok) {
                     const data = await res.json()
                     setDrafts(data.drafts || [])
                 }
@@ -77,7 +80,7 @@ export function useProjectData(initialProjects: Project[] = []) {
             setIsLoadingProjectImages(true)
             try {
                 const res = await fetch(`/api/projects/${selectedProjectId}/images`)
-                if (res.ok) {
+                if (res && res.ok) {
                     const data = await res.json()
                     setProjectImages(data)
                 }
@@ -126,7 +129,7 @@ export function useProjectData(initialProjects: Project[] = []) {
                 if (res.count) {
                     // Refresh the library after successful upload
                     const refreshRes = await fetch(`/api/projects/${selectedProjectId}/images`)
-                    if (refreshRes.ok) {
+                    if (refreshRes && refreshRes.ok) {
                         setProjectImages(await refreshRes.json())
                     }
                 } else {
@@ -143,12 +146,11 @@ export function useProjectData(initialProjects: Project[] = []) {
     }
 
     /** Delete an image from the project library */
-    const deleteProjectImage = async (id: string, e: React.MouseEvent) => {
-        e.stopPropagation()
-        if (!confirm('ライブラリからこの画像を削除しますか？')) return
+    const deleteProjectImage = async (id: string, e?: React.MouseEvent) => {
+        if (e) e.stopPropagation()
         try {
             const res = await fetch(`/api/projects/${selectedProjectId}/images/${id}`, { method: 'DELETE' })
-            if (res.ok) {
+            if (res && res.ok) {
                 setProjectImages(prev => prev.filter(img => img.id !== id))
             }
         } catch (err) {
@@ -164,7 +166,6 @@ export function useProjectData(initialProjects: Project[] = []) {
         selectedProjectId,
         setSelectedProjectId,
         selectedProject,
-        isProjectsLoading,
         history,
         isLoadingHistory,
         drafts,
