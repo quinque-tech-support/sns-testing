@@ -91,7 +91,7 @@ export function Topbar({ user }: TopbarProps) {
                                                     setSelectedAccountId(acc.id)
                                                     setIsAccountMenuOpen(false)
                                                 }}
-                                                className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 hover:bg-surface/80 dark:hover:bg-surface/50 transition-colors ${selectedAccountId === acc.id ? 'bg-purple-50/50 text-purple-700 font-medium' : 'text-foreground'}`}
+                                                className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 hover:bg-surface/80 dark:hover:bg-surface/50 transition-colors ${selectedAccountId === acc.id ? 'bg-purple-50/50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-300 font-medium' : 'text-foreground'}`}
                                             >
                                                 <div className="w-6 h-6 rounded-full bg-surface flex items-center justify-center border border-card-border shrink-0">
                                                     <Instagram className="w-3.5 h-3.5 text-muted-text" />
