@@ -102,8 +102,8 @@ export default async function Home() {
       <footer className="py-8 sm:py-10 border-t border-slate-200 dark:border-white/10 text-center transition-colors px-4">
         <div className="flex items-center justify-center gap-2 mb-2">
           <Image src="/images/gravia_mark.png" alt="Gravia" width={24} height={24} className="rounded-lg" />
-          <span className="text-lg font-black tracking-tight bg-gradient-to-r from-[#7C3AED] via-[#EC4899] to-[#F97316] bg-clip-text text-transparent">
-            Gravia
+          <span>
+            <Image src="/images/gravia_text.png" alt="Gravia" width={45} height={40} />
           </span>
         </div>
         <p className="text-xs font-semibold text-muted-text dark:text-slate-400">{t('footerDesc')}</p>
