@@ -28,7 +28,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             // post-login "Connect Instagram Account" flow.
             authorization: {
                 params: {
-                    scope: "public_profile",
+                    scope: "public_profile,email,pages_show_list",
                 },
             },
             profile(profile) {
