@@ -198,9 +198,7 @@ export default function AccountClient({ connectedAccounts, error, success }: Acc
                         {t('readDocs')} <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                     </button>
                 </div>
-
                 </div>
-
             <ConfirmModal
                 isOpen={!!disconnectId}
                 title={t('disconnectModalTitle')}

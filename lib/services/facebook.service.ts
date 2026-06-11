@@ -1,4 +1,4 @@
-import axios, { AxiosError } from 'axios'
+import axios from 'axios'
 import { IG_GRAPH_BASE } from '@/lib/constants'
 
 export class FacebookApiError extends Error {
@@ -53,7 +53,7 @@ export const facebookService = {
             client_id: FACEBOOK_APP_ID,
             redirect_uri: redirectUri,
             state: state,
-            scope: 'pages_show_list,pages_read_engagement,instagram_basic,instagram_content_publish,business_management',
+            scope: 'pages_show_list,pages_read_engagement,instagram_basic,instagram_content_publish,business_management,instagram_manage_messages,pages_manage_metadata',
             response_type: 'code',
         })
         return `https://www.facebook.com/v21.0/dialog/oauth?${params.toString()}`
