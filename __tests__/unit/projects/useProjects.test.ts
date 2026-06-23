@@ -7,6 +7,19 @@ jest.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush, refresh: mockRefresh })
 }))
 
+import { AccountContext } from '@/app/components/AccountContext'
+import React from 'react'
+
+const wrapper = ({ children }: { children: React.ReactNode }) => 
+  React.createElement(AccountContext.Provider, {
+    value: {
+      activeAccount: { id: 'account1', pageId: 'page1', username: 'test' } as any,
+      accounts: [],
+      selectedAccountId: 'account1',
+      setSelectedAccountId: jest.fn()
+    }
+  }, children)
+
 global.fetch = jest.fn()
 const mockFetch = fetch as jest.Mock
 
@@ -26,7 +39,7 @@ describe('useProjects › openModal', () => {
   })
 
   it('should open modal and clear fields when no arg is provided', () => {
-    const { result } = renderHook(() => useProjects([]))
+    const { result } = renderHook(() => useProjects([]), { wrapper })
 
     act(() => {
       result.current.openModal()
@@ -39,7 +52,7 @@ describe('useProjects › openModal', () => {
   })
 
   it('should open modal and pre-fill fields when project is provided', () => {
-    const { result } = renderHook(() => useProjects([]))
+    const { result } = renderHook(() => useProjects([]), { wrapper })
 
     act(() => {
       result.current.openModal(mockProj as any)
@@ -54,7 +67,7 @@ describe('useProjects › openModal', () => {
   })
 
   it('should set isModalOpen false when closeModal is called', () => {
-    const { result } = renderHook(() => useProjects([]))
+    const { result } = renderHook(() => useProjects([]), { wrapper })
 
     act(() => {
       result.current.openModal()
@@ -65,7 +78,7 @@ describe('useProjects › openModal', () => {
   })
 
   it('should clear previous field values when openModal is called after edit', () => {
-    const { result } = renderHook(() => useProjects([]))
+    const { result } = renderHook(() => useProjects([]), { wrapper })
 
     act(() => {
       result.current.openModal(mockProj as any)
@@ -84,7 +97,7 @@ describe('useProjects › openViewModal / closeViewModal', () => {
   })
 
   it('should set viewingProject when openViewModal is called', () => {
-    const { result } = renderHook(() => useProjects([]))
+    const { result } = renderHook(() => useProjects([]), { wrapper })
 
     act(() => {
       result.current.openViewModal(mockProj as any)
@@ -94,7 +107,7 @@ describe('useProjects › openViewModal / closeViewModal', () => {
   })
 
   it('should clear viewingProject when closeViewModal is called', () => {
-    const { result } = renderHook(() => useProjects([]))
+    const { result } = renderHook(() => useProjects([]), { wrapper })
 
     act(() => {
       result.current.openViewModal(mockProj as any)
@@ -111,7 +124,7 @@ describe('useProjects › handleSave — create', () => {
   })
 
   it('should create new project on success', async () => {
-    const { result } = renderHook(() => useProjects([]))
+    const { result } = renderHook(() => useProjects([]), { wrapper })
     mockFetch.mockResolvedValue({ ok: true, json: async () => ({ id: 'p2', name: 'New' }) })
 
     act(() => {
@@ -132,7 +145,7 @@ describe('useProjects › handleSave — create', () => {
   })
 
   it('should parse space/comma separated hashtags and add # prefix', async () => {
-    const { result } = renderHook(() => useProjects([]))
+    const { result } = renderHook(() => useProjects([]), { wrapper })
     mockFetch.mockResolvedValue({ ok: true, json: async () => ({ id: 'p2', name: 'New' }) })
 
     act(() => {
@@ -149,7 +162,7 @@ describe('useProjects › handleSave — create', () => {
   })
 
   it('should not add double prefix if hashtag already has #', async () => {
-    const { result } = renderHook(() => useProjects([]))
+    const { result } = renderHook(() => useProjects([]), { wrapper })
     mockFetch.mockResolvedValue({ ok: true, json: async () => ({ id: 'p2', name: 'New' }) })
 
     act(() => {
@@ -166,7 +179,7 @@ describe('useProjects › handleSave — create', () => {
   })
 
   it('should set error and keep modal open on API failure', async () => {
-    const { result } = renderHook(() => useProjects([]))
+    const { result } = renderHook(() => useProjects([]), { wrapper })
     mockFetch.mockResolvedValue({ ok: false, json: async () => ({}) })
 
     act(() => {
@@ -188,7 +201,7 @@ describe('useProjects › handleSave — edit', () => {
   })
 
   it('should update existing project on success', async () => {
-    const { result } = renderHook(() => useProjects([mockProj as any]))
+    const { result } = renderHook(() => useProjects([mockProj as any]), { wrapper })
     mockFetch.mockResolvedValue({ ok: true, json: async () => ({ ...mockProj, name: 'Updated' }) })
 
     act(() => {
@@ -211,7 +224,7 @@ describe('useProjects › handleDelete', () => {
   })
 
   it('should remove project from list on successful delete', async () => {
-    const { result } = renderHook(() => useProjects([mockProj as any]))
+    const { result } = renderHook(() => useProjects([mockProj as any]), { wrapper })
     mockFetch.mockResolvedValue({ ok: true })
 
     await act(async () => {
@@ -224,7 +237,7 @@ describe('useProjects › handleDelete', () => {
 
 
   it('should set error and unchanged list on API failure', async () => {
-    const { result } = renderHook(() => useProjects([mockProj as any]))
+    const { result } = renderHook(() => useProjects([mockProj as any]), { wrapper })
     mockFetch.mockResolvedValue({ ok: false })
 
     await act(async () => {

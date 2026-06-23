@@ -55,6 +55,7 @@ export const facebookService = {
             redirect_uri: redirectUri,
             state: state,
             scope: 'pages_show_list,pages_read_engagement,instagram_basic,instagram_content_publish,business_management,instagram_manage_messages,instagram_manage_insights',
+            scope: 'pages_show_list,pages_read_engagement,instagram_basic,instagram_content_publish,business_management,instagram_manage_messages,instagram_manage_insights',
             response_type: 'code',
         })
         return `https://www.facebook.com/v21.0/dialog/oauth?${params.toString()}`
@@ -344,4 +345,58 @@ export const facebookService = {
         }, 600) // Cache for 10 minutes
     },
     
+    async getInstagramFollowersCount(igBusinessId: string, accessToken: string): Promise<number | null> {
+        try {
+            const response = await graphApi.get(`/${igBusinessId}`, {
+                params: {
+                    fields: 'followers_count',
+                    access_token: accessToken,
+                }
+            })
+            return response.data.followers_count || 0
+        } catch (error: any) {
+            console.error(`[FacebookService] Failed to fetch followers for ${igBusinessId}:`, error.response?.data || error.message)
+            return null
+        }
+    },
+
+    /**
+     * Fetch the ID for a given hashtag string.
+     */
+    async getHashtagId(igBusinessId: string, hashtag: string, accessToken: string): Promise<string | null> {
+        try {
+            const cleanHashtag = hashtag.replace(/^#/, '')
+            const response = await graphApi.get(`/ig_hashtag_search`, {
+                params: {
+                    user_id: igBusinessId,
+                    q: cleanHashtag,
+                    access_token: accessToken,
+                }
+            })
+            return response.data.data?.[0]?.id || null
+        } catch (error: any) {
+            console.error(`[FacebookService] Failed to fetch hashtag ID for ${hashtag}:`, error.response?.data || error.message)
+            return null
+        }
+    },
+
+    /**
+     * Fetch top media for a given hashtag ID.
+     */
+    async getHashtagTopMedia(hashtagId: string, igBusinessId: string, accessToken: string): Promise<any[]> {
+        try {
+            const response = await graphApi.get(`/${hashtagId}/top_media`, {
+                params: {
+                    user_id: igBusinessId,
+                    fields: 'id,media_type,media_url,permalink,caption',
+                    limit: 20,
+                    access_token: accessToken,
+                }
+            })
+            return response.data.data || []
+        } catch (error: any) {
+            console.error(`[FacebookService] Failed to fetch top media for hashtag ${hashtagId}:`, error.response?.data || error.message)
+            return []
+        }
+    },
 }

@@ -28,7 +28,8 @@ describe('Projects API', () => {
             const mockProjects = [{ id: 'p1', name: 'Proj 1', userId: 'user-1' }]
             mockPrismaProjectFindMany.mockResolvedValue(mockProjects)
 
-            const res = await GET()
+            const req = new Request('http://localhost/api/projects')
+            const res = await GET(req)
             const json = await res.json()
 
             expect(res.status).toBe(200)
@@ -41,7 +42,8 @@ describe('Projects API', () => {
 
         it('should return 401 when unauthenticated', async () => {
             mockRequireAuth.mockRejectedValue({ isAuthError: true })
-            const res = await GET()
+            const req = new Request('http://localhost/api/projects')
+            const res = await GET(req)
             expect(res.status).toBe(401)
         })
     })

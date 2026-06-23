@@ -8,6 +8,7 @@
     "workflow": "Workflow",
     "account": "Account",
     "automation": "Automation",
+    "followManager": "Follow Manager",
     "settings": "Settings",
     "menu": "Menu",
     "logout": "Logout",
@@ -443,5 +444,24 @@
       "title": "Request deletion directly",
       "p1": "You can also email us directly to request full data deletion. We will confirm deletion within 30 days."
     }
+  },
+  "FollowManager": {
+    "title": "Follow Manager",
+    "description": "Discover top profiles for follow campaigns.",
+    "noAccountWarning": "Please connect an Instagram account first.",
+    "selectCampaign": "Select Campaign",
+    "createCampaign": "Create Campaign",
+    "campaignName": "Campaign Name",
+    "hashtags": "Hashtags (comma separated)",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving...",
+    "manualSearch": "Search Posts (Max 50/wk)",
+    "fetching": "Fetching...",
+    "noPosts": "No posts found.",
+    "follow": "Follow",
+    "markFollowed": "Mark as Followed",
+    "manualFollowInstruction": "Click Follow to view the post on Instagram. Follow them, then confirm below.",
+    "successMessage": "Successfully updated!"
   }
 }
