@@ -148,14 +148,8 @@ async function handler(_req: Request) {
 
         const publishedResults = []
         for (const schedule of pendingSchedules) {
-            const result = await prisma.schedule.updateMany({
-                where: { id: schedule.id, status: 'PENDING' },
-                data: { status: 'PROCESSING' }
-            })
-            if (result.count > 0) {
-                const processResult = await processSchedule(schedule.id)
-                publishedResults.push(processResult)
-            }
+            const processResult = await processSchedule(schedule.id)
+            publishedResults.push(processResult)
         }
 
         // 2. Sync Insights for published posts
