@@ -15,7 +15,8 @@ import {
     ChevronRight,
     X,
     FolderKanban,
-    Bot
+    Bot,
+    UserPlus
 } from 'lucide-react'
 import { signOut } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
@@ -29,6 +30,7 @@ const navigation = [
     { key: 'workflow', href: '/workflow', icon: ListChecks },
     { key: 'account', href: '/account', icon: Instagram },
     { key: 'automation', href: '/automation', icon: Bot },
+    { key: 'followManager', href: '/follow-manager', icon: UserPlus },
     { key: 'settings', href: '/settings', icon: Settings },
 ]
 

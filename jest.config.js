@@ -5,6 +5,7 @@ const sharedConfig = {
     '^.+\\.(ts|tsx|js|jsx)$': ['babel-jest', { configFile: './babel.config.test.js' }],
   },
   moduleNameMapper: {
+    '^@upstash/redis$': '<rootDir>/__mocks__/@upstash/redis.ts',
     '^@/(.*)$': '<rootDir>/$1',
     '\\.(css|less|scss|sass)$': '<rootDir>/__mocks__/styleMock.js',
     '\\.(jpg|jpeg|png|gif|svg|webp|avif)$': '<rootDir>/__mocks__/fileMock.js',
@@ -14,9 +15,9 @@ const sharedConfig = {
     '<rootDir>/node_modules/',
     '<rootDir>/scripts/',
   ],
-  // Allow ESM packages from next/upstash/intl to be transformed
+  // Allow ESM packages to be transformed
   transformIgnorePatterns: [
-    '/node_modules/(?!(lucide-react|next-intl|use-intl|@formatjs|intl-messageformat)/)',
+    '/node_modules/(?!(lucide-react|next-intl|use-intl|@formatjs|intl-messageformat|@upstash|uncrypto)/)',
   ],
 }
 

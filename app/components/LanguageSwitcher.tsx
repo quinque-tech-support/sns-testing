@@ -2,18 +2,22 @@
 
 import { useLocale } from 'next-intl'
 import { useRouter, usePathname } from '@/i18n/routing'
+import { useSearchParams } from 'next/navigation'
 import { useTransition } from 'react'
 
 export function LanguageSwitcher() {
     const locale = useLocale()
     const router = useRouter()
     const pathname = usePathname()
+    const searchParams = useSearchParams()
     const [isPending, startTransition] = useTransition()
 
     const switchLocale = (newLocale: string) => {
         if (locale === newLocale || isPending) return;
         startTransition(() => {
-            router.replace(pathname, { locale: newLocale })
+            const query = searchParams.toString() ? `?${searchParams.toString()}` : ''
+            // @ts-ignore - next-intl types may complain about string with query, but it works
+            router.replace(`${pathname}${query}`, { locale: newLocale })
         })
     }
 

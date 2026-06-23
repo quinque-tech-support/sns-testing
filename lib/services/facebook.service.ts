@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { IG_GRAPH_BASE } from '@/lib/constants'
 import { getCached } from '@/lib/redis'
+import crypto from 'crypto'
 
 export class FacebookApiError extends Error {
     constructor(
@@ -120,7 +121,8 @@ export const facebookService = {
      * Fetch the user's base Meta profile (ID and Name)
      */
     async getUserProfile(accessToken: string): Promise<FacebookProfile> {
-        return getCached(`meta:userProfile:${accessToken.substring(0, 10)}`, async () => {
+        const tokenHash = crypto.createHash('sha256').update(accessToken).digest('hex').substring(0, 16)
+        return getCached(`meta:userProfile:${tokenHash}`, async () => {
             try {
                 const response = await graphApi.get<FacebookProfile>('/me', {
                     params: {
@@ -146,7 +148,8 @@ export const facebookService = {
      * Fetch all pages the user manages
      */
     async getUserPages(accessToken: string): Promise<FacebookPage[]> {
-        return getCached(`meta:userPages:${accessToken.substring(0, 10)}`, async () => {
+        const tokenHash = crypto.createHash('sha256').update(accessToken).digest('hex').substring(0, 16)
+        return getCached(`meta:userPages:${tokenHash}`, async () => {
             try {
                 const response = await graphApi.get('/me/accounts', {
                     params: {
@@ -344,4 +347,46 @@ export const facebookService = {
         }, 600) // Cache for 10 minutes
     },
     
+
+    /**
+     * Fetch the ID for a given hashtag string.
+     */
+    async getHashtagId(igBusinessId: string, hashtag: string, accessToken: string): Promise<string | null> {
+        const cleanHashtag = hashtag.replace(/^#/, '')
+        return getCached(`meta:hashtagId:${igBusinessId}:${cleanHashtag}`, async () => {
+            try {
+                const response = await graphApi.get(`/ig_hashtag_search`, {
+                    params: {
+                        user_id: igBusinessId,
+                        q: cleanHashtag,
+                        access_token: accessToken,
+                    }
+                })
+                return response.data.data?.[0]?.id || null
+            } catch (error: any) {
+                console.error(`[FacebookService] Failed to fetch hashtag ID for ${hashtag}:`, error.response?.data || error.message)
+                return null
+            }
+        }, 86400) // Cache for 24 hours
+    },
+
+    /**
+     * Fetch top media for a given hashtag ID.
+     */
+    async getHashtagTopMedia(hashtagId: string, igBusinessId: string, accessToken: string): Promise<any[]> {
+        try {
+            const response = await graphApi.get(`/${hashtagId}/top_media`, {
+                params: {
+                    user_id: igBusinessId,
+                    fields: 'id,media_type,media_url,permalink,caption',
+                    limit: 3,
+                    access_token: accessToken,
+                }
+            })
+            return response.data.data || []
+        } catch (error: any) {
+            console.error(`[FacebookService] Failed to fetch top media for hashtag ${hashtagId}:`, error.response?.data || error.message)
+            return []
+        }
+    },
 }

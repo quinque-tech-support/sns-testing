@@ -10,7 +10,7 @@ import crypto from 'crypto'
 // Mock Prisma client
 jest.mock('@/lib/prisma', () => ({
   prisma: {
-    connectedAccount: { findFirst: jest.fn() },
+    connectedAccount: { findFirst: jest.fn(), findMany: jest.fn() },
     automationEvent: { findFirst: jest.fn(), create: jest.fn(), findMany: jest.fn(), update: jest.fn(), updateMany: jest.fn() },
     automationSettings: { findUnique: jest.fn() }
   }
@@ -89,7 +89,7 @@ describe('Instagram DM Auto-Reply Automation Flow', () => {
       }
     }
 
-    ;(prisma.connectedAccount.findFirst as jest.Mock).mockResolvedValue(mockAccount)
+    ;(prisma.connectedAccount.findMany as jest.Mock).mockResolvedValue([mockAccount])
     ;(prisma.automationEvent.findFirst as jest.Mock).mockResolvedValue(null) // No existing message duplicate
 
     // -------------------------------------------------------------
@@ -125,7 +125,7 @@ describe('Instagram DM Auto-Reply Automation Flow', () => {
     console.log('✔ Webhook processed successfully, event parsed.')
 
     // Verify automationService.handleDmEvent was called and queried correct tables
-    expect(prisma.connectedAccount.findFirst).toHaveBeenCalledWith({
+    expect(prisma.connectedAccount.findMany).toHaveBeenCalledWith({
       where: { instagramBusinessId: 'ig-biz-789' },
       include: { automationSettings: true }
     })
