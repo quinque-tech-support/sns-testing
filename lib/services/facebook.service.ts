@@ -53,7 +53,7 @@ export const facebookService = {
             client_id: FACEBOOK_APP_ID,
             redirect_uri: redirectUri,
             state: state,
-            scope: 'pages_show_list,pages_read_engagement,instagram_basic,instagram_content_publish,business_management,instagram_manage_messages,pages_manage_metadata',
+            scope: 'pages_show_list,pages_read_engagement,instagram_basic,instagram_content_publish,business_management,instagram_manage_messages,instagram_manage_insights',
             response_type: 'code',
         })
         return `https://www.facebook.com/v21.0/dialog/oauth?${params.toString()}`
