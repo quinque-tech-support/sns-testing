@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { IG_GRAPH_BASE } from '@/lib/constants'
 import { getCached } from '@/lib/redis'
+import crypto from 'crypto'
 
 export class FacebookApiError extends Error {
     constructor(
@@ -54,7 +55,6 @@ export const facebookService = {
             client_id: FACEBOOK_APP_ID,
             redirect_uri: redirectUri,
             state: state,
-            scope: 'pages_show_list,pages_read_engagement,instagram_basic,instagram_content_publish,business_management,instagram_manage_messages,instagram_manage_insights',
             scope: 'pages_show_list,pages_read_engagement,instagram_basic,instagram_content_publish,business_management,instagram_manage_messages,instagram_manage_insights',
             response_type: 'code',
         })
@@ -121,7 +121,8 @@ export const facebookService = {
      * Fetch the user's base Meta profile (ID and Name)
      */
     async getUserProfile(accessToken: string): Promise<FacebookProfile> {
-        return getCached(`meta:userProfile:${accessToken.substring(0, 10)}`, async () => {
+        const tokenHash = crypto.createHash('sha256').update(accessToken).digest('hex').substring(0, 16)
+        return getCached(`meta:userProfile:${tokenHash}`, async () => {
             try {
                 const response = await graphApi.get<FacebookProfile>('/me', {
                     params: {
@@ -147,7 +148,8 @@ export const facebookService = {
      * Fetch all pages the user manages
      */
     async getUserPages(accessToken: string): Promise<FacebookPage[]> {
-        return getCached(`meta:userPages:${accessToken.substring(0, 10)}`, async () => {
+        const tokenHash = crypto.createHash('sha256').update(accessToken).digest('hex').substring(0, 16)
+        return getCached(`meta:userPages:${tokenHash}`, async () => {
             try {
                 const response = await graphApi.get('/me/accounts', {
                     params: {
@@ -345,39 +347,27 @@ export const facebookService = {
         }, 600) // Cache for 10 minutes
     },
     
-    async getInstagramFollowersCount(igBusinessId: string, accessToken: string): Promise<number | null> {
-        try {
-            const response = await graphApi.get(`/${igBusinessId}`, {
-                params: {
-                    fields: 'followers_count',
-                    access_token: accessToken,
-                }
-            })
-            return response.data.followers_count || 0
-        } catch (error: any) {
-            console.error(`[FacebookService] Failed to fetch followers for ${igBusinessId}:`, error.response?.data || error.message)
-            return null
-        }
-    },
 
     /**
      * Fetch the ID for a given hashtag string.
      */
     async getHashtagId(igBusinessId: string, hashtag: string, accessToken: string): Promise<string | null> {
-        try {
-            const cleanHashtag = hashtag.replace(/^#/, '')
-            const response = await graphApi.get(`/ig_hashtag_search`, {
-                params: {
-                    user_id: igBusinessId,
-                    q: cleanHashtag,
-                    access_token: accessToken,
-                }
-            })
-            return response.data.data?.[0]?.id || null
-        } catch (error: any) {
-            console.error(`[FacebookService] Failed to fetch hashtag ID for ${hashtag}:`, error.response?.data || error.message)
-            return null
-        }
+        const cleanHashtag = hashtag.replace(/^#/, '')
+        return getCached(`meta:hashtagId:${igBusinessId}:${cleanHashtag}`, async () => {
+            try {
+                const response = await graphApi.get(`/ig_hashtag_search`, {
+                    params: {
+                        user_id: igBusinessId,
+                        q: cleanHashtag,
+                        access_token: accessToken,
+                    }
+                })
+                return response.data.data?.[0]?.id || null
+            } catch (error: any) {
+                console.error(`[FacebookService] Failed to fetch hashtag ID for ${hashtag}:`, error.response?.data || error.message)
+                return null
+            }
+        }, 86400) // Cache for 24 hours
     },
 
     /**
@@ -389,7 +379,7 @@ export const facebookService = {
                 params: {
                     user_id: igBusinessId,
                     fields: 'id,media_type,media_url,permalink,caption',
-                    limit: 20,
+                    limit: 3,
                     access_token: accessToken,
                 }
             })
