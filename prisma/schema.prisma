@@ -232,6 +232,8 @@ model FollowCampaign {
   accountId String
   name      String
   hashtags  String[]
+  niche     String?
+  location  String?
   status    String   @default("ACTIVE") // ACTIVE, PAUSED
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -247,19 +249,22 @@ model FollowTarget {
   userId     String
   accountId  String
   authorName String?
-  postImage  String?
-  postLink   String
-  postId     String
-  status     String    @default("QUEUED") // QUEUED, FOLLOWED, UNFOLLOW_READY, UNFOLLOWED
-  followedAt DateTime?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  postImage      String?
+  postLink       String
+  postId         String
+  followersCount Int?
+  mediaCount     Int?
+  biography      String?
+  status         String    @default("QUEUED") // QUEUED, FOLLOWED, UNFOLLOW_READY, UNFOLLOWED
+  followedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   campaign         FollowCampaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   connectedAccount ConnectedAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, postId])
+  @@unique([userId,campaignId, postId])
   @@index([userId, accountId, followedAt])
 }
 
