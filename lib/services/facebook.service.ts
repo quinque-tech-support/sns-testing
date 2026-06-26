@@ -389,4 +389,35 @@ export const facebookService = {
             return []
         }
     },
+
+    /**
+     * Fetch basic profile data for a given Instagram username using the Business Discovery API.
+     */
+    async getBusinessDiscoveryProfile(igBusinessId: string, username: string, accessToken: string): Promise<{ id: string, username: string, profile_picture_url?: string, followers_count?: number, media_count?: number, biography?: string } | null> {
+        try {
+            const response = await graphApi.get(`/${igBusinessId}`, {
+                params: {
+                    fields: `business_discovery.username(${username}){username,profile_picture_url,followers_count,media_count,biography}`,
+                    access_token: accessToken,
+                }
+            })
+            
+            const bd = response.data?.business_discovery
+            if (bd) {
+                return {
+                    id: bd.id,
+                    username: bd.username,
+                    profile_picture_url: bd.profile_picture_url,
+                    followers_count: bd.followers_count,
+                    media_count: bd.media_count,
+                    biography: bd.biography
+                }
+            }
+            return null
+        } catch (error: any) {
+            // Silently move on if not found or error
+            console.warn(`[FacebookService] Business discovery failed for ${username}:`, error.response?.data?.error?.message || error.message)
+            return null
+        }
+    },
 }
