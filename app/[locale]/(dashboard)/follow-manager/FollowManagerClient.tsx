@@ -98,9 +98,7 @@ export default function FollowManagerClient() {
         try {
             const data = await getCampaigns(connectedAccount.id)
             setCampaigns(data)
-            if (data.length > 0 && selectedCampaignId === 'ALL' && !searchParams.get('campaign')) {
-                setSelectedCampaignId(data[0].id)
-            }
+            // Default to ALL campaigns
         } catch (error) {
             console.error("Failed to load campaigns", error)
         }
@@ -341,21 +339,18 @@ export default function FollowManagerClient() {
         biography: t.biography,
     }))
 
-    // Check if followed > 3 days ago for unfollow reminder
+    // Check if followed > 30 days ago for unfollow reminder
     const isUnfollowReminder = (followedAt: string | null) => {
         if (!followedAt) return false
         const diff = Date.now() - new Date(followedAt).getTime()
-        return diff > 24 * 60 * 60 * 1000
+        return diff > 30 * 24 * 60 * 60 * 1000
     }
 
     return (
         <div className="w-full max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500 pb-20">
-            
-                <div className="flex items-center gap-4">
-                    <h1 className="text-3xl font-bold text-foreground tracking-tight">{t('title')}</h1>
-                </div>
-                
-            
+            <div className="flex items-center gap-4">
+                <h1 className="text-3xl font-bold text-foreground tracking-tight">{t('title')}</h1>
+            </div>            
 
             {/* Tab Toggle */}
             <div className="flex justify-between items-center">
@@ -613,7 +608,7 @@ export default function FollowManagerClient() {
                                                         {showUnfollowReminder && (
                                                             <span className="inline-flex w-fit items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800 mt-0.5">
                                                                 <Clock className="w-3 h-3" />
-                                                                3+ days
+                                                                30+ days
                                                             </span>
                                                         )}
                                                     </div>

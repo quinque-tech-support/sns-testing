@@ -5,7 +5,7 @@ import { requireAuth } from '@/lib/auth.utils'
 import { facebookService } from '@/lib/services/facebook.service'
 import { revalidatePath } from 'next/cache'
 import { callModel } from '@/lib/ai/utils/callModel'
-
+import { generateFollowSuggestions } from '@/lib/ai/follow/suggestions'
 export async function getCampaigns(accountId: string) {
     const userId = await requireAuth()
     const campaigns = await prisma.followCampaign.findMany({
@@ -101,19 +101,9 @@ export async function searchPosts(campaignId: string, accountId: string, niche?:
     const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     if (!apiKey) throw new Error("GEMINI_API_KEY is not set");
 
-    const prompt = `
-Generate a JSON list of 10 relevant Instagram usernames that exist in the real world related to the following criteria.
-Niche: ${niche || 'General'}
-Location: ${location || 'Global'}
-Hashtags: ${campaign.hashtags.join(', ')}
-
-Respond ONLY with a JSON array of strings containing the usernames. Example:
-["username1", "username2"]
-`;
-    
     let generatedUsernames: string[] = [];
     try {
-        generatedUsernames = await callModel(apiKey, prompt, { label: 'FollowManagerSearch' });
+        generatedUsernames = await generateFollowSuggestions(apiKey, campaign.hashtags, niche, location);
         if (!Array.isArray(generatedUsernames)) {
             throw new Error("Invalid format returned from AI.");
         }
