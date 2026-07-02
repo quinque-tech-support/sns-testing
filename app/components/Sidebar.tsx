@@ -16,7 +16,8 @@ import {
     X,
     FolderKanban,
     Bot,
-    UserPlus
+    UserPlus,
+    Image as ImageIcon
 } from 'lucide-react'
 import { signOut } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
@@ -24,6 +25,7 @@ import { useTranslations } from 'next-intl'
 const navigation = [
     { key: 'dashboard', href: '/dashboard', icon: LayoutDashboard },
     { key: 'create', href: '/create', icon: PlusCircle },
+    { key: 'imageGen', href: '/image-gen', icon: ImageIcon },
     { key: 'projects', href: '/projects', icon: FolderKanban },
     { key: 'calendar', href: '/calendar', icon: Calendar },
     { key: 'analytics', href: '/analytics', icon: BarChart3 },
