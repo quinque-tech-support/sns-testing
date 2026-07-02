@@ -22,6 +22,7 @@ model User {
   followCampaigns    FollowCampaign[]
   followTargets      FollowTarget[]
   sessions           Session[]
+  promptTemplates    PromptTemplate[]
   connectedAccounts  ConnectedAccount[]
   posts              Post[]
   projects           Project[]
@@ -56,6 +57,27 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+
+model PromptTemplate {
+  id             String   @id @default(cuid())
+  userId         String
+  projectId      String?
+  name           String
+  description    String?
+  category       String?
+  tags           String[]
+  positivePrompt String
+  negativePrompt String?
+  isSystem       Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project        Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([projectId])
 }
 
 model ConnectedAccount {
@@ -137,6 +159,7 @@ model Project {
   connectedAccount             ConnectedAccount? @relation(fields: [accountId], references: [id], onDelete: Cascade)
   user                         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   images                       ProjectImage[]
+  promptTemplates              PromptTemplate[]
 
   @@index([userId])
   @@index([accountId])
