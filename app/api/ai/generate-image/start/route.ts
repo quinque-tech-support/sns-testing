@@ -9,6 +9,24 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        // --- Rate Limiting ---
+        const { Redis } = require('@upstash/redis');
+        const redis = Redis.fromEnv();
+        // Use user ID or IP as the rate limit key
+        const rateLimitKey = `rate_limit:gen_image:${session.user.id}`;
+        const currentUsage = await redis.incr(rateLimitKey);
+        
+        if (currentUsage === 1) {
+            // Reset the window every 60 seconds
+            await redis.expire(rateLimitKey, 60);
+        }
+        
+        // Limit: 10 generations per minute
+        if (currentUsage > 10) {
+            return NextResponse.json({ error: 'Rate limit exceeded. Please wait a minute before generating more images.' }, { status: 429 });
+        }
+        // ---------------------
+
         const body = await req.json();
         const { description, context, category, tags, projectId, positivePrompt, negativePrompt } = body;
 

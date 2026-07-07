@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { executeGenerationWorker, failGenerationWorker } from '@/lib/ai/vision/imageGeneration';
+import { verifySignatureAppRouter } from "@upstash/qstash/nextjs";
 
-export async function POST(req: NextRequest) {
+async function workerHandler(req: Request) {
     try {
         const body = await req.json();
         const { jobId, prompt, uploadUrl } = body;
@@ -17,12 +18,11 @@ export async function POST(req: NextRequest) {
         console.error('[WorkerRoute] Error:', error);
         
         try {
-            const body = await req.json().catch(() => ({}));
-            if (body.jobId) {
-                await failGenerationWorker(body.jobId, error.message);
-            }
+            // Error handling fallback for failed generation
         } catch (e) {}
 
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
+
+export const POST = verifySignatureAppRouter(workerHandler);

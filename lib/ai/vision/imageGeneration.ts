@@ -138,7 +138,10 @@ export async function executeGenerationWorker(payload: { jobId: string, prompt: 
     const webhookUrl = `${baseUrl}/api/ai/generate-image/webhook`;
     await fetch(webhookUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'x-webhook-secret': process.env.AUTH_SECRET || 'fallback-secret' 
+        },
         body: JSON.stringify({
             jobId,
             status: 'COMPLETED'
@@ -155,7 +158,10 @@ export async function failGenerationWorker(jobId: string, errorMsg: string) {
         const webhookUrl = `${baseUrl}/api/ai/generate-image/webhook`;
         await fetch(webhookUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'x-webhook-secret': process.env.AUTH_SECRET || 'fallback-secret'
+            },
             body: JSON.stringify({
                 jobId,
                 status: 'FAILED',

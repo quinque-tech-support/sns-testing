@@ -3,6 +3,12 @@ import { finalizeGenerationWebhook } from '@/lib/ai/vision/imageGeneration';
 
 export async function POST(req: NextRequest) {
     try {
+        const secret = req.headers.get('x-webhook-secret');
+        if (secret !== (process.env.AUTH_SECRET || 'fallback-secret')) {
+            console.error('[GenerateImageWebhookRoute] Unauthorized: Invalid webhook secret');
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const body = await req.json();
         const { jobId, status, error } = body;
 

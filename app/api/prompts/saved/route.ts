@@ -28,7 +28,7 @@ export async function GET(req: Request) {
             ]
         }
 
-        const [templates, total] = await Promise.all([
+        const [templates] = await Promise.all([
             prisma.promptTemplate.findMany({
                 where,
                 include: {
