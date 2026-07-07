@@ -13,12 +13,14 @@ import {
     BookOpen,
     ChevronRight,
     ChevronDown,
+    ChevronLeft,
     Settings2,
     X,
     Plus,
     Trash2,
     Copy,
     FolderOpen,
+    RefreshCw,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
@@ -84,27 +86,51 @@ export default function ImageGenClient({ projects }: { projects?: ProjectMini[] 
     const [templateName, setTemplateName] = useState('')
     const [isSavingTemplate, setIsSavingTemplate] = useState(false)
 
+    // Saved Images State
+    const [savedImages, setSavedImages] = useState<any[]>([])
+    const [isLoadingImages, setIsLoadingImages] = useState(false)
+    const [imagePage, setImagePage] = useState(1)
+    const [imageTotalPages, setImageTotalPages] = useState(1)
+    const [imageDeleteConfirmId, setImageDeleteConfirmId] = useState<string | null>(null)
+    const [isDeletingImageId, setIsDeletingImageId] = useState<string | null>(null)
+
+    // Image Generation State
+    const [isGeneratingImage, setIsGeneratingImage] = useState(false)
+    const [generationStatus, setGenerationStatus] = useState<string | null>(null)
+    const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null)
+    const [generationError, setGenerationError] = useState<string | null>(null)
+    const [isPromptsOpen, setIsPromptsOpen] = useState(true)
+    const [lastJobId, setLastJobId] = useState<string | null>(null)
+
     // Modal State
     const [selectedTemplate, setSelectedTemplate] = useState<PromptTemplate | null>(null)
     const [isDeletingId, setIsDeletingId] = useState<string | null>(null)
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
+    // Prompt Library Pagination
+    const [templatePage, setTemplatePage] = useState(1)
+    const [templateTotalPages, setTemplateTotalPages] = useState(1)
+
     const hasLoadedInitialRef = useRef(false)
 
     useEffect(() => {
         if (activeTab === 'library') {
-            loadTemplates()
+            loadTemplates(templatePage)
+        } else if (activeTab === 'image-library') {
+            loadImages(imagePage)
         }
     }, [activeTab])
 
-    const loadTemplates = async () => {
+    const loadTemplates = async (page = 1) => {
         setIsLoadingTemplates(true)
         try {
-            const res = await fetch('/api/prompts/saved')
+            const res = await fetch(`/api/prompts/saved?page=${page}`)
             const data = await res.json()
             if (res.ok) {
-                setSavedTemplates(data)
-                if (!hasLoadedInitialRef.current && data.length === 0) {
+                setSavedTemplates(data.templates || [])
+                setTemplatePage(data.page || 1)
+                setTemplateTotalPages(data.totalPages || 1)
+                if (!hasLoadedInitialRef.current && (!data.templates || data.templates.length === 0)) {
                     setActiveTab('new')
                 }
                 hasLoadedInitialRef.current = true
@@ -116,6 +142,54 @@ export default function ImageGenClient({ projects }: { projects?: ProjectMini[] 
         } finally {
             setIsLoadingTemplates(false)
         }
+    }
+
+    const loadImages = async (page = 1) => {
+        setIsLoadingImages(true)
+        try {
+            const res = await fetch(`/api/images?page=${page}`)
+            const data = await res.json()
+            if (res.ok) {
+                setSavedImages(data.images || [])
+                setImagePage(data.page || 1)
+                setImageTotalPages(data.totalPages || 1)
+            } else {
+                console.error(data.error)
+            }
+        } catch (err) {
+            console.error(err)
+        } finally {
+            setIsLoadingImages(false)
+        }
+    }
+
+    const handleDeleteImage = async (id: string) => {
+        setIsDeletingImageId(id)
+        try {
+            const res = await fetch(`/api/images/${id}`, { method: 'DELETE' })
+            if (res.ok) {
+                setSavedImages(prev => prev.filter(img => img.id !== id))
+                setImageDeleteConfirmId(null)
+            } else {
+                const data = await res.json()
+                setError(data.error || 'Failed to delete image')
+            }
+        } catch (err: any) {
+            setError(err.message || 'Failed to delete image')
+        } finally {
+            setIsDeletingImageId(null)
+        }
+    }
+
+    const handleGenerateSimilar = (prompt: string, negPrompt?: string) => {
+        // Directly fill in the prompts — skip the Gemini build step
+        setPositivePrompt(prompt || '')
+        setNegativePrompt(negPrompt || '')
+        setDescription(prompt || '')
+        setGeneratedImageUrl(null)
+        setGenerationError(null)
+        setIsPromptsOpen(true)
+        setActiveTab('new')
     }
 
     const handleBuildPrompt = async (e: React.FormEvent) => {
@@ -156,12 +230,106 @@ export default function ImageGenClient({ projects }: { projects?: ProjectMini[] 
 
             setPositivePrompt(buildData.positivePrompt || '')
             setNegativePrompt(buildData.negativePrompt || '')
+            setGeneratedImageUrl(null) // Reset previous image
+            setGenerationError(null)
+            setIsPromptsOpen(true) // Open prompts when new one is built
 
         } catch (err: any) {
             setError(err.message || 'An error occurred')
         } finally {
             setIsBuilding(false)
         }
+    }
+
+    const pollStatus = (jobId: string, finalUrl: string) => {
+        const startTime = Date.now()
+        const TIMEOUT_MS = 60000 // 60 seconds max
+
+        const interval = setInterval(async () => {
+            // Check for timeout
+            if (Date.now() - startTime > TIMEOUT_MS) {
+                clearInterval(interval)
+                setGenerationError('Generation timed out. Please try again.')
+                setIsGeneratingImage(false)
+                return
+            }
+
+            try {
+                const res = await fetch(`/api/ai/generate-image/status?jobId=${jobId}`)
+                if (!res.ok) throw new Error('Failed to fetch status')
+                
+                const data = await res.json()
+                setGenerationStatus(data.status)
+
+                if (data.status === 'COMPLETED') {
+                    clearInterval(interval)
+                    setGeneratedImageUrl(finalUrl)
+                    setIsGeneratingImage(false)
+                } else if (data.status === 'FAILED') {
+                    clearInterval(interval)
+                    setGenerationError(data.error || 'Generation failed')
+                    setIsGeneratingImage(false)
+                }
+            } catch (err: any) {
+                console.error('Polling error:', err)
+                clearInterval(interval)
+                setGenerationError(err.message)
+                setIsGeneratingImage(false)
+            }
+        }, 2000)
+    }
+
+    const handleGenerateImage = async () => {
+        try {
+            setIsGeneratingImage(true)
+            setIsPromptsOpen(false)
+            setGenerationStatus('Initializing...')
+            setGenerationError(null)
+            setGeneratedImageUrl(null)
+            setLastJobId(null)
+
+            const res = await fetch('/api/ai/generate-image/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    description, 
+                    context: selectedProject ? `Project Name: ${selectedProject.name}. Tone: ${selectedProject.toneStyle || 'None'}` : 'None', 
+                    category, 
+                    tags: selectedTags,
+                    projectId: selectedProjectId || undefined,
+                    positivePrompt,
+                    negativePrompt
+                })
+            })
+
+            if (!res.ok) {
+                const data = await res.json()
+                throw new Error(data.error || 'Failed to start generation')
+            }
+
+            const { jobId, imageUrl: predictedUrl } = await res.json()
+            
+            setLastJobId(jobId)
+            setGenerationStatus('IN_PROGRESS')
+            pollStatus(jobId, predictedUrl)
+
+        } catch (err: any) {
+            setGenerationError(err.message)
+            setIsGeneratingImage(false)
+            setGenerationStatus(null)
+        }
+    }
+
+    const handleRegenerate = async () => {
+        if (lastJobId) {
+            try {
+                // Delete the previous generation from DB instantly
+                await fetch(`/api/images/by-job?jobId=${lastJobId}`, { method: 'DELETE' })
+            } catch (err) {
+                console.error('Failed to delete previous job', err)
+            }
+        }
+        handleGenerateImage()
     }
 
     const handleSaveTemplate = async () => {
@@ -523,27 +691,50 @@ export default function ImageGenClient({ projects }: { projects?: ProjectMini[] 
 
                                         {!isBuilding && positivePrompt && (
                                             <>
-                                                <div className="space-y-2">
-                                                    <label className="text-sm font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-2">
-                                                        <Sparkles className="w-4 h-4 text-indigo-500" />
-                                                        {t('positivePrompt')}
-                                                    </label>
-                                                    <div className="w-full bg-white dark:bg-card border border-indigo-100 dark:border-indigo-500/20 rounded-xl p-4 text-sm leading-relaxed shadow-inner">
-                                                        {positivePrompt}
-                                                    </div>
-                                                </div>
+                                                <div className="bg-surface/50 rounded-xl border border-card-border overflow-hidden">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setIsPromptsOpen(!isPromptsOpen)}
+                                                        className="w-full flex items-center justify-between p-4 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                                                    >
+                                                        <span className="font-bold text-sm flex items-center gap-2 text-foreground">
+                                                            <Sparkles className="w-4 h-4 text-indigo-500" />
+                                                            {t('positivePrompt')} & {t('negativePrompt')}
+                                                        </span>
+                                                        <ChevronDown className={twMerge("w-4 h-4 text-muted-text transition-transform duration-200", isPromptsOpen ? "rotate-180" : "")} />
+                                                    </button>
+                                                    
+                                                    <div className={twMerge(
+                                                        "grid transition-all duration-300 ease-in-out",
+                                                        isPromptsOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                                                    )}>
+                                                        <div className="min-h-0 overflow-hidden">
+                                                            <div className="p-4 pt-0 space-y-4">
+                                                                <div className="space-y-2">
+                                                                    <label className="text-sm font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-2">
+                                                                        <Sparkles className="w-4 h-4 text-indigo-500" />
+                                                                        {t('positivePrompt')}
+                                                                    </label>
+                                                                    <div className="w-full bg-white dark:bg-card border border-indigo-100 dark:border-indigo-500/20 rounded-xl p-4 text-sm leading-relaxed shadow-inner">
+                                                                        {positivePrompt}
+                                                                    </div>
+                                                                </div>
 
-                                                {negativePrompt && (
-                                                    <div className="space-y-2">
-                                                        <label className="text-sm font-bold text-rose-900 dark:text-rose-300 flex items-center gap-2">
-                                                            <AlertCircle className="w-4 h-4 text-rose-500" />
-                                                            {t('negativePrompt')}
-                                                        </label>
-                                                        <div className="w-full bg-white dark:bg-card border border-rose-100 dark:border-rose-500/20 rounded-xl p-4 text-sm leading-relaxed shadow-inner">
-                                                            {negativePrompt}
+                                                                {negativePrompt && (
+                                                                    <div className="space-y-2">
+                                                                        <label className="text-sm font-bold text-rose-900 dark:text-rose-300 flex items-center gap-2">
+                                                                            <AlertCircle className="w-4 h-4 text-rose-500" />
+                                                                            {t('negativePrompt')}
+                                                                        </label>
+                                                                        <div className="w-full bg-white dark:bg-card border border-rose-100 dark:border-rose-500/20 rounded-xl p-4 text-sm leading-relaxed shadow-inner">
+                                                                            {negativePrompt}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                )}
+                                                </div>
 
                                                 <div className="pt-4 border-t border-indigo-100 dark:border-indigo-500/20 flex flex-col gap-3">
                                                     <div className="flex gap-2">
@@ -567,13 +758,50 @@ export default function ImageGenClient({ projects }: { projects?: ProjectMini[] 
 
                                                     <button
                                                         type="button"
-                                                        disabled={true}
+                                                        onClick={handleGenerateImage}
+                                                        disabled={isGeneratingImage || isBuilding}
                                                         className="w-full px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold rounded-xl shadow-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                                     >
-                                                        <ImageIcon className="w-4 h-4" />
-                                                        {t('generateImage')}
+                                                        {isGeneratingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+                                                        {isGeneratingImage ? `Generating (${generationStatus})...` : t('generateImage')}
                                                     </button>
                                                 </div>
+
+                                                {generationError && (
+                                                    <div className="text-sm text-red-500 mt-2 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-800">
+                                                        {generationError}
+                                                    </div>
+                                                )}
+
+                                                {generatedImageUrl && (
+                                                    <div className="mt-6 flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-500">
+                                                        <div className="rounded-xl overflow-hidden border border-card-border shadow-lg bg-surface">
+                                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                            <img src={generatedImageUrl} alt="Generated output" className="w-full h-auto object-cover" />
+                                                        </div>
+                                                        <div className="flex gap-3">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setGeneratedImageUrl(null)
+                                                                    setActiveTab('image-library')
+                                                                }}
+                                                                className="flex-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2"
+                                                            >
+                                                                <CheckCircle2 className="w-4 h-4" /> Approve
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={handleRegenerate}
+                                                                disabled={isGeneratingImage}
+                                                                className="flex-1 px-4 py-2.5 bg-surface border border-card-border hover:bg-gray-50 dark:hover:bg-surface/80 text-foreground font-bold rounded-xl shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                                                            >
+                                                                {isGeneratingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                                                                Regenerate
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </>
                                         )}
                                     </div>
@@ -755,19 +983,139 @@ export default function ImageGenClient({ projects }: { projects?: ProjectMini[] 
                             </table>
                         </div>
                     )}
+                    {/* Pagination for Prompt Library */}
+                    {!isLoadingTemplates && savedTemplates.length > 0 && templateTotalPages > 1 && (
+                        <div className="flex items-center justify-between px-6 py-4 border-t border-card-border">
+                            <p className="text-xs text-muted-text">Page {templatePage} of {templateTotalPages}</p>
+                            <div className="flex gap-1.5">
+                                <button
+                                    disabled={templatePage <= 1}
+                                    onClick={() => { setTemplatePage(p => p - 1); loadTemplates(templatePage - 1) }}
+                                    className="p-2 rounded-lg border border-card-border bg-surface hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    <ChevronLeft className="w-4 h-4" />
+                                </button>
+                                <button
+                                    disabled={templatePage >= templateTotalPages}
+                                    onClick={() => { setTemplatePage(p => p + 1); loadTemplates(templatePage + 1) }}
+                                    className="p-2 rounded-lg border border-card-border bg-surface hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    <ChevronRight className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
             {/* ─── IMAGE LIBRARY TAB ──────────────────────────────────────── */}
             {activeTab === 'image-library' && (
-                <div className="bg-card border border-card-border rounded-2xl p-16 flex flex-col items-center justify-center text-center shadow-sm">
-                    <div className="w-20 h-20 bg-surface rounded-full flex items-center justify-center mb-5">
-                        <ImageIcon className="w-10 h-10 text-muted-text opacity-30" />
-                    </div>
-                    <h3 className="text-xl font-bold text-foreground">{t('imageLibraryPlaceholderTitle')}</h3>
-                    <p className="text-sm text-muted-text mt-2 max-w-sm">
-                        {t('imageLibraryDesc')}
-                    </p>
+                <div className="space-y-6 animate-in slide-in-from-bottom-4 fade-in duration-300">
+                    {isLoadingImages ? (
+                        <div className="flex justify-center p-12">
+                            <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+                        </div>
+                    ) : savedImages.length === 0 ? (
+                        <div className="bg-card border border-card-border rounded-2xl p-16 flex flex-col items-center justify-center text-center shadow-sm">
+                            <div className="w-20 h-20 bg-surface rounded-full flex items-center justify-center mb-5">
+                                <ImageIcon className="w-10 h-10 text-muted-text opacity-30" />
+                            </div>
+                            <h3 className="text-xl font-bold text-foreground">{t('imageLibraryPlaceholderTitle')}</h3>
+                            <p className="text-sm text-muted-text mt-2 max-w-sm">
+                                {t('imageLibraryDesc')}
+                            </p>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                {savedImages.map(image => (
+                                    <div key={image.id} className="group relative bg-card rounded-xl border border-card-border overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col">
+                                        <div className="aspect-square bg-surface relative overflow-hidden">
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img 
+                                                src={image.url} 
+                                                alt="AI Generated" 
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-3 gap-2">
+                                                <button 
+                                                    onClick={() => handleGenerateSimilar(image.prompt || '', image.negativePrompt || '')}
+                                                    className="px-3 py-1.5 bg-white/90 hover:bg-white text-gray-900 text-[11px] font-bold rounded-lg backdrop-blur-sm transition-colors flex items-center gap-1.5 shadow-md"
+                                                    title="Generate Similar"
+                                                >
+                                                    <RefreshCw className="w-3.5 h-3.5" />
+                                                    Similar
+                                                </button>
+                                                {imageDeleteConfirmId === image.id ? (
+                                                    <div className="flex gap-1">
+                                                        <button
+                                                            onClick={() => handleDeleteImage(image.id)}
+                                                            disabled={isDeletingImageId === image.id}
+                                                            className="px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white text-[11px] font-bold rounded-lg transition-colors flex items-center gap-1"
+                                                        >
+                                                            {isDeletingImageId === image.id ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                                                            Confirm
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setImageDeleteConfirmId(null)}
+                                                            className="p-1.5 bg-white/80 hover:bg-white text-gray-700 rounded-lg transition-colors"
+                                                        >
+                                                            <X className="w-3 h-3" />
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <button 
+                                                        onClick={() => setImageDeleteConfirmId(image.id)}
+                                                        className="p-1.5 bg-white/90 hover:bg-red-50 text-red-600 rounded-lg backdrop-blur-sm transition-colors shadow-md"
+                                                        title="Delete"
+                                                    >
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="p-3 bg-card border-t border-card-border">
+                                            <div className="flex items-center justify-between">
+                                                <p className="text-[10px] text-muted-text">
+                                                    {new Date(image.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                                                </p>
+                                                {image.project ? (
+                                                    <span className="text-[10px] font-bold text-purple-600 bg-purple-50 dark:bg-purple-500/10 border border-purple-100 dark:border-purple-500/20 px-2 py-0.5 rounded-md truncate max-w-[100px]">
+                                                        {image.project.name}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-[10px] text-muted-text">General</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Pagination for Image Library */}
+                            {imageTotalPages > 1 && (
+                                <div className="flex items-center justify-between bg-card border border-card-border rounded-xl px-5 py-3">
+                                    <p className="text-xs text-muted-text">Page {imagePage} of {imageTotalPages}</p>
+                                    <div className="flex gap-1.5">
+                                        <button
+                                            disabled={imagePage <= 1}
+                                            onClick={() => { setImagePage(p => p - 1); loadImages(imagePage - 1) }}
+                                            className="p-2 rounded-lg border border-card-border bg-surface hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            <ChevronLeft className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            disabled={imagePage >= imageTotalPages}
+                                            onClick={() => { setImagePage(p => p + 1); loadImages(imagePage + 1) }}
+                                            className="p-2 rounded-lg border border-card-border bg-surface hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            <ChevronRight className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
                 </div>
             )}
 
