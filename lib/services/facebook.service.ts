@@ -215,52 +215,86 @@ export const facebookService = {
      * Fetch insights for a published IG Media.
      */
     async getMediaInsights(mediaId: string, accessToken: string): Promise<{ views: number, reach: number, saves: number, likes: number } | null> {
-        return getCached(`meta:mediaInsights:${mediaId}`, async () => {
+        const cacheKey = `meta:mediaInsights:${mediaId}`
+
+        // Manual cache check — we can't use getCached because we need to
+        // conditionally skip caching when all metrics are zero.
+        if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
             try {
-                // 1. Fetch basic media fields (likes)
-                const basicRes = await graphApi.get(`/${mediaId}`, {
-                    params: {
-                        fields: 'like_count',
-                        access_token: accessToken,
-                    }
-                })
-                const likes = basicRes.data.like_count || 0
-
-                // 2. Fetch insights (Graph API v22.0 replaces plays/impressions with unified 'views')
-                const response = await graphApi.get(`/${mediaId}/insights`, {
-                    params: {
-                        metric: 'reach,saved,views',
-                        access_token: accessToken,
-                    }
-                })
-
-                const data = response.data.data
-                if (!data || !Array.isArray(data)) return null
-
-                let views = 0
-                let reach = 0
-                let saves = 0
-
-                for (const metric of data) {
-                    const value = typeof metric.value === 'number' ? metric.value : (metric.values?.[0]?.value || 0)
-                    if (metric.name === 'views') views = value
-                    if (metric.name === 'reach') reach = value
-                    if (metric.name === 'saved') saves = value
+                const { redis } = await import('@/lib/redis')
+                const cached = await redis.get<{ v: { views: number, reach: number, saves: number, likes: number } | null }>(cacheKey)
+                if (cached !== null) {
+                    console.log(`[Redis Cache Hit] Key: ${cacheKey}`)
+                    return cached.v
                 }
-
-                return { views, reach, saves, likes }
-            } catch (error: any) {
-                const fbError = error.response?.data?.error
-                if (fbError?.code === 100 && fbError?.error_subcode === 33) {
-                    // Media likely deleted on Instagram or unsupported media type (e.g., expired story)
-                    // Suppressing full error stack to avoid terminal noise
-                    console.warn(`[FacebookService] Media ${mediaId} not found or unsupported (likely deleted on IG).`)
-                } else {
-                    console.error(`[FacebookService] Failed to fetch insights for media ${mediaId}:`, error.response?.data || error.message)
-                }
-                return null
+            } catch (e) {
+                console.warn(`[Redis Cache Error] Key: ${cacheKey}`, e)
             }
-        }, 600) // Cache for 10 minutes
+        }
+
+        try {
+            // 1. Fetch basic media fields (likes)
+            const basicRes = await graphApi.get(`/${mediaId}`, {
+                params: {
+                    fields: 'like_count',
+                    access_token: accessToken,
+                }
+            })
+            const likes = basicRes.data.like_count || 0
+
+            // 2. Fetch insights (Graph API v22.0 replaces plays/impressions with unified 'views')
+            const response = await graphApi.get(`/${mediaId}/insights`, {
+                params: {
+                    metric: 'reach,saved,views',
+                    access_token: accessToken,
+                }
+            })
+
+            const data = response.data.data
+            if (!data || !Array.isArray(data)) return null
+
+            let views = 0
+            let reach = 0
+            let saves = 0
+
+            for (const metric of data) {
+                const value = typeof metric.value === 'number' ? metric.value : (metric.values?.[0]?.value || 0)
+                if (metric.name === 'views') views = value
+                if (metric.name === 'reach') reach = value
+                if (metric.name === 'saved') saves = value
+            }
+
+            const result = { views, reach, saves, likes }
+
+            // Don't cache all-zero insights — the post was likely just published
+            // and Instagram hasn't computed real metrics yet. Skipping the cache
+            // lets the next cron invocation re-fetch and pick up actual data.
+            if (views === 0 && reach === 0 && saves === 0 && likes === 0) {
+                console.log(`[FacebookService] Skipping cache for media ${mediaId} — all metrics are zero (likely too fresh).`)
+                return result
+            }
+
+            // Cache non-zero results for 10 minutes
+            if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+                try {
+                    const { redis } = await import('@/lib/redis')
+                    await redis.set(cacheKey, { v: result }, { ex: 600 })
+                } catch (e) {
+                    console.warn(`[Redis Cache Error] Key: ${cacheKey}`, e)
+                }
+            }
+
+            return result
+        } catch (error: any) {
+            const fbError = error.response?.data?.error
+            if (fbError?.code === 100 && fbError?.error_subcode === 33) {
+                // Media likely deleted on Instagram or unsupported media type (e.g., expired story)
+                console.warn(`[FacebookService] Media ${mediaId} not found or unsupported (likely deleted on IG).`)
+            } else {
+                console.error(`[FacebookService] Failed to fetch insights for media ${mediaId}:`, error.response?.data || error.message)
+            }
+            return null
+        }
     },
 
     /**

@@ -17,22 +17,37 @@ export async function GET(req: Request) {
     try {
         const userId = await requireAuth()
 
-        const templates = await prisma.promptTemplate.findMany({
-            where: {
-                OR: [
-                    { userId: userId },
-                    { isSystem: true }
-                ]
-            },
-            include: {
-                project: {
-                    select: { id: true, name: true }
-                }
-            },
-            orderBy: { updatedAt: 'desc' }
-        })
+        const { searchParams } = new URL(req.url)
+        const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
+        const pageSize = 10
 
-        return apiSuccess(templates)
+        const where = {
+            OR: [
+                { userId: userId },
+                { isSystem: true }
+            ]
+        }
+
+        const [templates] = await Promise.all([
+            prisma.promptTemplate.findMany({
+                where,
+                include: {
+                    project: {
+                        select: { id: true, name: true }
+                    }
+                },
+                orderBy: { updatedAt: 'desc' },
+                skip: (page - 1) * pageSize,
+                take: pageSize,
+            }),
+        ])
+
+        return apiSuccess({
+            templates,
+            total: templates.length,
+            page,
+            totalPages: Math.ceil(templates.length / pageSize),
+        })
     } catch (error: any) {
         if (error?.isAuthError) return apiError("Unauthorized", 401)
         console.error('[GET /api/prompts/saved]', error)

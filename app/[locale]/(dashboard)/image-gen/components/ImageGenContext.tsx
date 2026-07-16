@@ -1,0 +1,572 @@
+'use client'
+
+import React, { createContext, useContext, useState, useRef, useEffect, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
+
+export const DEFAULT_CATEGORIES = ['Photography', 'Digital Art', 'Anime/Manga', '3D Render', 'Painting', 'Illustration']
+export const DEFAULT_TAGS = ['4k resolution', 'highly detailed', 'cinematic lighting', 'vibrant colors', 'dark & moody', 'macro photography', 'cyberpunk', 'fantasy']
+
+export interface ProjectMini {
+    id: string
+    name: string
+    connectedAccountId?: string
+    customPromptNotes?: string | null
+    description?: string | null
+    toneStyle?: string | null
+}
+
+export interface PromptTemplate {
+    id: string
+    userId: string
+    name: string
+    description?: string | null
+    category?: string | null
+    tags: string[]
+    positivePrompt: string
+    negativePrompt?: string | null
+    isSystem: boolean
+    projectId?: string | null
+    project?: { id: string; name: string } | null
+    createdAt: string
+    updatedAt: string
+}
+
+export interface ImageGenContextType {
+    activeTab: 'new' | 'library' | 'image-library'
+    setActiveTab: (tab: 'new' | 'library' | 'image-library') => void
+    projects?: ProjectMini[]
+    
+    // New Prompt State
+    description: string
+    setDescription: (val: string) => void
+    category: string
+    setCategory: (val: string) => void
+    isCustomCategory: boolean
+    setIsCustomCategory: (val: boolean) => void
+    selectedTags: string[]
+    setSelectedTags: React.Dispatch<React.SetStateAction<string[]>>
+    customTagInput: string
+    setCustomTagInput: (val: string) => void
+    selectedProjectId: string
+    setSelectedProjectId: (val: string) => void
+    isAdvancedSettingsOpen: boolean
+    setIsAdvancedSettingsOpen: (val: boolean) => void
+
+    // Building State
+    isBuilding: boolean
+    error: string | null
+    setError: (val: string | null) => void
+    successMessage: string | null
+    setSuccessMessage: (val: string | null) => void
+
+    // Result State
+    positivePrompt: string
+    setPositivePrompt: (val: string) => void
+    negativePrompt: string
+    setNegativePrompt: (val: string) => void
+
+    // Saved Prompts State
+    savedTemplates: PromptTemplate[]
+    isLoadingTemplates: boolean
+    templateName: string
+    setTemplateName: (val: string) => void
+    isSavingTemplate: boolean
+    templatePage: number
+    setTemplatePage: React.Dispatch<React.SetStateAction<number>>
+    templateTotalPages: number
+    selectedTemplate: PromptTemplate | null
+    setSelectedTemplate: (val: PromptTemplate | null) => void
+    isDeletingId: string | null
+    deleteConfirmId: string | null
+    setDeleteConfirmId: (val: string | null) => void
+
+    // Saved Images State
+    savedImages: any[]
+    isLoadingImages: boolean
+    imagePage: number
+    setImagePage: React.Dispatch<React.SetStateAction<number>>
+    imageTotalPages: number
+    imageDeleteConfirmId: string | null
+    setImageDeleteConfirmId: (val: string | null) => void
+    isDeletingImageId: string | null
+
+    // Image Generation State
+    isGeneratingImage: boolean
+    generationStatus: string | null
+    generatedImageUrl: string | null
+    setGeneratedImageUrl: (val: string | null) => void
+    generationError: string | null
+    isPromptsOpen: boolean
+    setIsPromptsOpen: (val: boolean) => void
+    lastJobId: string | null
+
+    // Functions
+    loadTemplates: (page?: number) => Promise<void>
+    loadImages: (page?: number) => Promise<void>
+    handleDeleteImage: (id: string) => Promise<void>
+    handleGenerateSimilar: (prompt: string, negPrompt?: string) => void
+    handleBuildPrompt: (e: React.FormEvent) => Promise<void>
+    handleGenerateImage: () => Promise<void>
+    handleRegenerate: () => Promise<void>
+    handleSaveTemplate: () => Promise<void>
+    handleDeleteTemplate: (id: string) => Promise<void>
+    handleUseTemplate: (template: any) => void
+    resetForm: () => void
+}
+
+const ImageGenContext = createContext<ImageGenContextType | null>(null)
+
+export function ImageGenProvider({ children, projects }: { children: React.ReactNode, projects?: ProjectMini[] }) {
+    const t = useTranslations('ImageGen')
+
+    const [activeTab, setActiveTab] = useState<'new' | 'library' | 'image-library'>('library')
+
+    // New Prompt State
+    const [description, setDescription] = useState('')
+    const [category, setCategory] = useState('')
+    const [isCustomCategory, setIsCustomCategory] = useState(false)
+    const [selectedTags, setSelectedTags] = useState<string[]>([])
+    const [customTagInput, setCustomTagInput] = useState('')
+    const [selectedProjectId, setSelectedProjectId] = useState<string>('')
+    const [isAdvancedSettingsOpen, setIsAdvancedSettingsOpen] = useState(false)
+
+    // Building State
+    const [isBuilding, setIsBuilding] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+    const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
+    // Result State
+    const [positivePrompt, setPositivePrompt] = useState('')
+    const [negativePrompt, setNegativePrompt] = useState('')
+
+    // Saved Prompts State
+    const [savedTemplates, setSavedTemplates] = useState<PromptTemplate[]>([])
+    const [isLoadingTemplates, setIsLoadingTemplates] = useState(false)
+    const [templateName, setTemplateName] = useState('')
+    const [isSavingTemplate, setIsSavingTemplate] = useState(false)
+    const [templatePage, setTemplatePage] = useState(1)
+    const [templateTotalPages, setTemplateTotalPages] = useState(1)
+    const [selectedTemplate, setSelectedTemplate] = useState<PromptTemplate | null>(null)
+    const [isDeletingId, setIsDeletingId] = useState<string | null>(null)
+    const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+
+    // Saved Images State
+    const [savedImages, setSavedImages] = useState<any[]>([])
+    const [isLoadingImages, setIsLoadingImages] = useState(false)
+    const [imagePage, setImagePage] = useState(1)
+    const [imageTotalPages, setImageTotalPages] = useState(1)
+    const [imageDeleteConfirmId, setImageDeleteConfirmId] = useState<string | null>(null)
+    const [isDeletingImageId, setIsDeletingImageId] = useState<string | null>(null)
+
+    // Image Generation State
+    const [isGeneratingImage, setIsGeneratingImage] = useState(false)
+    const [generationStatus, setGenerationStatus] = useState<string | null>(null)
+    const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null)
+    const [generationError, setGenerationError] = useState<string | null>(null)
+    const [isPromptsOpen, setIsPromptsOpen] = useState(true)
+    const [lastJobId, setLastJobId] = useState<string | null>(null)
+
+    const hasLoadedInitialRef = useRef(false)
+
+    const loadTemplates = useCallback(async (page = 1) => {
+        setIsLoadingTemplates(true)
+        try {
+            const res = await fetch(`/api/prompts/saved?page=${page}`)
+            const data = await res.json()
+            if (res.ok) {
+                setSavedTemplates(data.templates || [])
+                setTemplatePage(data.page || 1)
+                setTemplateTotalPages(data.totalPages || 1)
+                if (!hasLoadedInitialRef.current && (!data.templates || data.templates.length === 0)) {
+                    setActiveTab('new')
+                }
+                hasLoadedInitialRef.current = true
+            } else {
+                console.error(data.error)
+            }
+        } catch (err) {
+            console.error(err)
+        } finally {
+            setIsLoadingTemplates(false)
+        }
+    }, [])
+
+    const loadImages = useCallback(async (page = 1) => {
+        setIsLoadingImages(true)
+        try {
+            const res = await fetch(`/api/images?page=${page}`)
+            const data = await res.json()
+            if (res.ok) {
+                setSavedImages(data.images || [])
+                setImagePage(data.page || 1)
+                setImageTotalPages(data.totalPages || 1)
+            } else {
+                console.error(data.error)
+            }
+        } catch (err) {
+            console.error(err)
+        } finally {
+            setIsLoadingImages(false)
+        }
+    }, [])
+
+    useEffect(() => {
+        if (activeTab === 'library') {
+            loadTemplates(templatePage)
+        } else if (activeTab === 'image-library') {
+            loadImages(imagePage)
+        }
+    }, [activeTab, loadTemplates, loadImages, templatePage, imagePage])
+
+    const handleDeleteImage = async (id: string) => {
+        setIsDeletingImageId(id)
+        try {
+            const res = await fetch(`/api/images/${id}`, { method: 'DELETE' })
+            if (res.ok) {
+                setSavedImages(prev => prev.filter(img => img.id !== id))
+                setImageDeleteConfirmId(null)
+            } else {
+                const data = await res.json()
+                setError(data.error || 'Failed to delete image')
+            }
+        } catch (err: any) {
+            setError(err.message || 'Failed to delete image')
+        } finally {
+            setIsDeletingImageId(null)
+        }
+    }
+
+    const handleGenerateSimilar = (prompt: string, negPrompt?: string) => {
+        setPositivePrompt(prompt || '')
+        setNegativePrompt(negPrompt || '')
+        setDescription(prompt || '')
+        setGeneratedImageUrl(null)
+        setGenerationError(null)
+        setIsPromptsOpen(true)
+        setActiveTab('new')
+    }
+
+    const handleBuildPrompt = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!description) return
+
+        setIsBuilding(true)
+        setError(null)
+        setSuccessMessage(null)
+        setIsAdvancedSettingsOpen(false)
+
+        let finalContext = ''
+        if (selectedProjectId && projects) {
+            const project = projects.find(p => p.id === selectedProjectId)
+            if (project) {
+                finalContext = `Project Name: ${project.name}. Description: ${project.description || 'None'}. Style/Tone: ${project.toneStyle || 'None'}. Notes: ${project.customPromptNotes || 'None'}`
+            }
+        }
+
+        try {
+            const buildRes = await fetch('/api/prompts/build', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    description,
+                    context: finalContext,
+                    category,
+                    tags: selectedTags
+                })
+            })
+
+            const buildData = await buildRes.json()
+            if (!buildRes.ok) throw new Error(buildData.error || 'Failed to build prompt')
+
+            if (buildData.fallback) {
+                setError(buildData.error || 'Failed to generate prompt. Showing fallback.')
+            }
+
+            setPositivePrompt(buildData.positivePrompt || '')
+            setNegativePrompt(buildData.negativePrompt || '')
+            setGeneratedImageUrl(null)
+            setGenerationError(null)
+            setIsPromptsOpen(true)
+        } catch (err: any) {
+            setError(err.message || 'An error occurred')
+        } finally {
+            setIsBuilding(false)
+        }
+    }
+
+    const pollStatus = (jobId: string, finalUrl: string) => {
+        const startTime = Date.now()
+        const TIMEOUT_MS = 60000
+
+        const interval = setInterval(async () => {
+            if (Date.now() - startTime > TIMEOUT_MS) {
+                clearInterval(interval)
+                setGenerationError('Generation timed out. Please try again.')
+                setIsGeneratingImage(false)
+                return
+            }
+
+            try {
+                const res = await fetch(`/api/ai/generate-image/status?jobId=${jobId}`)
+                if (!res.ok) throw new Error('Failed to fetch status')
+                
+                const data = await res.json()
+                setGenerationStatus(data.status)
+
+                if (data.status === 'COMPLETED') {
+                    clearInterval(interval)
+                    setGeneratedImageUrl(finalUrl)
+                    setIsGeneratingImage(false)
+                } else if (data.status === 'FAILED') {
+                    clearInterval(interval)
+                    setGenerationError(data.error || 'Generation failed')
+                    setIsGeneratingImage(false)
+                }
+            } catch (err: any) {
+                console.error('Polling error:', err)
+                clearInterval(interval)
+                setGenerationError(err.message)
+                setIsGeneratingImage(false)
+            }
+        }, 2000)
+    }
+
+    const handleGenerateImage = async () => {
+        try {
+            setIsGeneratingImage(true)
+            setIsPromptsOpen(false)
+            setGenerationStatus('Initializing...')
+            setGenerationError(null)
+            setGeneratedImageUrl(null)
+            setLastJobId(null)
+            
+            const selectedProject = projects?.find(p => p.id === selectedProjectId)
+
+            const res = await fetch('/api/ai/generate-image/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    description, 
+                    context: selectedProject ? `Project Name: ${selectedProject.name}. Tone: ${selectedProject.toneStyle || 'None'}` : 'None', 
+                    category, 
+                    tags: selectedTags,
+                    projectId: selectedProjectId || undefined,
+                    positivePrompt,
+                    negativePrompt
+                })
+            })
+
+            if (!res.ok) {
+                const data = await res.json()
+                throw new Error(data.error || 'Failed to start generation')
+            }
+
+            const { jobId, imageUrl: predictedUrl } = await res.json()
+            
+            setLastJobId(jobId)
+            setGenerationStatus('IN_PROGRESS')
+            pollStatus(jobId, predictedUrl)
+
+        } catch (err: any) {
+            setGenerationError(err.message)
+            setIsGeneratingImage(false)
+            setGenerationStatus(null)
+        }
+    }
+
+    const handleRegenerate = async () => {
+        if (lastJobId) {
+            try {
+                await fetch(`/api/images/by-job?jobId=${lastJobId}`, { method: 'DELETE' })
+            } catch (err) {
+                console.error('Failed to delete previous job', err)
+            }
+        }
+        handleGenerateImage()
+    }
+
+    const handleSaveTemplate = async () => {
+        if (!templateName || !positivePrompt) return
+
+        setIsSavingTemplate(true)
+        try {
+            const res = await fetch('/api/prompts/saved', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: templateName,
+                    description,
+                    category,
+                    tags: selectedTags,
+                    positivePrompt,
+                    negativePrompt,
+                    projectId: selectedProjectId || null,
+                })
+            })
+            const data = await res.json()
+            if (res.ok) {
+                setSuccessMessage(t('saveSuccess'))
+                setTemplateName('')
+                setDescription('')
+                setCategory('')
+                setIsCustomCategory(false)
+                setSelectedTags([])
+                setCustomTagInput('')
+                setPositivePrompt('')
+                setNegativePrompt('')
+                setActiveTab('library')
+            } else {
+                throw new Error(data.error || 'Failed to save template')
+            }
+        } catch (err: any) {
+            setError(err.message || 'Failed to save template')
+        } finally {
+            setIsSavingTemplate(false)
+        }
+    }
+
+    const handleDeleteTemplate = async (id: string) => {
+        setIsDeletingId(id)
+        try {
+            const res = await fetch(`/api/prompts/saved/${id}`, { method: 'DELETE' })
+            if (res.ok) {
+                setSavedTemplates(prev => prev.filter(t => t.id !== id))
+                if (selectedTemplate?.id === id) setSelectedTemplate(null)
+                setDeleteConfirmId(null)
+            } else {
+                const data = await res.json()
+                setError(data.error || 'Failed to delete template')
+            }
+        } catch (err: any) {
+            setError(err.message || 'Failed to delete template')
+        } finally {
+            setIsDeletingId(null)
+        }
+    }
+
+    const handleUseTemplate = (template: any) => {
+        setPositivePrompt(template.positivePrompt)
+        setNegativePrompt(template.negativePrompt || '')
+        setDescription(template.description || '')
+
+        const cat = template.category || ''
+        setCategory(cat)
+        if (cat && !DEFAULT_CATEGORIES.includes(cat)) {
+            setIsCustomCategory(true)
+        } else {
+            setIsCustomCategory(false)
+        }
+
+        setSelectedTags(template.tags || [])
+
+        if (template.projectId) {
+            setSelectedProjectId(template.projectId)
+        }
+
+        setActiveTab('new')
+        setSelectedTemplate(null)
+    }
+
+    const resetForm = () => {
+        setDescription('')
+        setCategory('')
+        setIsCustomCategory(false)
+        setSelectedTags([])
+        setCustomTagInput('')
+        setPositivePrompt('')
+        setNegativePrompt('')
+        setTemplateName('')
+        setSuccessMessage('')
+        setError('')
+    }
+
+    const value: ImageGenContextType = {
+        activeTab,
+        setActiveTab,
+        projects,
+        
+        description,
+        setDescription,
+        category,
+        setCategory,
+        isCustomCategory,
+        setIsCustomCategory,
+        selectedTags,
+        setSelectedTags,
+        customTagInput,
+        setCustomTagInput,
+        selectedProjectId,
+        setSelectedProjectId,
+        isAdvancedSettingsOpen,
+        setIsAdvancedSettingsOpen,
+
+        isBuilding,
+        error,
+        setError,
+        successMessage,
+        setSuccessMessage,
+
+        positivePrompt,
+        setPositivePrompt,
+        negativePrompt,
+        setNegativePrompt,
+
+        savedTemplates,
+        isLoadingTemplates,
+        templateName,
+        setTemplateName,
+        isSavingTemplate,
+        templatePage,
+        setTemplatePage,
+        templateTotalPages,
+        selectedTemplate,
+        setSelectedTemplate,
+        isDeletingId,
+        deleteConfirmId,
+        setDeleteConfirmId,
+
+        savedImages,
+        isLoadingImages,
+        imagePage,
+        setImagePage,
+        imageTotalPages,
+        imageDeleteConfirmId,
+        setImageDeleteConfirmId,
+        isDeletingImageId,
+
+        isGeneratingImage,
+        generationStatus,
+        generatedImageUrl,
+        setGeneratedImageUrl,
+        generationError,
+        isPromptsOpen,
+        setIsPromptsOpen,
+        lastJobId,
+
+        loadTemplates,
+        loadImages,
+        handleDeleteImage,
+        handleGenerateSimilar,
+        handleBuildPrompt,
+        handleGenerateImage,
+        handleRegenerate,
+        handleSaveTemplate,
+        handleDeleteTemplate,
+        handleUseTemplate,
+        resetForm
+    }
+
+    return (
+        <ImageGenContext.Provider value={value}>
+            {children}
+        </ImageGenContext.Provider>
+    )
+}
+
+export function useImageGen() {
+    const context = useContext(ImageGenContext)
+    if (!context) {
+        throw new Error('useImageGen must be used within an ImageGenProvider')
+    }
+    return context
+}

@@ -156,7 +156,7 @@ model Project {
   accountId                    String?
   patternCaches                PatternCache[]
   posts                        Post[]
-  connectedAccount             ConnectedAccount? @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  connectedAccount             ConnectedAccount? @relation(fields: [accountId], references: [id], onDelete: SetNull)
   user                         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   images                       ProjectImage[]
   promptTemplates              PromptTemplate[]
@@ -167,13 +167,16 @@ model Project {
 
 model ProjectImage {
   id          String   @id @default(cuid())
-  projectId   String
+  projectId   String?
   userId      String
   url         String
   storagePath String
   fileName    String
+  prompt      String?
+  negativePrompt String?
+  source      String   @default("AI_GENERATED")
   createdAt   DateTime @default(now())
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project     Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([projectId])

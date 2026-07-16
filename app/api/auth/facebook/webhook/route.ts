@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { automationService } from '@/lib/services/automation.service'
+import { rateLimit } from '@/lib/redis'
 
 // Handle Facebook Webhook Verification
 export async function GET(req: Request) {
@@ -10,7 +11,12 @@ export async function GET(req: Request) {
     const challenge = url.searchParams.get('hub.challenge')
 
     // Webhook verification token setup in Facebook App Dashboard -> Webhooks
-    const verifyToken = process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN || 'insta_auto_webhook_verify'
+    const verifyToken = process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN
+    
+    if (!verifyToken) {
+        console.error('[FacebookWebhook] FACEBOOK_WEBHOOK_VERIFY_TOKEN is missing in environment variables.')
+        return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+    }
 
     if (mode === 'subscribe' && token === verifyToken) {
         console.log('[FacebookWebhook] Verification successful')
@@ -20,16 +26,18 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 }
 
-// Handle Facebook Webhook Events
-// NOTE on signature verification:
-// The HMAC-SHA256 signature is computed by Meta using the App Secret from the
-// Facebook Developer Dashboard. If FACEBOOK_APP_SECRET in .env doesn't match
-// the value in Dashboard > Settings > Basic > App Secret, verification will fail.
-// During development with a regenerated secret or test app, update the .env value.
-// In production, ensure FACEBOOK_APP_SECRET is set correctly in your hosting env vars.
 export async function POST(req: Request) {
     try {
-        const facebookAppSecret = process.env.FACEBOOK_APP_SECRET
+        // Rate limit: 200 requests per 60 seconds per IP
+        const ip = req.headers.get('x-forwarded-for') || 'unknown-ip'
+        const allowed = await rateLimit(`fb-webhook:${ip}`, 200, 60)
+        
+        if (!allowed) {
+            console.warn(`[FacebookWebhook] Rate limit exceeded for IP: ${ip}`)
+            return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+        }
+
+        const facebookAppSecret = process.env.INSTAGRAM_APP_SECRET
         const arrayBuffer = await req.arrayBuffer()
         const buffer = Buffer.from(arrayBuffer)
         const signature = req.headers.get('x-hub-signature-256')
@@ -45,9 +53,8 @@ export async function POST(req: Request) {
             .digest('hex')}`
 
         if (signature !== expectedSignature) {
-            console.warn('[FacebookWebhook] Signature mismatch — verify FACEBOOK_APP_SECRET matches Meta Dashboard')
-            // Temporarily allow through for debugging as requested
-            // return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
+            console.warn('[FacebookWebhook] Signature mismatch — verify INSTAGRAM_APP_SECRET matches Meta Dashboard')
+            return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
         }
 
         const payload = JSON.parse(buffer.toString('utf8'))
