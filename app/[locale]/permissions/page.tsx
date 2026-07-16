@@ -1,4 +1,4 @@
-import PermissionsDisclosure from '@/components/PermissionsDisclosure'
+import PermissionsDisclosure from '@/app/components/PermissionsDisclosure'
 import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
 import { ArrowLeft } from 'lucide-react'

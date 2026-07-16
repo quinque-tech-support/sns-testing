@@ -15,6 +15,13 @@ export default async function AccountPage(props: { searchParams: Promise<{ [key:
     const connectedAccounts = await prisma.connectedAccount.findMany({
         where: { userId: userId },
         orderBy: { createdAt: 'desc' },
+        select: {
+            id: true,
+            username: true,
+            profilePictureUrl: true,
+            tokenExpiry: true,
+            createdAt: true,
+        },
     })
 
     return <AccountClient connectedAccounts={connectedAccounts} error={error} success={success} />

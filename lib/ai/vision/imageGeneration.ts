@@ -72,7 +72,7 @@ export async function startGenerationJob(options: StartGenerationOptions) {
         createdAt: Date.now(),
     }, { ex: 3600 });
 
-    const baseUrl = process.env.APP_URL || process.env.AUTH_URL || 'http://localhost:3000';
+    const baseUrl = process.env.APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000';
     const workerUrl = `${baseUrl}/api/ai/generate-image/worker`;
     
     const payload = {
@@ -134,7 +134,7 @@ export async function executeGenerationWorker(payload: { jobId: string, prompt: 
     console.log(`[Worker] Image uploaded successfully for job ${jobId}`);
 
     // Trigger webhook
-    const baseUrl = process.env.APP_URL || process.env.AUTH_URL || 'http://localhost:3000';
+    const baseUrl = process.env.APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000';
     const webhookUrl = `${baseUrl}/api/ai/generate-image/webhook`;
     await fetch(webhookUrl, {
         method: 'POST',
@@ -154,7 +154,7 @@ export async function executeGenerationWorker(payload: { jobId: string, prompt: 
  */
 export async function failGenerationWorker(jobId: string, errorMsg: string) {
     try {
-        const baseUrl = process.env.APP_URL || process.env.AUTH_URL || 'http://localhost:3000';
+        const baseUrl = process.env.APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000';
         const webhookUrl = `${baseUrl}/api/ai/generate-image/webhook`;
         await fetch(webhookUrl, {
             method: 'POST',

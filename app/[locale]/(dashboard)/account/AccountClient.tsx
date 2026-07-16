@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import { disconnectAccount } from './actions'
 import ConfirmModal from '../../../components/ConfirmModal'
-import PermissionsDisclosure from '../../../../components/PermissionsDisclosure'
+import PermissionsDisclosure from '../../../components/PermissionsDisclosure'
 import { useState, useRef, useEffect, useTransition } from 'react'
 import { useTranslations } from 'next-intl'
 
@@ -144,7 +144,7 @@ export default function AccountClient({ connectedAccounts, error, success }: Acc
                                     <button className="flex-1 py-3 bg-surface border border-card-border text-foreground/80 rounded-xl text-sm font-bold hover:bg-surface dark:hover:bg-surface/80 transition-all duration-200 ease-out active:scale-95 flex items-center justify-center gap-2">
                                         <RefreshCw className="w-4 h-4" />{t('refresh')}
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => setDisconnectId(account.id)}
                                         className="flex-1 py-3 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-sm font-bold hover:bg-red-100 dark:hover:bg-red-500/20 transition-all duration-200 ease-out active:scale-95 flex items-center justify-center gap-2"
                                     >
