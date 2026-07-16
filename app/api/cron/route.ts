@@ -153,12 +153,21 @@ async function handler(_req: Request) {
         }
 
         // 2. Sync Insights for published posts
-        // We look for up to 5 random posts that have an IG media ID
+        
+        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
         const postsToSync = await prisma.post.findMany({
-            where: { instagramMediaId: { not: null } },
+            where: {
+                instagramMediaId: { not: null },
+                schedules: {
+                    some: {
+                        status: 'PUBLISHED',
+                        scheduledFor: { lte: oneHourAgo }
+                    }
+                }
+            },
             include: { connectedAccount: true },
             take: 5,
-            orderBy: { createdAt: 'desc' } // Sync the most recent ones usually, or could track lastSyncedAt
+            orderBy: { createdAt: 'desc' }
         })
 
         let syncedCount = 0
