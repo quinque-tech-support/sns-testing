@@ -185,18 +185,26 @@ export async function finalizeGenerationWebhook(jobId: string, status: string, e
         throw new Error('Job not found');
     }
 
-    await redis.set(`job:${jobId}`, {
-        ...jobData,
-        status,
-        error: error || undefined,
-        updatedAt: Date.now(),
-    }, { ex: 86400 });
+    if (jobData.status === 'CANCELLED') {
+        console.log(`[GenerateImageWebhook] Job ${jobId} was cancelled, skipping save.`);
+        return;
+    }
 
     if (status === 'COMPLETED' && jobData.userId) {
         try {
+            let finalProjectId = jobData.projectId || undefined;
+            if (!finalProjectId) {
+                const generalProject = await prisma.project.findFirst({
+                    where: { userId: jobData.userId, name: 'General' }
+                });
+                if (generalProject) {
+                    finalProjectId = generalProject.id;
+                }
+            }
+
             await prisma.projectImage.create({
                 data: {
-                    projectId: jobData.projectId || undefined,
+                    projectId: finalProjectId,
                     userId: jobData.userId,
                     url: jobData.imageUrl,
                     storagePath: jobData.storagePath,
@@ -211,4 +219,11 @@ export async function finalizeGenerationWebhook(jobId: string, status: string, e
             console.error('[GenerateImageWebhook] Failed to save to DB:', dbError);
         }
     }
+
+    await redis.set(`job:${jobId}`, {
+        ...jobData,
+        status,
+        error: error || undefined,
+        updatedAt: Date.now(),
+    }, { ex: 86400 });
 }
