@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { executeGenerationWorker, failGenerationWorker } from '@/lib/ai/vision/imageGeneration';
 import { verifySignatureAppRouter } from "@upstash/qstash/nextjs";
 
+export const maxDuration = 60; // Prevent Vercel timeouts for slow image generation
+
+
 async function workerHandler(req: Request) {
     try {
         const body = await req.json();

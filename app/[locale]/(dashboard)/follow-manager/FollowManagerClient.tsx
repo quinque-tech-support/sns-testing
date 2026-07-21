@@ -551,7 +551,7 @@ export default function FollowManagerClient() {
                                             <td className="px-6 py-4">
                                                 <a href={item.permalink} target="_blank" rel="noreferrer" className="block w-14 h-14 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800 border-2 border-card-border flex-shrink-0 relative group">
                                                     {item.mediaUrl ? (
-                                                        <img src={item.mediaUrl} alt="Profile" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                                        <img src={item.mediaUrl} alt="Profile" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                                                     ) : (
                                                         <div className="w-full h-full flex items-center justify-center text-[10px] text-muted-text/50">No Pic</div>
                                                     )}

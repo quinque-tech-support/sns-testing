@@ -355,6 +355,10 @@ export const facebookService = {
 
                 return { totalImpressions, totalLikes }
             } catch (error: any) {
+                const fbError = error.response?.data?.error
+                if (fbError && fbError.code === 190) {
+                    throw new FacebookApiError('Token invalid', fbError.code, fbError.error_subcode)
+                }
                 console.error(`[FacebookService] Failed to fetch account insights for ${igBusinessId}:`, error.response?.data || error.message)
                 return null
             }
@@ -375,6 +379,10 @@ export const facebookService = {
                 })
                 return response.data.followers_count || 0
             } catch (error: any) {
+                const fbError = error.response?.data?.error
+                if (fbError && fbError.code === 190) {
+                    throw new FacebookApiError('Token invalid', fbError.code, fbError.error_subcode)
+                }
                 console.error(`[FacebookService] Failed to fetch followers count for ${igBusinessId}:`, error.response?.data || error.message)
                 return 0
             }

@@ -23,24 +23,29 @@ export async function getCached<T>(
     return fetcher()
   }
 
+  let cachedData: { v: T } | null = null;
   try {
-    const cachedData = await redis.get<{ v: T }>(key)
-    if (cachedData !== null) {
-      console.log(`[Redis Cache Hit] Key: ${key}`)
-      return cachedData.v
-    }
-
-    console.log(`[Redis Cache Miss] Key: ${key}`)
-    const data = await fetcher()
-
-    await redis.set(key, { v: data }, { ex: ttlSeconds })
-
-    return data
+    cachedData = await redis.get<{ v: T }>(key)
   } catch (error) {
-    console.warn(`[Redis Cache Error] Key: ${key}`, error)
-    // On cache failure, fallback to fetcher
-    return fetcher()
+    console.warn(`[Redis Cache Error - GET] Key: ${key}`, error)
   }
+
+  if (cachedData !== null) {
+    console.log(`[Redis Cache Hit] Key: ${key}`)
+    return cachedData.v
+  }
+
+  console.log(`[Redis Cache Miss] Key: ${key}`)
+  
+  const data = await fetcher() // Let fetcher throw naturally without wrapping in Redis catch
+
+  try {
+    await redis.set(key, { v: data }, { ex: ttlSeconds })
+  } catch (error) {
+    console.warn(`[Redis Cache Error - SET] Key: ${key}`, error)
+  }
+
+  return data
 }
 
 /**
