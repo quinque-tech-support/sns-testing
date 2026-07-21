@@ -1,6 +1,10 @@
 import { renderHook, act } from '@testing-library/react'
 import { useProjectData } from '@/app/[locale]/(dashboard)/create/hooks/useProjectData'
 import { getProjectImageUploadUrl, registerProjectImages } from '@/app/[locale]/(dashboard)/create/actions'
+import { SWRConfig } from 'swr'
+import React from 'react'
+
+const wrapper = ({ children }: { children: React.ReactNode }) => React.createElement(SWRConfig, { value: { provider: () => new Map() } }, children)
 
 global.fetch = jest.fn()
 const mockFetch = fetch as jest.Mock
@@ -32,17 +36,17 @@ describe('useProjectData › initialisation', () => {
   })
 
   it('should default selectedProjectId to first project id', () => {
-    const { result } = renderHook(() => useProjectData([proj1 as any, proj2 as any]))
+    const { result } = renderHook(() => useProjectData([proj1 as any, proj2 as any]), { wrapper })
     expect(result.current.selectedProjectId).toBe('p1')
   })
 
   it('should return correct selectedProject object', () => {
-    const { result } = renderHook(() => useProjectData([proj1 as any, proj2 as any]))
+    const { result } = renderHook(() => useProjectData([proj1 as any, proj2 as any]), { wrapper })
     expect(result.current.selectedProject?.name).toBe('Proj 1')
   })
 
   it('should set selectedProjectId to empty string when initial projects are empty', () => {
-    const { result } = renderHook(() => useProjectData([]))
+    const { result } = renderHook(() => useProjectData([]), { wrapper })
     expect(result.current.selectedProjectId).toBe('')
   })
 
@@ -61,7 +65,7 @@ describe('useProjectData › project switching triggers data fetch', () => {
   })
 
   it('should fetch history, drafts, and images when switching selectedProjectId', async () => {
-    const { result } = renderHook(() => useProjectData([proj1 as any, proj2 as any]))
+    const { result } = renderHook(() => useProjectData([proj1 as any, proj2 as any]), { wrapper })
     
     await act(async () => {
       result.current.setSelectedProjectId('p2')
@@ -73,7 +77,7 @@ describe('useProjectData › project switching triggers data fetch', () => {
   })
 
   it('should clear data when switching to empty project', async () => {
-    const { result } = renderHook(() => useProjectData([proj1 as any]))
+    const { result } = renderHook(() => useProjectData([proj1 as any]), { wrapper })
     
     // Wait for initial fetch to settle
     await act(async () => {
@@ -91,7 +95,7 @@ describe('useProjectData › project switching triggers data fetch', () => {
 
   it('should not crash and leave state empty on failed fetch', async () => {
     mockFetch.mockResolvedValue({ ok: false })
-    const { result } = renderHook(() => useProjectData([proj1 as any, proj2 as any]))
+    const { result } = renderHook(() => useProjectData([proj1 as any, proj2 as any]), { wrapper })
     
     await act(async () => {
       result.current.setSelectedProjectId('p2')
@@ -118,7 +122,7 @@ describe('useProjectData › handleLibraryUpload', () => {
       json: async () => [{ id: 'img-1', url: 'https://cdn/rand.jpg', fileName: 'photo.jpg', createdAt: new Date().toISOString() }]
     })
 
-    const { result } = renderHook(() => useProjectData([proj1 as any]))
+    const { result } = renderHook(() => useProjectData([proj1 as any]), { wrapper })
 
     await act(async () => {
       await result.current.handleLibraryUpload([new File(['data'], 'photo.jpg', { type: 'image/jpeg' })])
@@ -139,7 +143,7 @@ describe('useProjectData › handleLibraryUpload', () => {
     mockRegisterImages.mockResolvedValue({ count: 1 })
     mockFetch.mockResolvedValue({ ok: true, json: async () => [] })
 
-    const { result } = renderHook(() => useProjectData([proj1 as any]))
+    const { result } = renderHook(() => useProjectData([proj1 as any]), { wrapper })
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) })
 
     await act(async () => {
@@ -158,7 +162,7 @@ describe('useProjectData › handleLibraryUpload', () => {
     mockRegisterImages.mockResolvedValue({ count: 2 })
     mockFetch.mockResolvedValue({ ok: true, json: async () => [] })
 
-    const { result } = renderHook(() => useProjectData([proj1 as any]))
+    const { result } = renderHook(() => useProjectData([proj1 as any]), { wrapper })
 
     await act(async () => {
       await result.current.handleLibraryUpload([
@@ -174,7 +178,7 @@ describe('useProjectData › handleLibraryUpload', () => {
     mockGetProjectUrl.mockResolvedValue({ error: 'fail' })
     mockFetch.mockResolvedValue({ ok: true, json: async () => [] })
 
-    const { result } = renderHook(() => useProjectData([proj1 as any]))
+    const { result } = renderHook(() => useProjectData([proj1 as any]), { wrapper })
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) })
 
     await act(async () => {
@@ -195,7 +199,7 @@ describe('useProjectData › deleteProjectImage', () => {
       ok: true,
       json: async () => [{ id: 'img-1', url: 'https://cdn/rand.jpg' }]
     })
-    const { result } = renderHook(() => useProjectData([proj1 as any]))
+    const { result } = renderHook(() => useProjectData([proj1 as any]), { wrapper })
     
     await act(async () => {
       result.current.setSelectedProjectId('p1') // trigger fetch
@@ -214,7 +218,7 @@ describe('useProjectData › deleteProjectImage', () => {
 
   it('should leave state unchanged on failed DELETE fetch', async () => {
     mockFetch.mockResolvedValue({ ok: true, json: async () => [{ id: 'img-1', url: 'https://cdn/rand.jpg' }] })
-    const { result } = renderHook(() => useProjectData([proj1 as any]))
+    const { result } = renderHook(() => useProjectData([proj1 as any]), { wrapper })
     await act(async () => { result.current.setSelectedProjectId('p1') })
 
     mockFetch.mockResolvedValue({ ok: false })

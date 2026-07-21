@@ -17,7 +17,7 @@ export default async function DashboardPage() {
         prisma.schedule.count({ where: { post: { userId: userId }, status: 'PUBLISHED' } }),
         prisma.connectedAccount.findFirst({
             where: { userId: userId },
-            select: { instagramBusinessId: true, pageAccessToken: true, username: true },
+            select: { id: true, instagramBusinessId: true, pageAccessToken: true, username: true, tokenExpiry: true },
         }),
         prisma.schedule.findMany({
             where: { post: { userId: userId }, status: 'PENDING' },
@@ -45,23 +45,34 @@ export default async function DashboardPage() {
         let totalLikes = 0
         let followersCount = 0
         let hasInsights = false
+        let isTokenExpired = connectedAccount?.tokenExpiry ? connectedAccount.tokenExpiry < new Date() : false
 
-        if (connectedAccount?.instagramBusinessId && connectedAccount?.pageAccessToken) {
-            const [insights, followers] = await Promise.all([
-                facebookService.getAccountInsights(connectedAccount.instagramBusinessId, connectedAccount.pageAccessToken),
-                facebookService.getInstagramFollowersCount(connectedAccount.instagramBusinessId, connectedAccount.pageAccessToken)
-            ])
-            if (insights) {
-                totalImpressions = insights.totalImpressions
-                totalLikes = insights.totalLikes
-                hasInsights = true
-            }
-            if (followers !== null) {
-                followersCount = followers
-                hasInsights = true // consider having followers as having some insights
+        if (connectedAccount?.instagramBusinessId && connectedAccount?.pageAccessToken && !isTokenExpired) {
+            try {
+                const [insights, followers] = await Promise.all([
+                    facebookService.getAccountInsights(connectedAccount.instagramBusinessId, connectedAccount.pageAccessToken),
+                    facebookService.getInstagramFollowersCount(connectedAccount.instagramBusinessId, connectedAccount.pageAccessToken)
+                ])
+                if (insights) {
+                    totalImpressions = insights.totalImpressions
+                    totalLikes = insights.totalLikes
+                    hasInsights = true
+                }
+                if (followers !== null) {
+                    followersCount = followers
+                    hasInsights = true // consider having followers as having some insights
+                }
+            } catch (error: any) {
+                if (error.name === 'FacebookApiError' && error.code === 190) {
+                    await prisma.connectedAccount.update({
+                        where: { id: connectedAccount.id },
+                        data: { tokenExpiry: new Date(0) }
+                    }).catch(console.error)
+                    isTokenExpired = true
+                }
             }
         }
-        return { totalImpressions, totalLikes, followersCount, hasInsights }
+        return { totalImpressions, totalLikes, followersCount, hasInsights, isTokenExpired }
     })()
 
     const chartDays = 12
