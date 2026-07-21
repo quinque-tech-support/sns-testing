@@ -29,6 +29,10 @@ export function useProjectData(initialProjects: Project[] = []) {
     const { data: projectImagesData, isLoading: isLoadingProjectImages, mutate: mutateProjectImages } = useSWR(selectedProjectId ? `/api/projects/${selectedProjectId}/images` : null, fetcher)
     const projectImages = projectImagesData || []
 
+    // General Images via SWR
+    const { data: generalImagesData, isLoading: isLoadingGeneralImages } = useSWR('/api/images/general', fetcher)
+    const generalImages = generalImagesData?.images || []
+
     const [isLibraryExpanded, setIsLibraryExpanded] = useState(false)
     const [isLibraryUploading, setIsLibraryUploading] = useState(false)
     const [libraryUploadProgress, setLibraryUploadProgress] = useState(0)
@@ -128,6 +132,8 @@ export function useProjectData(initialProjects: Project[] = []) {
         isLoadingDrafts,
         projectImages,
         isLoadingProjectImages,
+        generalImages,
+        isLoadingGeneralImages,
         isLibraryExpanded,
         setIsLibraryExpanded,
         isLibraryUploading,

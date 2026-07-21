@@ -192,8 +192,17 @@ async function handler(_req: Request) {
         // 3. Process due DM automation events (auto-replies)
         const dmResult = await automationService.processDueEvents()
 
+        // 4. Cleanup expired follow targets (QUEUED profiles not approved after 24 hours)
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+        const deletedTargets = await prisma.followTarget.deleteMany({
+            where: {
+                status: 'QUEUED',
+                createdAt: { lt: twentyFourHoursAgo }
+            }
+        })
+
         return NextResponse.json({
-            message: `Processed ${publishedResults.length} post(s). Synced insights for ${syncedCount} post(s). DM replies: ${dmResult.dmReplies}, failed: ${dmResult.failed}.`,
+            message: `Processed ${publishedResults.length} post(s). Synced insights for ${syncedCount} post(s). DM replies: ${dmResult.dmReplies}, failed: ${dmResult.failed}. Cleaned up ${deletedTargets.count} expired follow targets.`,
             publishedResults,
             dmReplies: dmResult.dmReplies,
             dmFailed: dmResult.failed

@@ -36,9 +36,10 @@ export function useProjects(initialProjects: Project[]) {
     
     const { data: swrProjects, mutate: mutateProjects } = useSWR('/api/projects', fetcher, { fallbackData: initialProjects })
     
+    const safeProjects = Array.isArray(swrProjects) ? swrProjects : (initialProjects || [])
     const projects = activeAccount 
-        ? swrProjects.filter((p: Project) => !p.accountId || p.accountId === activeAccount.id)
-        : swrProjects.filter((p: Project) => !p.accountId)
+        ? safeProjects.filter((p: Project) => !p.accountId || p.accountId === activeAccount.id)
+        : safeProjects.filter((p: Project) => !p.accountId)
 
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [viewingProject, setViewingProject] = useState<Project | null>(null)
@@ -172,9 +173,9 @@ export function useProjects(initialProjects: Project[]) {
             const savedProject = await res.json()
 
             if (editingProject) {
-                mutateProjects(swrProjects.map((p: Project) => p.id === savedProject.id ? savedProject : p), { revalidate: false })
+                await mutateProjects(safeProjects.map((p: Project) => p.id === savedProject.id ? savedProject : p), { revalidate: false })
             } else {
-                mutateProjects([savedProject, ...swrProjects], { revalidate: false })
+                await mutateProjects([savedProject, ...safeProjects], { revalidate: false })
             }
             closeModal()
             router.refresh()
@@ -191,7 +192,7 @@ export function useProjects(initialProjects: Project[]) {
         try {
             const res = await fetch(`/api/projects/${id}`, { method: 'DELETE' })
             if (!res.ok) throw new Error('削除に失敗しました。')
-            mutateProjects(swrProjects.filter((p: Project) => p.id !== id), { revalidate: false })
+            await mutateProjects(safeProjects.filter((p: Project) => p.id !== id), { revalidate: false })
             router.refresh()
         } catch (err: any) {
             setError(err.message)

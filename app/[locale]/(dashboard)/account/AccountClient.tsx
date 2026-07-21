@@ -11,6 +11,7 @@ import ConfirmModal from '../../../components/ConfirmModal'
 import PermissionsDisclosure from '../../../components/PermissionsDisclosure'
 import { useState, useRef, useEffect, useTransition } from 'react'
 import { useTranslations } from 'next-intl'
+import { useRouter } from '@/i18n/routing'
 
 interface ConnectedAccount {
     id: string
@@ -29,8 +30,16 @@ interface AccountClientProps {
 export default function AccountClient({ connectedAccounts, error, success }: AccountClientProps) {
     const [disconnectId, setDisconnectId] = useState<string | null>(null)
     const [isPending, startTransition] = useTransition()
+    const [isRefreshing, startRefreshTransition] = useTransition()
     const errorRef = useRef<HTMLDivElement>(null)
     const t = useTranslations('Account')
+    const router = useRouter()
+
+    const handleRefresh = () => {
+        startRefreshTransition(() => {
+            router.refresh()
+        })
+    }
 
     useEffect(() => {
         if (error && errorRef.current) {
@@ -46,8 +55,13 @@ export default function AccountClient({ connectedAccounts, error, success }: Acc
                     <h1 className="text-2xl font-bold text-foreground">{t('title')}</h1>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button className="flex items-center gap-2.5 px-6 py-3 bg-card border border-card-border text-foreground/80 rounded-2xl font-bold shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:bg-surface/80 dark:hover:bg-surface/50 transition-all duration-200 ease-out active:scale-95">
-                        <RefreshCw className="w-5 h-5" />{t('refreshAll')}
+                    <button 
+                        onClick={() => {
+                            window.location.href = '/api/auth/facebook'
+                        }}
+                        disabled={isRefreshing}
+                        className="flex items-center gap-2.5 px-6 py-3 bg-card border border-card-border text-foreground/80 rounded-2xl font-bold shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:bg-surface/80 dark:hover:bg-surface/50 transition-all duration-200 ease-out active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />{connectedAccounts.some(acc => new Date(acc.tokenExpiry) < new Date()) ? t('reconnect') || 'Reconnect' : t('refreshAll')}
                     </button>
                 </div>
             </div>
@@ -141,8 +155,13 @@ export default function AccountClient({ connectedAccounts, error, success }: Acc
                                 </div>
 
                                 <div className="flex gap-4 mt-8 pt-6 border-t border-card-border relative z-10">
-                                    <button className="flex-1 py-3 bg-surface border border-card-border text-foreground/80 rounded-xl text-sm font-bold hover:bg-surface dark:hover:bg-surface/80 transition-all duration-200 ease-out active:scale-95 flex items-center justify-center gap-2">
-                                        <RefreshCw className="w-4 h-4" />{t('refresh')}
+                                    <button 
+                                        onClick={() => {
+                                            window.location.href = '/api/auth/facebook'
+                                        }}
+                                        disabled={isRefreshing}
+                                        className="flex-1 py-3 bg-surface border border-card-border text-foreground/80 rounded-xl text-sm font-bold hover:bg-surface dark:hover:bg-surface/80 transition-all duration-200 ease-out active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                                        <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />{new Date(account.tokenExpiry) < new Date() ? t('reconnect') || 'Reconnect' : t('refresh')}
                                     </button>
                                     <button
                                         onClick={() => setDisconnectId(account.id)}

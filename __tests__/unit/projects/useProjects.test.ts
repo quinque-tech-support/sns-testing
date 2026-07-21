@@ -9,16 +9,19 @@ jest.mock('next/navigation', () => ({
 
 import { AccountContext } from '@/app/components/AccountContext'
 import React from 'react'
+import { SWRConfig } from 'swr'
 
 const wrapper = ({ children }: { children: React.ReactNode }) => 
-  React.createElement(AccountContext.Provider, {
-    value: {
-      activeAccount: { id: 'account1', pageId: 'page1', username: 'test' } as any,
-      accounts: [],
-      selectedAccountId: 'account1',
-      setSelectedAccountId: jest.fn()
-    }
-  }, children)
+  React.createElement(SWRConfig, { value: { provider: () => new Map(), revalidateOnMount: false, revalidateOnFocus: false, revalidateOnReconnect: false, dedupingInterval: 0 } },
+    React.createElement(AccountContext.Provider, {
+      value: {
+        activeAccount: { id: 'account1', pageId: 'page1', username: 'test' } as any,
+        accounts: [],
+        selectedAccountId: 'account1',
+        setSelectedAccountId: jest.fn()
+      }
+    }, children)
+  )
 
 global.fetch = jest.fn()
 const mockFetch = fetch as jest.Mock

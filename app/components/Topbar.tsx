@@ -7,7 +7,6 @@ import { ChevronDown, Instagram, Menu, Sun, Moon } from 'lucide-react'
 import { useAccount } from './AccountContext'
 import { useSidebar } from './SidebarContext'
 import { useTheme } from './ThemeContext'
-import { LanguageSwitcher } from './LanguageSwitcher'
 
 interface TopbarProps {
     user?: {
@@ -47,19 +46,6 @@ export function Topbar({ user }: TopbarProps) {
 
             {/* Right: Actions */}
             <div className="flex items-center gap-3 lg:gap-6">
-                <LanguageSwitcher />
-
-                {/* Theme Toggle */}
-                <button
-                    onClick={toggleTheme}
-                    aria-label="Toggle theme"
-                    className="relative w-14 h-7 rounded-full transition-all duration-300 active:scale-95 flex items-center px-1"
-                    style={{background: theme === 'dark' ? 'linear-gradient(135deg,#7C3AED,#EC4899,#F97316)' : '#e2e8f0'}}
-                >
-                    <div className={`w-5 h-5 rounded-full bg-card shadow-md flex items-center justify-center transition-transform duration-300 ${theme === 'dark' ? 'translate-x-7' : 'translate-x-0'}`}>
-                        {theme === 'light' ? <Sun className="w-3 h-3 text-amber-500" /> : <Moon className="w-3 h-3 text-purple-600" />}
-                    </div>
-                </button>
 
                 {/* Account Selector */}
                 {accounts.length > 0 && (
