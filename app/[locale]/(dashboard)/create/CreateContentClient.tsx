@@ -43,7 +43,7 @@ import { useMediaManagement } from './hooks/useMediaManagement'
 import { usePostGeneration } from './hooks/usePostGeneration'
 import { usePublishing } from './hooks/usePublishing'
 import { useProjectData } from './hooks/useProjectData'
-import { ConnectedAccount, HistoryItem } from './types'
+import { ConnectedAccount, HistoryItem, ProjectImage } from './types'
 import { useAccount } from '../../../components/AccountContext'
 import ConfirmModal from '../../../components/ConfirmModal'
 import { useTranslations } from 'next-intl'
@@ -71,6 +71,8 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
         isLoadingDrafts,
         projectImages,
         isLoadingProjectImages,
+        generalImages,
+        isLoadingGeneralImages,
         isLibraryExpanded,
         setIsLibraryExpanded,
         isLibraryUploading,
@@ -492,23 +494,53 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
                                                                     <div className="col-span-full flex justify-center py-6">
                                                                         <Loader2 className="w-6 h-6 animate-spin text-gray-300" />
                                                                     </div>
-                                                                ) : projectImages.length > 0 ? (
-                                                                    projectImages.map((img: any) => (
-                                                                        <div key={img.id} className="aspect-square relative rounded-xl border border-card-border overflow-hidden cursor-pointer group shadow-sm bg-surface" onClick={() => loadFromLibrary(img)}>
-                                                                            <img src={img.url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                                                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[1px]">
-                                                                                <span className="text-[10px] font-bold text-white bg-black/60 px-2 py-1 rounded-full border border-white/20">{t('use')}</span>
-                                                                            </div>
-                                                                            <button type="button" onClick={(e) => { e.stopPropagation(); setImageToDelete(img.id); }} className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/50 hover:bg-red-500 rounded flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all border border-white/20">
-                                                                                <Trash2 className="w-3 h-3" />
-                                                                            </button>
-                                                                        </div>
-                                                                    ))
                                                                 ) : (
-                                                                    <div className="col-span-full py-8 flex flex-col items-center justify-center bg-surface rounded-xl border border-dashed border-card-border">
-                                                                        <FolderPlus className="w-6 h-6 text-gray-300 mb-2" />
-                                                                        <span className="text-xs text-muted-text/80 font-medium">{t('noImages')}</span>
-                                                                    </div>
+                                                                    <>
+                                                                        {projectImages.length > 0 ? (
+                                                                            projectImages.map((img: any) => (
+                                                                                <div key={img.id} className="aspect-square relative rounded-xl border border-card-border overflow-hidden cursor-pointer group shadow-sm bg-surface" onClick={() => loadFromLibrary(img)}>
+                                                                                    <img src={img.url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[1px]">
+                                                                                        <span className="text-[10px] font-bold text-white bg-black/60 px-2 py-1 rounded-full border border-white/20">{t('use')}</span>
+                                                                                    </div>
+                                                                                    <button type="button" onClick={(e) => { e.stopPropagation(); setImageToDelete(img.id); }} className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/50 hover:bg-red-500 rounded flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all border border-white/20">
+                                                                                        <Trash2 className="w-3 h-3" />
+                                                                                    </button>
+                                                                                </div>
+                                                                            ))
+                                                                        ) : (
+                                                                            <div className="col-span-full py-8 flex flex-col items-center justify-center bg-surface rounded-xl border border-dashed border-card-border">
+                                                                                <FolderPlus className="w-6 h-6 text-gray-300 mb-2" />
+                                                                                <span className="text-xs text-muted-text/80 font-medium">{t('noImages')}</span>
+                                                                            </div>
+                                                                        )}
+
+                                                                        <div className="col-span-full flex items-center gap-3 my-2">
+                                                                            <div className="h-px bg-card-border/50 flex-1"></div>
+                                                                            <span className="text-[10px] font-semibold text-muted-text/60 uppercase tracking-wider">AI Generated</span>
+                                                                            <div className="h-px bg-card-border/50 flex-1"></div>
+                                                                        </div>
+
+                                                                        {isLoadingGeneralImages ? (
+                                                                            <div className="col-span-full flex justify-center py-6">
+                                                                                <Loader2 className="w-6 h-6 animate-spin text-gray-300" />
+                                                                            </div>
+                                                                        ) : generalImages.length > 0 ? (
+                                                                            generalImages.map((img: any) => (
+                                                                                <div key={img.id} className="aspect-square relative rounded-xl border border-card-border overflow-hidden cursor-pointer group shadow-sm bg-surface" onClick={() => loadFromLibrary(img)}>
+                                                                                    <img src={img.url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[1px]">
+                                                                                        <span className="text-[10px] font-bold text-white bg-black/60 px-2 py-1 rounded-full border border-white/20">{t('use')}</span>
+                                                                                    </div>
+                                                                                </div>
+                                                                            ))
+                                                                        ) : (
+                                                                            <div className="col-span-full py-4 flex flex-col items-center justify-center bg-surface rounded-xl border border-dashed border-card-border">
+                                                                                <Sparkles className="w-5 h-5 text-gray-300 mb-1" />
+                                                                                <span className="text-[10px] text-muted-text/80 font-medium">No AI generated images yet</span>
+                                                                            </div>
+                                                                        )}
+                                                                    </>
                                                                 )}
                                                             </div>
                                                         </div>

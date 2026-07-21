@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { Sparkles, Loader2, ChevronDown, AlertCircle, Save, Image as ImageIcon, CheckCircle2, Wand2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useImageGen } from './ImageGenContext'
@@ -25,8 +25,34 @@ export default function ImageGenerationPanel() {
         setGeneratedImageUrl,
         setActiveTab,
         handleGenerateImage,
-        handleRegenerate
+        handleRegenerate,
+        lastJobId
     } = useImageGen()
+
+    const approvedRef = useRef(false)
+    const lastJobIdRef = useRef<string | null>(null)
+
+    useEffect(() => {
+        if (lastJobId) {
+            lastJobIdRef.current = lastJobId
+            approvedRef.current = false
+        }
+    }, [lastJobId])
+
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+            if (lastJobIdRef.current && !approvedRef.current) {
+                fetch(`/api/images/by-job?jobId=${lastJobIdRef.current}`, { method: 'DELETE', keepalive: true }).catch(() => {})
+            }
+        }
+        window.addEventListener('beforeunload', handleBeforeUnload)
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload)
+            if (lastJobIdRef.current && !approvedRef.current) {
+                fetch(`/api/images/by-job?jobId=${lastJobIdRef.current}`, { method: 'DELETE', keepalive: true }).catch(() => {})
+            }
+        }
+    }, [])
 
     if (!positivePrompt && !isBuilding) {
         return (
@@ -145,6 +171,7 @@ export default function ImageGenerationPanel() {
                                     <button
                                         type="button"
                                         onClick={() => {
+                                            approvedRef.current = true
                                             setGeneratedImageUrl(null)
                                             setActiveTab('image-library')
                                         }}
