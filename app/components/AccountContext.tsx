@@ -16,7 +16,7 @@ interface AccountContextType {
     activeAccount: ConnectedAccount | undefined
 }
 
-const AccountContext = createContext<AccountContextType | undefined>(undefined)
+export const AccountContext = createContext<AccountContextType | undefined>(undefined)
 
 export function AccountProvider({ 
     children, 

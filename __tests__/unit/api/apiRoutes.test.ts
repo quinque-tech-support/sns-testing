@@ -1,4 +1,4 @@
-process.env.FACEBOOK_APP_SECRET = 'test-secret'
+process.env.INSTAGRAM_APP_SECRET = 'test-secret'
 process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN = 'test-verify-token'
 process.env.GEMINI_API_KEY = 'test-gemini-key'
 

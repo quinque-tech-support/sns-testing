@@ -5,7 +5,7 @@ import { requireAuth } from '@/lib/auth.utils'
 
 jest.mock('@/lib/prisma', () => ({
     prisma: {
-        project: { findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() }
+        project: { findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn(), findFirst: jest.fn() }
     }
 }))
 
@@ -13,6 +13,7 @@ jest.mock('@/lib/auth.utils')
 
 const mockRequireAuth = requireAuth as jest.Mock
 const mockPrismaProjectFindMany = prisma.project.findMany as jest.Mock
+const mockPrismaProjectFindFirst = prisma.project.findFirst as jest.Mock
 const mockPrismaProjectCreate = prisma.project.create as jest.Mock
 const mockPrismaProjectUpdate = prisma.project.update as jest.Mock
 const mockPrismaProjectDelete = prisma.project.delete as jest.Mock
@@ -27,6 +28,7 @@ describe('Projects API', () => {
         it('should return 200 and projects for the authenticated user', async () => {
             const mockProjects = [{ id: 'p1', name: 'Proj 1', userId: 'user-1' }]
             mockPrismaProjectFindMany.mockResolvedValue(mockProjects)
+            mockPrismaProjectFindFirst.mockResolvedValue(mockProjects[0])
 
             const req = new Request('http://localhost/api/projects')
             const res = await GET(req)

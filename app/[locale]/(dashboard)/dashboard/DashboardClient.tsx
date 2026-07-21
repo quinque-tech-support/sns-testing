@@ -3,7 +3,7 @@
 import { Link } from '@/i18n/routing'
 import {
     Eye, Heart, PlayCircle, CheckCircle2, Users,
-    ArrowUpRight, MoreHorizontal, Calendar
+    ArrowUpRight, MoreHorizontal, Calendar, AlertCircle
 } from 'lucide-react'
 import { firstImageUrl } from '@/lib/utils'
 
@@ -52,6 +52,7 @@ interface InsightsData {
     totalLikes: number
     followersCount: number
     hasInsights: boolean
+    isTokenExpired: boolean
 }
 
 interface DashboardClientProps {
@@ -76,6 +77,27 @@ function formatNum(n: number): string {
 
 import { use, Suspense } from 'react'
 import { useTranslations } from 'next-intl'
+
+function TokenBanner({ insightsPromise }: { insightsPromise: Promise<InsightsData> }) {
+    const { isTokenExpired } = use(insightsPromise)
+    const t = useTranslations('Dashboard')
+
+    if (!isTokenExpired) return null
+
+    return (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 p-4 rounded-xl mb-8 flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 shrink-0" />
+                <p className="text-sm font-medium">
+                    Your Facebook session has expired due to a password change or security update. Please reconnect your account to restore dashboard insights.
+                </p>
+            </div>
+            <Link href="/account" className="bg-red-100 dark:bg-red-800 hover:bg-red-200 dark:hover:bg-red-700 text-red-700 dark:text-red-100 px-4 py-2 rounded-lg text-sm font-bold transition-colors shrink-0 ml-4">
+                Reconnect Account
+            </Link>
+        </div>
+    )
+}
 
 function KPIGrid({
     insightsPromise,
@@ -215,6 +237,10 @@ export default function DashboardClient({
                     </button>
                 </div>
             </div>
+
+            <Suspense fallback={null}>
+                <TokenBanner insightsPromise={insightsPromise} />
+            </Suspense>
 
             {/* KPI Grid */}
             <Suspense fallback={<KPIGridSkeleton />}>
