@@ -20,15 +20,16 @@ export async function DELETE(req: NextRequest) {
         if (!jobId) return NextResponse.json({ error: 'Missing jobId' }, { status: 400 });
 
         const fileName = `${jobId}.png`;
+        const storagePath = `${session.user.id}/${fileName}`;
+
+        // Attempt to remove from Supabase storage unconditionally, just in case the DB insert failed or raced
+        await supabase.storage.from('project-images').remove([storagePath]);
 
         const image = await prisma.projectImage.findFirst({
             where: { fileName, userId: session.user.id }
         });
 
         if (image) {
-            if (image.storagePath) {
-                await supabase.storage.from('project-images').remove([image.storagePath]);
-            }
             await prisma.projectImage.delete({ where: { id: image.id } });
         }
 

@@ -13,10 +13,36 @@ export async function GET(req: Request) {
             whereClause.accountId = accountId
         }
 
-        const projects = await prisma.project.findMany({
+        let projects = await prisma.project.findMany({
             where: whereClause,
             orderBy: { updatedAt: 'desc' }
         })
+
+        // Check for General project globally for the user
+        const generalProjectExists = await prisma.project.findFirst({
+            where: { userId: userId, name: 'General' }
+        });
+
+        if (!generalProjectExists) {
+            const generalProject = await prisma.project.create({
+                data: {
+                    userId,
+                    accountId: accountId || undefined,
+                    name: 'General',
+                    description: 'Default project for storing AI generated images',
+                    objective: 'custom'
+                }
+            })
+            // If they are fetching for the current accountId (or no accountId), we should include the new general project
+            if (!accountId || accountId === generalProject.accountId) {
+                projects = [generalProject, ...projects]
+            }
+        } else if (!projects.find(p => p.id === generalProjectExists.id)) {
+             // If general project exists but wasn't in the fetched results (e.g., different accountId filter), we might still want to include it since it's a global library?
+             // Actually, the prompt says "just to store AI generated images in library. when user selects general project they can see all AI generated images."
+             // It's probably better to always return the general project so it's always accessible.
+             projects = [generalProjectExists, ...projects]
+        }
 
         return apiSuccess(projects)
     } catch (error: any) {
