@@ -127,6 +127,7 @@ model Post {
   @@index([userId])
   @@index([connectedAccountId])
   @@index([projectId])
+  @@index([instagramMediaId])
 }
 
 model Project {
@@ -267,6 +268,9 @@ model FollowCampaign {
   user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   connectedAccount ConnectedAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
   targets          FollowTarget[]
+
+  @@index([userId])
+  @@index([accountId])
 }
 
 model FollowTarget {
@@ -292,6 +296,9 @@ model FollowTarget {
 
   @@unique([userId,campaignId, postId])
   @@index([userId, accountId, followedAt])
+  @@index([campaignId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 enum MediaType {
