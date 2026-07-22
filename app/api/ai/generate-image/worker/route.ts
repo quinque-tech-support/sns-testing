@@ -28,4 +28,12 @@ async function workerHandler(req: Request) {
     }
 }
 
-export const POST = verifySignatureAppRouter(workerHandler);
+const isDevOrTest = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
+const appUrl = process.env.NEXTAUTH_URL || 'https://gravia.vercel.app';
+const workerUrl = `${appUrl.endsWith('/') ? appUrl.slice(0, -1) : appUrl}/api/ai/generate-image/worker`;
+
+export const POST = isDevOrTest
+    ? workerHandler
+    : verifySignatureAppRouter(workerHandler, {
+        url: workerUrl
+    });
