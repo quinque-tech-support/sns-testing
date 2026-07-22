@@ -221,9 +221,7 @@ const cronUrl = `${appUrl.endsWith('/') ? appUrl.slice(0, -1) : appUrl}/api/cron
 
 export const POST = isDevOrTest
     ? handler
-    : verifySignatureAppRouter(handler, {
-        url: cronUrl
-      });
+    : verifySignatureAppRouter(handler);
 
 export const GET = isDevOrTest
     ? handler
