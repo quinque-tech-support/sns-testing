@@ -21,6 +21,48 @@ export function usePostGeneration() {
     const [generationError, setGenerationError] = useState<string | null>(null)
     const [analysisResults, setAnalysisResults] = useState<AnalysisResults | null>(null)
 
+    const compressImage = async (fileOrBlob: Blob): Promise<{ base64: string; mimeType: string }> => {
+        return new Promise((resolve, reject) => {
+            const img = new Image()
+            img.onload = () => {
+                const canvas = document.createElement('canvas')
+                const MAX_DIM = 800 // Safe dimension for AI vision, keeps payload < 100KB
+                let { width, height } = img
+
+                if (width > height) {
+                    if (width > MAX_DIM) {
+                        height = Math.round(height * (MAX_DIM / width))
+                        width = MAX_DIM
+                    }
+                } else {
+                    if (height > MAX_DIM) {
+                        width = Math.round(width * (MAX_DIM / height))
+                        height = MAX_DIM
+                    }
+                }
+
+                canvas.width = width
+                canvas.height = height
+                const ctx = canvas.getContext('2d')
+                if (!ctx) {
+                    reject(new Error('Failed to get canvas context'))
+                    return
+                }
+                ctx.drawImage(img, 0, 0, width, height)
+                
+                // Always compress to JPEG for AI
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.8)
+                resolve({ base64: dataUrl, mimeType: 'image/jpeg' })
+                URL.revokeObjectURL(img.src)
+            }
+            img.onerror = () => {
+                reject(new Error('Failed to load image for compression'))
+                URL.revokeObjectURL(img.src)
+            }
+            img.src = URL.createObjectURL(fileOrBlob)
+        })
+    }
+
     /** Convert file-based media items to base64 for the AI pipeline */
     const getImagePayloads = async (
         mediaItems: MediaItem[]
@@ -29,24 +71,38 @@ export function usePostGeneration() {
 
         for (const item of mediaItems) {
             if (item.type === 'file' && !item.file.type.startsWith('video/')) {
-                const dataUrl = await new Promise<string>((resolve, reject) => {
-                    const reader = new FileReader()
-                    reader.onload = () => resolve(reader.result as string)
-                    reader.onerror = reject
-                    reader.readAsDataURL(item.file)
-                })
-                images.push({ base64: dataUrl, mimeType: item.file.type })
-            } else if (item.type === 'url' && !item.isVideo) {
                 try {
-                    const res = await fetch(item.url)
-                    const blob = await res.blob()
+                    const compressed = await compressImage(item.file)
+                    images.push(compressed)
+                } catch (err) {
+                    console.error('Compression failed, using raw:', err)
+                    // Fallback to raw if compression fails
                     const dataUrl = await new Promise<string>((resolve, reject) => {
                         const reader = new FileReader()
                         reader.onload = () => resolve(reader.result as string)
                         reader.onerror = reject
-                        reader.readAsDataURL(blob)
+                        reader.readAsDataURL(item.file)
                     })
-                    images.push({ base64: dataUrl, mimeType: blob.type })
+                    images.push({ base64: dataUrl, mimeType: item.file.type })
+                }
+            } else if (item.type === 'url' && !item.isVideo) {
+                try {
+                    const res = await fetch(item.url)
+                    const blob = await res.blob()
+                    try {
+                        const compressed = await compressImage(blob)
+                        images.push(compressed)
+                    } catch (compressErr) {
+                        console.error('Compression failed for URL, using raw blob:', compressErr)
+                        // Fallback to raw if compression fails (e.g. in Jest environment)
+                        const dataUrl = await new Promise<string>((resolve, reject) => {
+                            const reader = new FileReader()
+                            reader.onload = () => resolve(reader.result as string)
+                            reader.onerror = reject
+                            reader.readAsDataURL(blob)
+                        })
+                        images.push({ base64: dataUrl, mimeType: blob.type })
+                    }
                 } catch (err) {
                     console.error('Failed to fetch image URL for AI:', err)
                 }
