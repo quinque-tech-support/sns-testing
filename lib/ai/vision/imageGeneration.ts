@@ -72,7 +72,8 @@ export async function startGenerationJob(options: StartGenerationOptions) {
         createdAt: Date.now(),
     }, { ex: 3600 });
 
-    const baseUrl = process.env.APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const rawBaseUrl = process.env.APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const baseUrl = rawBaseUrl.endsWith('/') ? rawBaseUrl.slice(0, -1) : rawBaseUrl;
     const workerUrl = `${baseUrl}/api/ai/generate-image/worker`;
     
     const payload = {
