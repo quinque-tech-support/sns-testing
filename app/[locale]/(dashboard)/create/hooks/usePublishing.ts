@@ -1,15 +1,12 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { createClient } from '@supabase/supabase-js'
+// import removed
 import { publishNow, schedulePost, saveDraft, getSignedUploadUrl } from '../actions'
 import { ActionResult } from '@/lib/types'
 import { MediaItem } from '../types'
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { supabase } from '@/lib/supabase'
 
 interface PublishOptions {
     caption: string
