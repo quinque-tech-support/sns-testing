@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 import { facebookService } from '@/lib/services/facebook.service'
 import { automationService } from '@/lib/services/automation.service'
-//import { verifySignatureAppRouter } from '@upstash/qstash/nextjs'
+import { verifySignatureAppRouter } from '@upstash/qstash/nextjs'
 import { IG_GRAPH_BASE } from '@/lib/constants'
 
 // Important: This route should be secured in production so that only authorized cron jobs can trigger it.
@@ -214,5 +214,12 @@ async function handler(_req: Request) {
 }
 
 // QStash intercepts the GET/POST request and verifies the signature securely in production
-export const GET = handler;
-export const POST = handler;
+const isDevOrTest = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'
+
+export const POST = isDevOrTest
+    ? handler
+    : verifySignatureAppRouter(handler);
+
+export const GET = isDevOrTest
+    ? handler
+    : async () => NextResponse.json({ error: "Method not allowed" }, { status: 405 });

@@ -140,7 +140,7 @@ export async function executeGenerationWorker(payload: { jobId: string, prompt: 
         method: 'POST',
         headers: { 
             'Content-Type': 'application/json',
-            'x-webhook-secret': process.env.AUTH_SECRET || 'fallback-secret' 
+            'x-webhook-secret': process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || 'fallback-secret' 
         },
         body: JSON.stringify({
             jobId,
@@ -160,7 +160,7 @@ export async function failGenerationWorker(jobId: string, errorMsg: string) {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
-                'x-webhook-secret': process.env.AUTH_SECRET || 'fallback-secret'
+                'x-webhook-secret': process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || 'fallback-secret'
             },
             body: JSON.stringify({
                 jobId,

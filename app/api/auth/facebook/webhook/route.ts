@@ -37,7 +37,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
         }
 
-        const facebookAppSecret = process.env.INSTAGRAM_APP_SECRET
+        const facebookAppSecret = process.env.INSTAGRAM_APP_SECRET || process.env.FACEBOOK_APP_SECRET
         const arrayBuffer = await req.arrayBuffer()
         const buffer = Buffer.from(arrayBuffer)
         const signature = req.headers.get('x-hub-signature-256')
