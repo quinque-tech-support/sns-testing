@@ -216,9 +216,14 @@ async function handler(_req: Request) {
 // QStash intercepts the GET/POST request and verifies the signature securely in production
 const isDevOrTest = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'
 
+const appUrl = process.env.NEXTAUTH_URL || 'https://gravia.vercel.app';
+const cronUrl = `${appUrl.endsWith('/') ? appUrl.slice(0, -1) : appUrl}/api/cron`;
+
 export const POST = isDevOrTest
     ? handler
-    : verifySignatureAppRouter(handler);
+    : verifySignatureAppRouter(handler, {
+        url: cronUrl
+      });
 
 export const GET = isDevOrTest
     ? handler
