@@ -251,11 +251,10 @@ export function ImageGenProvider({ children, projects }: { children: React.React
                 setSavedImages(prev => prev.filter(img => img.id !== id))
                 setImageDeleteConfirmId(null)
             } else {
-                const data = await res.json()
-                setError(data.error || 'Failed to delete image')
+                throw new Error()
             }
         } catch (err: any) {
-            setError(err.message || 'Failed to delete image')
+            setError(t('errDeleteImage'))
         } finally {
             setIsDeletingImageId(null)
         }
@@ -277,14 +276,14 @@ export function ImageGenProvider({ children, projects }: { children: React.React
         const interval = setInterval(async () => {
             if (Date.now() - startTime > TIMEOUT_MS) {
                 clearInterval(interval)
-                setGenerationError('Generation timed out. Please try again.')
+                setGenerationError(t('errGenTimeout'))
                 setIsGeneratingImage(false)
                 return
             }
 
             try {
                 const res = await fetch(`/api/ai/generate-image/status?jobId=${jobId}`)
-                if (!res.ok) throw new Error('Failed to fetch status')
+                if (!res.ok) throw new Error()
 
                 const data = await res.json()
                 setGenerationStatus(data.status)
@@ -295,13 +294,13 @@ export function ImageGenProvider({ children, projects }: { children: React.React
                     setIsGeneratingImage(false)
                 } else if (data.status === 'FAILED') {
                     clearInterval(interval)
-                    setGenerationError(data.error || 'Generation failed')
+                    setGenerationError(t('errGenFailed'))
                     setIsGeneratingImage(false)
                 }
             } catch (err: any) {
                 console.error('Polling error:', err)
                 clearInterval(interval)
-                setGenerationError(err.message)
+                setGenerationError(t('errGenFailed'))
                 setIsGeneratingImage(false)
             }
         }, 2000)
@@ -331,7 +330,7 @@ export function ImageGenProvider({ children, projects }: { children: React.React
             })
 
             const buildData = await buildRes.json()
-            if (!buildRes.ok) throw new Error(buildData.error || 'Failed to optimize prompt')
+            if (!buildRes.ok) throw new Error('errOptimizePrompt')
 
             const builtPos = buildData.positivePrompt || ''
             const builtNeg = buildData.negativePrompt || ''
@@ -355,8 +354,7 @@ export function ImageGenProvider({ children, projects }: { children: React.React
             })
 
             if (!res.ok) {
-                const data = await res.json()
-                throw new Error(data.error || 'Failed to start generation')
+                throw new Error('errStartGen')
             }
 
             const { jobId, imageUrl: predictedUrl } = await res.json()
@@ -365,7 +363,7 @@ export function ImageGenProvider({ children, projects }: { children: React.React
             pollStatus(jobId, predictedUrl)
 
         } catch (err: any) {
-            setGenerationError(err.message)
+            setGenerationError(err.message === 'errOptimizePrompt' ? t('errOptimizePrompt') : t('errStartGen'))
             setIsGeneratingImage(false)
             setGenerationStatus(null)
         }
@@ -433,10 +431,10 @@ export function ImageGenProvider({ children, projects }: { children: React.React
                 setNegativePrompt('')
                 setActiveTab('library')
             } else {
-                throw new Error(data.error || 'Failed to save template')
+                throw new Error()
             }
         } catch (err: any) {
-            setError(err.message || 'Failed to save template')
+            setError(t('errSavePrompt'))
         } finally {
             setIsSavingTemplate(false)
         }
@@ -451,11 +449,10 @@ export function ImageGenProvider({ children, projects }: { children: React.React
                 if (selectedTemplate?.id === id) setSelectedTemplate(null)
                 setDeleteConfirmId(null)
             } else {
-                const data = await res.json()
-                setError(data.error || 'Failed to delete template')
+                throw new Error()
             }
         } catch (err: any) {
-            setError(err.message || 'Failed to delete template')
+            setError(t('errDeletePrompt'))
         } finally {
             setIsDeletingId(null)
         }
@@ -480,7 +477,7 @@ export function ImageGenProvider({ children, projects }: { children: React.React
         discardImage()
         setIsGeneratingImage(false)
         setGenerationStatus(null)
-        setGenerationError('Generation cancelled by user.')
+        setGenerationError(null)
     }
 
     const handleUseTemplate = (template: any) => {

@@ -2,14 +2,11 @@
 
 import { Link } from '@/i18n/routing'
 import {
-    Instagram, CheckCircle2, AlertCircle, Clock, ShieldCheck,
-    RefreshCw, ChevronRight, UserCircle, LogOut, Check, MoreHorizontal,
-    ArrowRight, LinkIcon
+    CheckCircle2, AlertCircle, ShieldCheck,
+    RefreshCw, ChevronRight, UserCircle, LogOut, MoreHorizontal
 } from 'lucide-react'
 import { disconnectAccount } from './actions'
-import ConfirmModal from '../../../components/ConfirmModal'
-import PermissionsDisclosure from '../../../components/PermissionsDisclosure'
-import { useState, useRef, useEffect, useTransition } from 'react'
+import { useRef, useEffect, useTransition } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from '@/i18n/routing'
 
@@ -28,7 +25,6 @@ interface AccountClientProps {
 }
 
 export default function AccountClient({ connectedAccounts, error, success }: AccountClientProps) {
-    const [disconnectId, setDisconnectId] = useState<string | null>(null)
     const [isPending, startTransition] = useTransition()
     const [isRefreshing, startRefreshTransition] = useTransition()
     const errorRef = useRef<HTMLDivElement>(null)
@@ -39,6 +35,12 @@ export default function AccountClient({ connectedAccounts, error, success }: Acc
         startRefreshTransition(() => {
             router.refresh()
         })
+    }
+
+    const getErrorMessage = (err: string) => {
+        if (err === 'auth_denied' || err === 'access_denied') return t('connectErrorDenied')
+        if (!err.includes(' ') && err.includes('_')) return t('connectErrorGeneric')
+        return err
     }
 
     useEffect(() => {
@@ -66,17 +68,16 @@ export default function AccountClient({ connectedAccounts, error, success }: Acc
                 </div>
             </div>
 
-            {/* Status banners */}
             {error && (
                 <div ref={errorRef} className="p-4 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 text-red-700 dark:text-red-400 rounded-2xl flex items-center gap-3">
                     <AlertCircle className="w-5 h-5 shrink-0" />
-                    <p className="text-sm font-medium">{error}</p>
+                    <p className="text-sm font-medium">{getErrorMessage(error)}</p>
                 </div>
             )}
             {success && (
                 <div className="p-4 bg-green-50 dark:bg-green-500/10 border border-green-100 dark:border-green-500/20 text-green-700 dark:text-green-400 rounded-2xl flex items-center gap-3">
                     <CheckCircle2 className="w-5 h-5 shrink-0" />
-                    <p className="text-sm font-medium">{success}</p>
+                    <p className="text-sm font-medium">{success === 'true' ? t('connectSuccess') : success}</p>
                 </div>
             )}
 
@@ -102,9 +103,6 @@ export default function AccountClient({ connectedAccounts, error, success }: Acc
             <div className="space-y-6">
                 <div className="flex items-center justify-between px-1">
                     <h2 className="text-lg font-bold text-foreground">{t('connectedProfiles')} ({connectedAccounts.length})</h2>
-                    <div className="flex items-center gap-2 text-xs font-bold text-muted-text/80 uppercase tracking-widest">
-                        <Clock className="w-3.5 h-3.5" />{t('lastSync')}
-                    </div>
                 </div>
 
                 {connectedAccounts.length > 0 ? (
@@ -164,8 +162,13 @@ export default function AccountClient({ connectedAccounts, error, success }: Acc
                                         <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />{new Date(account.tokenExpiry) < new Date() ? t('reconnect') || 'Reconnect' : t('refresh')}
                                     </button>
                                     <button
-                                        onClick={() => setDisconnectId(account.id)}
-                                        className="flex-1 py-3 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-sm font-bold hover:bg-red-100 dark:hover:bg-red-500/20 transition-all duration-200 ease-out active:scale-95 flex items-center justify-center gap-2"
+                                        onClick={() => {
+                                            startTransition(() => {
+                                                disconnectAccount(account.id)
+                                            })
+                                        }}
+                                        disabled={isPending}
+                                        className="flex-1 py-3 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-sm font-bold hover:bg-red-100 dark:hover:bg-red-500/20 transition-all duration-200 ease-out active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         <LogOut className="w-4 h-4" />{t('disconnect')}
                                     </button>
@@ -175,14 +178,8 @@ export default function AccountClient({ connectedAccounts, error, success }: Acc
                     </div>
                 ) : (
                     <div className="bg-card rounded-3xl border border-card-border p-20 text-center shadow-sm">
-                        <div className="w-20 h-20 instagram-gradient rounded-[2.5rem] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-gray-900/20 rotate-12">
-                            <Instagram className="w-10 h-10 text-white" />
-                        </div>
                         <h3 className="text-2xl font-bold text-foreground">{t('noAccountTitle')}</h3>
                         <p className="text-muted-text mt-2 max-w-sm mx-auto leading-relaxed">{t('noAccountDesc')}</p>
-                        <button className="mt-8 px-8 py-4 instagram-gradient text-white rounded-2xl font-bold shadow-lg shadow-gray-900/20 hover:-translate-y-1 hover:shadow-xl transition-all duration-200 ease-out active:scale-95 inline-flex items-center gap-2">
-                            {t('connectNow')}<ArrowRight className="w-5 h-5" />
-                        </button>
                     </div>
                 )}
             </div>
@@ -220,21 +217,6 @@ export default function AccountClient({ connectedAccounts, error, success }: Acc
                 </div>
             </div>
 
-
-            <ConfirmModal
-                isOpen={!!disconnectId}
-                title={t('disconnectModalTitle')}
-                message={t('disconnectModalDesc')}
-                confirmText={isPending ? t('disconnecting') : t('disconnect')}
-                onCancel={() => setDisconnectId(null)}
-                onConfirm={() => {
-                    if (disconnectId) {
-                        startTransition(() => {
-                            disconnectAccount(disconnectId).then(() => setDisconnectId(null))
-                        })
-                    }
-                }}
-            />
         </div>
     )
 }

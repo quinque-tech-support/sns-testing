@@ -230,12 +230,6 @@ export default function DashboardClient({
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-foreground">{t('title')}</h1>
                 </div>
-                <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium text-muted-text">{t('last12Days')}</span>
-                    <button className="p-2 bg-card hover:bg-surface/80 dark:hover:bg-surface/50 rounded-lg border border-card-border shadow-sm transition-all duration-200 ease-out active:scale-95 group">
-                        <MoreHorizontal className="w-4 h-4 text-muted-text group-hover:text-gray-800" />
-                    </button>
-                </div>
             </div>
 
             <Suspense fallback={null}>
