@@ -35,8 +35,8 @@ export interface ImageGenContextType {
     activeTab: 'new' | 'library' | 'image-library'
     setActiveTab: (tab: 'new' | 'library' | 'image-library') => void
     projects?: ProjectMini[]
-    
-    // New Prompt State
+
+    // Prompt Form State
     description: string
     setDescription: (val: string) => void
     category: string
@@ -52,24 +52,21 @@ export interface ImageGenContextType {
     isAdvancedSettingsOpen: boolean
     setIsAdvancedSettingsOpen: (val: boolean) => void
 
-    // Building State
-    isBuilding: boolean
+    // UI Feedback State
     error: string | null
     setError: (val: string | null) => void
     successMessage: string | null
     setSuccessMessage: (val: string | null) => void
 
-    // Result State
+    // Built Prompt State
     positivePrompt: string
     setPositivePrompt: (val: string) => void
     negativePrompt: string
     setNegativePrompt: (val: string) => void
 
-    // Saved Prompts State
+    // Prompt Library State
     savedTemplates: PromptTemplate[]
     isLoadingTemplates: boolean
-    templateName: string
-    setTemplateName: (val: string) => void
     isSavingTemplate: boolean
     templatePage: number
     setTemplatePage: React.Dispatch<React.SetStateAction<number>>
@@ -80,7 +77,7 @@ export interface ImageGenContextType {
     deleteConfirmId: string | null
     setDeleteConfirmId: (val: string | null) => void
 
-    // Saved Images State
+    // Image Library State
     savedImages: any[]
     isLoadingImages: boolean
     imagePage: number
@@ -94,34 +91,38 @@ export interface ImageGenContextType {
     isGeneratingImage: boolean
     generationStatus: string | null
     generatedImageUrl: string | null
-    setGeneratedImageUrl: (val: string | null) => void
     generationError: string | null
-    isPromptsOpen: boolean
-    setIsPromptsOpen: (val: boolean) => void
-    lastJobId: string | null
 
     // Functions
     loadTemplates: (page?: number) => Promise<void>
     loadImages: (page?: number) => Promise<void>
     handleDeleteImage: (id: string) => Promise<void>
     handleGenerateSimilar: (prompt: string, negPrompt?: string) => void
-    handleBuildPrompt: (e: React.FormEvent) => Promise<void>
     handleGenerateImage: () => Promise<void>
     handleRegenerate: () => Promise<void>
     handleSaveTemplate: () => Promise<void>
     handleDeleteTemplate: (id: string) => Promise<void>
     handleUseTemplate: (template: any) => void
     resetForm: () => void
+    handleCancel: () => void
+    discardImage: () => void
+    approveImage: () => void
 }
 
 const ImageGenContext = createContext<ImageGenContextType | null>(null)
+
+/** Builds the project context string used in prompt API calls. */
+function buildProjectContext(project: ProjectMini | undefined): string {
+    if (!project) return ''
+    return `Project Name: ${project.name}. Description: ${project.description || 'None'}. Style/Tone: ${project.toneStyle || 'None'}. Notes: ${project.customPromptNotes || 'None'}`
+}
 
 export function ImageGenProvider({ children, projects }: { children: React.ReactNode, projects?: ProjectMini[] }) {
     const t = useTranslations('ImageGen')
 
     const [activeTab, setActiveTab] = useState<'new' | 'library' | 'image-library'>('library')
 
-    // New Prompt State
+    // Prompt Form State
     const [description, setDescription] = useState('')
     const [category, setCategory] = useState('')
     const [isCustomCategory, setIsCustomCategory] = useState(false)
@@ -130,19 +131,17 @@ export function ImageGenProvider({ children, projects }: { children: React.React
     const [selectedProjectId, setSelectedProjectId] = useState<string>('')
     const [isAdvancedSettingsOpen, setIsAdvancedSettingsOpen] = useState(false)
 
-    // Building State
-    const [isBuilding, setIsBuilding] = useState(false)
+    // UI Feedback State
     const [error, setError] = useState<string | null>(null)
     const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
-    // Result State
+    // Built Prompt State
     const [positivePrompt, setPositivePrompt] = useState('')
     const [negativePrompt, setNegativePrompt] = useState('')
 
-    // Saved Prompts State
+    // Prompt Library State
     const [savedTemplates, setSavedTemplates] = useState<PromptTemplate[]>([])
     const [isLoadingTemplates, setIsLoadingTemplates] = useState(false)
-    const [templateName, setTemplateName] = useState('')
     const [isSavingTemplate, setIsSavingTemplate] = useState(false)
     const [templatePage, setTemplatePage] = useState(1)
     const [templateTotalPages, setTemplateTotalPages] = useState(1)
@@ -150,7 +149,7 @@ export function ImageGenProvider({ children, projects }: { children: React.React
     const [isDeletingId, setIsDeletingId] = useState<string | null>(null)
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
-    // Saved Images State
+    // Image Library State
     const [savedImages, setSavedImages] = useState<any[]>([])
     const [isLoadingImages, setIsLoadingImages] = useState(false)
     const [imagePage, setImagePage] = useState(1)
@@ -163,10 +162,35 @@ export function ImageGenProvider({ children, projects }: { children: React.React
     const [generationStatus, setGenerationStatus] = useState<string | null>(null)
     const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null)
     const [generationError, setGenerationError] = useState<string | null>(null)
-    const [isPromptsOpen, setIsPromptsOpen] = useState(true)
     const [lastJobId, setLastJobId] = useState<string | null>(null)
 
+    // Approval tracking: kept as refs so closures (beforeunload, polling) always see latest values
+    const approvedRef = useRef(false)
+    const lastJobIdRef = useRef<string | null>(null)
+
     const hasLoadedInitialRef = useRef(false)
+
+    // Keep the ref in sync with the latest job ID and reset approval flag for each new job
+    useEffect(() => {
+        if (lastJobId) {
+            lastJobIdRef.current = lastJobId
+            approvedRef.current = false
+        }
+    }, [lastJobId])
+
+    // Delete unapproved image on page navigation (beforeunload) or provider unmount
+    useEffect(() => {
+        const deleteIfUnapproved = () => {
+            if (lastJobIdRef.current && !approvedRef.current) {
+                fetch(`/api/images/by-job?jobId=${lastJobIdRef.current}`, { method: 'DELETE', keepalive: true }).catch(() => {})
+            }
+        }
+        window.addEventListener('beforeunload', deleteIfUnapproved)
+        return () => {
+            window.removeEventListener('beforeunload', deleteIfUnapproved)
+            deleteIfUnapproved()
+        }
+    }, [])
 
     const loadTemplates = useCallback(async (page = 1) => {
         setIsLoadingTemplates(true)
@@ -177,6 +201,7 @@ export function ImageGenProvider({ children, projects }: { children: React.React
                 setSavedTemplates(data.templates || [])
                 setTemplatePage(data.page || 1)
                 setTemplateTotalPages(data.totalPages || 1)
+                // Auto-navigate to the builder if the user has no saved prompts yet
                 if (!hasLoadedInitialRef.current && (!data.templates || data.templates.length === 0)) {
                     setActiveTab('new')
                 }
@@ -242,61 +267,12 @@ export function ImageGenProvider({ children, projects }: { children: React.React
         setDescription(prompt || '')
         setGeneratedImageUrl(null)
         setGenerationError(null)
-        setIsPromptsOpen(true)
         setActiveTab('new')
-    }
-
-    const handleBuildPrompt = async (e: React.FormEvent) => {
-        e.preventDefault()
-        if (!description) return
-
-        setIsBuilding(true)
-        setError(null)
-        setSuccessMessage(null)
-        setIsAdvancedSettingsOpen(false)
-
-        let finalContext = ''
-        if (selectedProjectId && projects) {
-            const project = projects.find(p => p.id === selectedProjectId)
-            if (project) {
-                finalContext = `Project Name: ${project.name}. Description: ${project.description || 'None'}. Style/Tone: ${project.toneStyle || 'None'}. Notes: ${project.customPromptNotes || 'None'}`
-            }
-        }
-
-        try {
-            const buildRes = await fetch('/api/prompts/build', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    description,
-                    context: finalContext,
-                    category,
-                    tags: selectedTags
-                })
-            })
-
-            const buildData = await buildRes.json()
-            if (!buildRes.ok) throw new Error(buildData.error || 'Failed to build prompt')
-
-            if (buildData.fallback) {
-                setError(buildData.error || 'Failed to generate prompt. Showing fallback.')
-            }
-
-            setPositivePrompt(buildData.positivePrompt || '')
-            setNegativePrompt(buildData.negativePrompt || '')
-            setGeneratedImageUrl(null)
-            setGenerationError(null)
-            setIsPromptsOpen(true)
-        } catch (err: any) {
-            setError(err.message || 'An error occurred')
-        } finally {
-            setIsBuilding(false)
-        }
     }
 
     const pollStatus = (jobId: string, finalUrl: string) => {
         const startTime = Date.now()
-        const TIMEOUT_MS = 60000
+        const TIMEOUT_MS = 60_000
 
         const interval = setInterval(async () => {
             if (Date.now() - startTime > TIMEOUT_MS) {
@@ -309,7 +285,7 @@ export function ImageGenProvider({ children, projects }: { children: React.React
             try {
                 const res = await fetch(`/api/ai/generate-image/status?jobId=${jobId}`)
                 if (!res.ok) throw new Error('Failed to fetch status')
-                
+
                 const data = await res.json()
                 setGenerationStatus(data.status)
 
@@ -332,27 +308,49 @@ export function ImageGenProvider({ children, projects }: { children: React.React
     }
 
     const handleGenerateImage = async () => {
+        if (!description) {
+            setGenerationError('Please provide a description first.')
+            return
+        }
+
         try {
             setIsGeneratingImage(true)
-            setIsPromptsOpen(false)
-            setGenerationStatus('Initializing...')
+            setGenerationStatus('Optimizing Prompt...')
             setGenerationError(null)
             setGeneratedImageUrl(null)
             setLastJobId(null)
-            
-            const selectedProject = projects?.find(p => p.id === selectedProjectId)
 
+            const selectedProject = projects?.find(p => p.id === selectedProjectId)
+            const finalContext = buildProjectContext(selectedProject)
+
+            // 1. Build an AI-optimized prompt from the plain description
+            const buildRes = await fetch('/api/prompts/build', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ description, context: finalContext, category, tags: selectedTags })
+            })
+
+            const buildData = await buildRes.json()
+            if (!buildRes.ok) throw new Error(buildData.error || 'Failed to optimize prompt')
+
+            const builtPos = buildData.positivePrompt || ''
+            const builtNeg = buildData.negativePrompt || ''
+            setPositivePrompt(builtPos)
+            setNegativePrompt(builtNeg)
+
+            // 2. Start the generation job
+            setGenerationStatus('Starting...')
             const res = await fetch('/api/ai/generate-image/start', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    description, 
-                    context: selectedProject ? `Project Name: ${selectedProject.name}. Tone: ${selectedProject.toneStyle || 'None'}` : 'None', 
-                    category, 
+                body: JSON.stringify({
+                    description,
+                    context: finalContext,
+                    category,
                     tags: selectedTags,
                     projectId: selectedProjectId || undefined,
-                    positivePrompt,
-                    negativePrompt
+                    positivePrompt: builtPos,
+                    negativePrompt: builtNeg
                 })
             })
 
@@ -362,7 +360,6 @@ export function ImageGenProvider({ children, projects }: { children: React.React
             }
 
             const { jobId, imageUrl: predictedUrl } = await res.json()
-            
             setLastJobId(jobId)
             setGenerationStatus('IN_PROGRESS')
             pollStatus(jobId, predictedUrl)
@@ -375,38 +372,58 @@ export function ImageGenProvider({ children, projects }: { children: React.React
     }
 
     const handleRegenerate = async () => {
-        if (lastJobId) {
-            try {
-                await fetch(`/api/images/by-job?jobId=${lastJobId}`, { method: 'DELETE' })
-            } catch (err) {
-                console.error('Failed to delete previous job', err)
-            }
-        }
+        // Discard the previous unapproved image before starting a new generation
+        discardImage()
         handleGenerateImage()
     }
 
     const handleSaveTemplate = async () => {
-        if (!templateName || !positivePrompt) return
+        if (!description) return
 
         setIsSavingTemplate(true)
         try {
+            let posToSave = positivePrompt
+            let negToSave = negativePrompt
+
+            const selectedProject = projects?.find(p => p.id === selectedProjectId)
+
+            // Build the prompt on-the-fly if the user hasn't generated an image yet
+            if (!posToSave) {
+                const finalContext = buildProjectContext(selectedProject)
+                const buildRes = await fetch('/api/prompts/build', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ description, context: finalContext, category, tags: selectedTags })
+                })
+                const buildData = await buildRes.json()
+                if (buildRes.ok) {
+                    posToSave = buildData.positivePrompt || ''
+                    negToSave = buildData.negativePrompt || ''
+                    setPositivePrompt(posToSave)
+                    setNegativePrompt(negToSave)
+                }
+            }
+
+            const finalTemplateName = selectedProject
+                ? selectedProject.name
+                : `Prompt ${new Date().toLocaleDateString()}`
+
             const res = await fetch('/api/prompts/saved', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    name: templateName,
+                    name: finalTemplateName,
                     description,
                     category,
                     tags: selectedTags,
-                    positivePrompt,
-                    negativePrompt,
+                    positivePrompt: posToSave,
+                    negativePrompt: negToSave,
                     projectId: selectedProjectId || null,
                 })
             })
             const data = await res.json()
             if (res.ok) {
                 setSuccessMessage(t('saveSuccess'))
-                setTemplateName('')
                 setDescription('')
                 setCategory('')
                 setIsCustomCategory(false)
@@ -444,6 +461,28 @@ export function ImageGenProvider({ children, projects }: { children: React.React
         }
     }
 
+    /** Deletes the current unapproved image from the DB and clears generation state. */
+    const discardImage = () => {
+        if (lastJobIdRef.current && !approvedRef.current) {
+            fetch(`/api/images/by-job?jobId=${lastJobIdRef.current}`, { method: 'DELETE', keepalive: true }).catch(() => {})
+            lastJobIdRef.current = null
+        }
+        setGeneratedImageUrl(null)
+        setLastJobId(null)
+    }
+
+    /** Marks the current image as approved so the cleanup effect does not delete it. */
+    const approveImage = () => {
+        approvedRef.current = true
+    }
+
+    const handleCancel = () => {
+        discardImage()
+        setIsGeneratingImage(false)
+        setGenerationStatus(null)
+        setGenerationError('Generation cancelled by user.')
+    }
+
     const handleUseTemplate = (template: any) => {
         setPositivePrompt(template.positivePrompt)
         setNegativePrompt(template.negativePrompt || '')
@@ -451,23 +490,17 @@ export function ImageGenProvider({ children, projects }: { children: React.React
 
         const cat = template.category || ''
         setCategory(cat)
-        if (cat && !DEFAULT_CATEGORIES.includes(cat)) {
-            setIsCustomCategory(true)
-        } else {
-            setIsCustomCategory(false)
-        }
-
+        setIsCustomCategory(cat !== '' && !DEFAULT_CATEGORIES.includes(cat))
         setSelectedTags(template.tags || [])
 
-        if (template.projectId) {
-            setSelectedProjectId(template.projectId)
-        }
+        if (template.projectId) setSelectedProjectId(template.projectId)
 
         setActiveTab('new')
         setSelectedTemplate(null)
     }
 
     const resetForm = () => {
+        discardImage()
         setDescription('')
         setCategory('')
         setIsCustomCategory(false)
@@ -475,16 +508,17 @@ export function ImageGenProvider({ children, projects }: { children: React.React
         setCustomTagInput('')
         setPositivePrompt('')
         setNegativePrompt('')
-        setTemplateName('')
-        setSuccessMessage('')
-        setError('')
+        setSuccessMessage(null)
+        setError(null)
+        setGenerationStatus(null)
+        setGenerationError(null)
     }
 
     const value: ImageGenContextType = {
         activeTab,
         setActiveTab,
         projects,
-        
+
         description,
         setDescription,
         category,
@@ -500,7 +534,6 @@ export function ImageGenProvider({ children, projects }: { children: React.React
         isAdvancedSettingsOpen,
         setIsAdvancedSettingsOpen,
 
-        isBuilding,
         error,
         setError,
         successMessage,
@@ -513,8 +546,6 @@ export function ImageGenProvider({ children, projects }: { children: React.React
 
         savedTemplates,
         isLoadingTemplates,
-        templateName,
-        setTemplateName,
         isSavingTemplate,
         templatePage,
         setTemplatePage,
@@ -537,23 +568,21 @@ export function ImageGenProvider({ children, projects }: { children: React.React
         isGeneratingImage,
         generationStatus,
         generatedImageUrl,
-        setGeneratedImageUrl,
         generationError,
-        isPromptsOpen,
-        setIsPromptsOpen,
-        lastJobId,
 
         loadTemplates,
         loadImages,
         handleDeleteImage,
         handleGenerateSimilar,
-        handleBuildPrompt,
         handleGenerateImage,
         handleRegenerate,
         handleSaveTemplate,
         handleDeleteTemplate,
         handleUseTemplate,
-        resetForm
+        resetForm,
+        handleCancel,
+        discardImage,
+        approveImage,
     }
 
     return (

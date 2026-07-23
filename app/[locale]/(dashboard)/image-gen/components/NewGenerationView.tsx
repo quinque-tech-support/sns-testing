@@ -10,9 +10,11 @@ export default function NewGenerationView() {
     const t = useTranslations('ImageGen')
     return (
         <div className="flex flex-col gap-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+            <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr] xl:grid-cols-[400px_1fr] gap-6 items-start">
                 <PromptBuilderForm />
-                <ImageGenerationPanel />
+                <div className="sticky top-4">
+                    <ImageGenerationPanel />
+                </div>
             </div>
         </div>
     )
