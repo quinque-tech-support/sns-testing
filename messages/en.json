@@ -187,6 +187,7 @@
     "customPurpose": "Enter custom purpose",
     "projectDesc": "Project Description",
     "defaultHashtags": "Default Hashtags",
+    "hashtagPlaceholder": "Type and press Enter (#tag)",
     "targetAudience": "Target Audience",
     "ageRange": "Age Range",
     "gender": "Gender",

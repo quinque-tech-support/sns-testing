@@ -122,6 +122,7 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
     const [previewIndex, setPreviewIndex] = useState(0)
     const [scheduledFor, setScheduledFor] = useState('')
     const [showDatePicker, setShowDatePicker] = useState(false)
+    const [activeImageTab, setActiveImageTab] = useState<'uploaded' | 'ai'>('uploaded')
 
     // Auto-fill schedule when project with preferredTimeSlots is selected
     useEffect(() => {
@@ -159,31 +160,27 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
     }, [selectedProjectId])
 
     // When project changes, replace hashtag lines at end of caption with new project defaults
-    const prevProjectIdRef = useRef(selectedProjectId)
+    const prevProjectIdRef = useRef<string | null>(null)
     useEffect(() => {
         if (prevProjectIdRef.current === selectedProjectId) return
         prevProjectIdRef.current = selectedProjectId
 
         const newTags = selectedProject?.defaultHashtags ?? []
         setCaption(prev => {
-            // Strip trailing hashtag lines from caption
-            const lines = prev.trimEnd().split('\n')
-            while (lines.length > 0 && lines[lines.length - 1].trim().startsWith('#')) {
-                lines.pop()
-            }
-            const base = lines.join('\n').trimEnd()
-            if (newTags.length === 0) return base
-            return base ? `${base}\n\n${newTags.join(' ')}` : newTags.join(' ')
+            const base = prev.trimEnd()
+            const tagsToAdd = newTags.filter(tag => !base.includes(tag))
+            if (tagsToAdd.length === 0) return base
+            return base ? `${base}\n\n${tagsToAdd.join(' ')}` : tagsToAdd.join(' ')
         })
     }, [selectedProjectId, selectedProject])
 
-    // Clear caption/options when media is removed
+    // Clear caption/options when media is removed, but keep hashtags
     useEffect(() => {
         if (mediaItems.length === 0) {
-            setCaption('')
+            setCaption(selectedProject?.defaultHashtags?.length ? selectedProject.defaultHashtags.join(' ') : '')
             setCustomPrompt('')
         }
-    }, [mediaItems])
+    }, [mediaItems, selectedProject])
 
     // Surface generation errors as result banners
     useEffect(() => {
@@ -242,6 +239,8 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
 
     const isWorking = isPublishing || isGeneratingAI
     const actAccount = accounts?.find(a => a.id === selectedAccountId)
+
+    const otherAiImages = generalImages.filter((img: any) => img.projectId !== selectedProjectId)
 
     // Project selector dropdown state
     const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false)
@@ -489,60 +488,99 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
                                                                 </label>
                                                             </div>
 
-                                                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-[280px] overflow-y-auto pr-1 scrollbar-thin">
-                                                                {isLoadingProjectImages ? (
-                                                                    <div className="col-span-full flex justify-center py-6">
-                                                                        <Loader2 className="w-6 h-6 animate-spin text-gray-300" />
-                                                                    </div>
-                                                                ) : (
-                                                                    <>
-                                                                        {projectImages.length > 0 ? (
-                                                                            projectImages.map((img: any) => (
-                                                                                <div key={img.id} className="aspect-square relative rounded-xl border border-card-border overflow-hidden cursor-pointer group shadow-sm bg-surface" onClick={() => loadFromLibrary(img)}>
-                                                                                    <img src={img.url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                                                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[1px]">
-                                                                                        <span className="text-[10px] font-bold text-white bg-black/60 px-2 py-1 rounded-full border border-white/20">{t('use')}</span>
-                                                                                    </div>
-                                                                                    <button type="button" onClick={(e) => { e.stopPropagation(); setImageToDelete(img.id); }} className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/50 hover:bg-red-500 rounded flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all border border-white/20">
-                                                                                        <Trash2 className="w-3 h-3" />
-                                                                                    </button>
-                                                                                </div>
-                                                                            ))
-                                                                        ) : (
-                                                                            <div className="col-span-full py-8 flex flex-col items-center justify-center bg-surface rounded-xl border border-dashed border-card-border">
-                                                                                <FolderPlus className="w-6 h-6 text-gray-300 mb-2" />
-                                                                                <span className="text-xs text-muted-text/80 font-medium">{t('noImages')}</span>
-                                                                            </div>
-                                                                        )}
-
-                                                                        <div className="col-span-full flex items-center gap-3 my-2">
-                                                                            <div className="h-px bg-card-border/50 flex-1"></div>
-                                                                            <span className="text-[10px] font-semibold text-muted-text/60 uppercase tracking-wider">AI Generated</span>
-                                                                            <div className="h-px bg-card-border/50 flex-1"></div>
+                                                            {selectedProject?.name?.toLowerCase() === 'general' ? (
+                                                                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-[280px] overflow-y-auto pr-1 scrollbar-thin">
+                                                                    {isLoadingGeneralImages ? (
+                                                                        <div className="col-span-full flex justify-center py-6">
+                                                                            <Loader2 className="w-6 h-6 animate-spin text-gray-300" />
                                                                         </div>
-
-                                                                        {isLoadingGeneralImages ? (
-                                                                            <div className="col-span-full flex justify-center py-6">
-                                                                                <Loader2 className="w-6 h-6 animate-spin text-gray-300" />
-                                                                            </div>
-                                                                        ) : generalImages.length > 0 ? (
-                                                                            generalImages.map((img: any) => (
-                                                                                <div key={img.id} className="aspect-square relative rounded-xl border border-card-border overflow-hidden cursor-pointer group shadow-sm bg-surface" onClick={() => loadFromLibrary(img)}>
-                                                                                    <img src={img.url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                                                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[1px]">
-                                                                                        <span className="text-[10px] font-bold text-white bg-black/60 px-2 py-1 rounded-full border border-white/20">{t('use')}</span>
-                                                                                    </div>
+                                                                    ) : generalImages.length > 0 ? (
+                                                                        generalImages.map((img: any) => (
+                                                                            <div key={img.id} className="aspect-square relative rounded-xl border border-card-border overflow-hidden cursor-pointer group shadow-sm bg-surface" onClick={() => loadFromLibrary(img)}>
+                                                                                <img src={img.url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[1px]">
+                                                                                    <span className="text-[10px] font-bold text-white bg-black/60 px-2 py-1 rounded-full border border-white/20">{t('use')}</span>
                                                                                 </div>
-                                                                            ))
-                                                                        ) : (
-                                                                            <div className="col-span-full py-4 flex flex-col items-center justify-center bg-surface rounded-xl border border-dashed border-card-border">
-                                                                                <Sparkles className="w-5 h-5 text-gray-300 mb-1" />
-                                                                                <span className="text-[10px] text-muted-text/80 font-medium">No AI generated images yet</span>
+                                                                                <span className="absolute bottom-1 right-1 text-[8px] bg-purple-600/80 text-white px-1.5 py-0.5 rounded shadow-sm">AI</span>
                                                                             </div>
+                                                                        ))
+                                                                    ) : (
+                                                                        <div className="col-span-full py-4 flex flex-col items-center justify-center bg-surface rounded-xl border border-dashed border-card-border">
+                                                                            <Sparkles className="w-5 h-5 text-gray-300 mb-1" />
+                                                                            <span className="text-[10px] text-muted-text/80 font-medium">No images yet</span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    <div className="flex items-center gap-2 border-b border-card-border pb-2">
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => setActiveImageTab('uploaded')}
+                                                                            className={cn("px-3 py-1.5 text-sm font-bold rounded-lg transition-colors", activeImageTab === 'uploaded' ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400" : "text-muted-text hover:bg-surface")}
+                                                                        >
+                                                                            Uploaded Images
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => setActiveImageTab('ai')}
+                                                                            className={cn("px-3 py-1.5 text-sm font-bold rounded-lg transition-colors", activeImageTab === 'ai' ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400" : "text-muted-text hover:bg-surface")}
+                                                                        >
+                                                                            AI Images
+                                                                        </button>
+                                                                    </div>
+                                                                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-[280px] overflow-y-auto pr-1 scrollbar-thin">
+                                                                        {activeImageTab === 'uploaded' ? (
+                                                                            isLoadingProjectImages ? (
+                                                                                <div className="col-span-full flex justify-center py-6">
+                                                                                    <Loader2 className="w-6 h-6 animate-spin text-gray-300" />
+                                                                                </div>
+                                                                            ) : projectImages.length > 0 ? (
+                                                                                projectImages.map((img: any) => (
+                                                                                    <div key={img.id} className="aspect-square relative rounded-xl border border-card-border overflow-hidden cursor-pointer group shadow-sm bg-surface" onClick={() => loadFromLibrary(img)}>
+                                                                                        <img src={img.url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                                                                        {img.source === 'AI_GENERATED' && (
+                                                                                            <span className="absolute bottom-1 right-1 text-[8px] bg-purple-600/80 text-white px-1.5 py-0.5 rounded shadow-sm">AI</span>
+                                                                                        )}
+                                                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[1px]">
+                                                                                            <span className="text-[10px] font-bold text-white bg-black/60 px-2 py-1 rounded-full border border-white/20">{t('use')}</span>
+                                                                                        </div>
+                                                                                        <button type="button" onClick={(e) => { e.stopPropagation(); setImageToDelete(img.id); }} className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/50 hover:bg-red-500 rounded flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all border border-white/20">
+                                                                                            <Trash2 className="w-3 h-3" />
+                                                                                        </button>
+                                                                                    </div>
+                                                                                ))
+                                                                            ) : (
+                                                                                <div className="col-span-full py-8 flex flex-col items-center justify-center bg-surface rounded-xl border border-dashed border-card-border">
+                                                                                    <FolderPlus className="w-6 h-6 text-gray-300 mb-2" />
+                                                                                    <span className="text-xs text-muted-text/80 font-medium">{t('noImages')}</span>
+                                                                                </div>
+                                                                            )
+                                                                        ) : (
+                                                                            isLoadingGeneralImages ? (
+                                                                                <div className="col-span-full flex justify-center py-6">
+                                                                                    <Loader2 className="w-6 h-6 animate-spin text-gray-300" />
+                                                                                </div>
+                                                                            ) : otherAiImages.length > 0 ? (
+                                                                                otherAiImages.map((img: any) => (
+                                                                                    <div key={img.id} className="aspect-square relative rounded-xl border border-card-border overflow-hidden cursor-pointer group shadow-sm bg-surface" onClick={() => loadFromLibrary(img)}>
+                                                                                        <img src={img.url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                                                                        <span className="absolute bottom-1 right-1 text-[8px] bg-purple-600/80 text-white px-1.5 py-0.5 rounded shadow-sm">AI</span>
+                                                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[1px]">
+                                                                                            <span className="text-[10px] font-bold text-white bg-black/60 px-2 py-1 rounded-full border border-white/20">{t('use')}</span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                ))
+                                                                            ) : (
+                                                                                <div className="col-span-full py-4 flex flex-col items-center justify-center bg-surface rounded-xl border border-dashed border-card-border">
+                                                                                    <Sparkles className="w-5 h-5 text-gray-300 mb-1" />
+                                                                                    <span className="text-[10px] text-muted-text/80 font-medium">No AI generated images yet</span>
+                                                                                </div>
+                                                                            )
                                                                         )}
-                                                                    </>
-                                                                )}
-                                                            </div>
+                                                                    </div>
+                                                                </>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </div>
@@ -743,7 +781,7 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
                                     type="button"
                                     onClick={() => handlePublishAction('now')}
                                     disabled={isWorking || !selectedAccountId || mediaItems.length === 0}
-                                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-8 py-3 rounded-xl text-sm font-bold transition-all shadow-md active:scale-95 bg-gray-500 hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-700 text-white disabled:opacity-50 disabled:cursor-not-allowed min-w-max"
+                                    className="gap-2 px-8 py-3 w-full md:w-auto justify-center bg-indigo-600 hover:bg-indigo-700 text-sm dark:bg-gray-600 dark:hover:bg-gray-700 text-white font-bold rounded-xl transition-all flex items-center gap-2 max-w-max active:scale-95 disabled:cursor-not-allowed min-w-max"
                                 >
                                     {isPublishing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-4 h-4" />}
                                     <span>{t('publishNow')}</span>

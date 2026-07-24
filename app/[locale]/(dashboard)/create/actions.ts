@@ -153,6 +153,7 @@ export async function registerProjectImages(
                 url: img.url,
                 storagePath: img.storagePath,
                 fileName: img.fileName,
+                source: "UPLOADED",
             })),
         })
         return { count: result.count }

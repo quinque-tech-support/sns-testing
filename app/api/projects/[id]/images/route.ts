@@ -20,6 +20,13 @@ export async function GET(_req: Request, { params }: RouteProps) {
         })
         if (!project) return new NextResponse('Not Found', { status: 404 })
 
+        // Auto-fix past manual uploads that were wrongly saved as AI_GENERATED
+        // Manual uploads don't have a prompt, so we can use that to distinguish.
+        await prisma.projectImage.updateMany({
+            where: { projectId, userId, source: 'AI_GENERATED', prompt: null },
+            data: { source: 'UPLOADED' }
+        })
+
         const images = await prisma.projectImage.findMany({
             where: { projectId, userId: userId },
             orderBy: { createdAt: 'desc' },
@@ -63,6 +70,7 @@ export async function POST(req: Request, { params }: RouteProps) {
                 url: img.url,
                 storagePath: img.storagePath,
                 fileName: img.fileName,
+                source: "UPLOADED",
             }))
         })
 

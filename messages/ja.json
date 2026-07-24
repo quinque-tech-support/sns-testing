@@ -187,6 +187,7 @@
     "customPurpose": "カスタムの目的を入力",
     "projectDesc": "プロジェクト説明",
     "defaultHashtags": "デフォルトハッシュタグ",
+    "hashtagPlaceholder": "入力してEnterを押す (#tag)",
     "targetAudience": "ターゲット層",
     "ageRange": "年齢層",
     "gender": "性別",

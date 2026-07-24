@@ -66,7 +66,7 @@ export default function ImageGenerationPanel() {
                             approveImage()
                             setActiveTab('image-library')
                         }}
-                        className="flex-1 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm rounded-xl shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2"
+                        className="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2"
                     >
                         <CheckCircle2 className="w-4 h-4" /> {t('approve')}
                     </button>

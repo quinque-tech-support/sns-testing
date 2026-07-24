@@ -29,7 +29,8 @@ export default function PromptBuilderForm() {
         generationStatus,
         handleSaveTemplate,
         isSavingTemplate,
-        positivePrompt
+        positivePrompt,
+        negativePrompt
     } = useImageGen()
 
     const onSubmit = (e: React.FormEvent) => {
@@ -82,7 +83,7 @@ export default function PromptBuilderForm() {
                         <div className="absolute bottom-3 right-3 group">
                             <button
                                 type="button"
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 text-xs font-semibold rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors cursor-help"
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 text-xs font-semibold rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors cursor-help"
                             >
                                 <Sparkles className="w-3.5 h-3.5" />
                                 {t('geminiOptimized')}
@@ -117,6 +118,11 @@ export default function PromptBuilderForm() {
                                                 {t('geminiTooltip')}
                                             </p>
                                         )}
+                                        {negativePrompt ? (
+                                            <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed line-clamp-6">
+                                                {negativePrompt}
+                                            </p>
+                                        ) : null}
                                     </div>
                                 </div>
                             </div>
@@ -128,7 +134,7 @@ export default function PromptBuilderForm() {
                 <button
                     type="button"
                     onClick={() => setIsAdvancedSettingsOpen(!isAdvancedSettingsOpen)}
-                    className="flex items-center gap-2 text-sm font-bold text-purple-600 dark:text-purple-400 hover:opacity-80 transition-opacity w-fit"
+                    className="flex items-center gap-2 text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:opacity-80 transition-opacity w-fit"
                 >
                     <Settings2 className="w-4 h-4" />
                     {t('advancedSettings')}
@@ -253,8 +259,8 @@ export default function PromptBuilderForm() {
                     <button
                         type="submit"
                         disabled={isGeneratingImage || !description}
-                        className="w-full px-5 py-3 bg-gradient-to-r from-purple-400 to-pink-400 hover:from-purple-500 hover:to-pink-500 text-white font-bold rounded-xl shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                    >
+                        className="w-full px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                       >
                         {isGeneratingImage ? (
                             <>
                                 <Loader2 className="w-4 h-4 animate-spin" />
