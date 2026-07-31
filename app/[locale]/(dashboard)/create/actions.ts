@@ -63,6 +63,17 @@ async function waitForContainer(
     return false
 }
 
+/** Verify connectedAccountId belongs to userId before it's attached to a Post. */
+async function assertAccountOwnership(connectedAccountId: string, userId: string): Promise<void> {
+    const account = await prisma.connectedAccount.findUnique({
+        where: { id: connectedAccountId, userId },
+        select: { id: true },
+    })
+    if (!account) {
+        throw new Error('Instagram account not found.')
+    }
+}
+
 /** Extract FormData fields used by all three publishing actions. */
 function extractPublishFields(formData: FormData) {
     const caption = (formData.get('caption') as string) || ''
@@ -174,6 +185,7 @@ export async function saveDraft(formData: FormData): Promise<ActionResult<{ post
     if (!connectedAccountId) {
         return { error: 'Please select an Instagram account first.' }
     }
+        await assertAccountOwnership(connectedAccountId, userId)
         const imageUrl = mediaUrls.length > 1
             ? serializeImageUrls(mediaUrls)
             : (mediaUrl || 'https://placeholder.co/1080x1080')
@@ -385,6 +397,7 @@ export async function schedulePost(formData: FormData): Promise<ActionResult<{ p
     if (scheduledFor <= new Date()) {
         return { error: 'Scheduled time must be in the future.' }
     }
+        await assertAccountOwnership(connectedAccountId, userId)
         const post = await prisma.post.create({
             data: {
                 userId,
