@@ -39,6 +39,18 @@ interface CalendarClientProps {
 
 const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
+// Internal day names above stay English for logic/tests; this maps them to a
+// translation key for display only.
+const DAY_NAME_KEYS: Record<string, string> = {
+    Monday: 'dayMonday',
+    Tuesday: 'dayTuesday',
+    Wednesday: 'dayWednesday',
+    Thursday: 'dayThursday',
+    Friday: 'dayFriday',
+    Saturday: 'daySaturday',
+    Sunday: 'daySunday',
+}
+
 /* @testable */
 export function getWeekDays(offsetWeeks: number): WeekDay[] {
     const now = new Date()
@@ -161,7 +173,7 @@ export default function CalendarClient({ schedules, weekOffset }: CalendarClient
                         <div key={day.name} className={`bg-card rounded-2xl border shadow-sm flex flex-col min-h-[200px] md:min-h-[400px] ${isToday ? 'border-purple-200 ring-1 ring-purple-100' : 'border-card-border'}`}>
                             {/* Day Header */}
                             <div className={`p-4 border-b ${isToday ? 'border-purple-50 dark:border-purple-500/20 bg-purple-50/30 dark:bg-purple-500/10' : 'border-card-border'}`}>
-                                <p className="text-xs font-bold text-muted-text/80 uppercase tracking-widest">{day.name}</p>
+                                <p className="text-xs font-bold text-muted-text/80 uppercase tracking-widest">{t(DAY_NAME_KEYS[day.name] as any)}</p>
                                 <p className={`text-lg font-bold mt-0.5 ${isToday ? 'text-purple-700 dark:text-purple-400' : 'text-foreground'}`}>{day.date}</p>
                                 {isToday && (
                                     <div className="mt-2 flex items-center gap-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 rounded-lg w-fit">
@@ -193,7 +205,7 @@ export default function CalendarClient({ schedules, weekOffset }: CalendarClient
                                                 {statusLabel(schedule.status, t)}
                                             </div>
                                             <p className="text-[11px] font-bold text-foreground line-clamp-1">
-                                                {schedule.post.caption || 'No caption'}
+                                                {schedule.post.caption || t('noCaption')}
                                             </p>
                                             <p className="text-[10px] text-muted-text/80 mt-0.5">
                                                 {new Date(schedule.scheduledFor).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
@@ -241,7 +253,7 @@ export default function CalendarClient({ schedules, weekOffset }: CalendarClient
                                     <div>
                                         <p className="text-xs font-bold text-muted-text/80 uppercase tracking-widest leading-none">{t('account')}</p>
                                         <h3 className="text-lg font-bold text-foreground mt-2">
-                                            @{selectedPost.post.connectedAccount?.username || 'instagram'}
+                                            @{selectedPost.post.connectedAccount?.username || t('instagramFallback')}
                                         </h3>
                                     </div>
                                     <div className="flex items-center gap-2 px-3 py-1.5 bg-surface border border-card-border rounded-xl">

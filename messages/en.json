@@ -259,7 +259,16 @@
     "deleteWarning": "This action cannot be undone.",
     "cancel": "Cancel",
     "deleteBtn": "Delete",
-    "deleteFailed": "Failed to delete"
+    "deleteFailed": "Failed to delete",
+    "dayMonday": "Monday",
+    "dayTuesday": "Tuesday",
+    "dayWednesday": "Wednesday",
+    "dayThursday": "Thursday",
+    "dayFriday": "Friday",
+    "daySaturday": "Saturday",
+    "daySunday": "Sunday",
+    "noCaption": "No caption",
+    "instagramFallback": "instagram"
   },
   "Workflow": {
     "title": "Post History",

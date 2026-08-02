@@ -259,7 +259,16 @@
     "deleteWarning": "この操作は取り消せません。",
     "cancel": "キャンセル",
     "deleteBtn": "削除する",
-    "deleteFailed": "削除に失敗しました"
+    "deleteFailed": "削除に失敗しました",
+    "dayMonday": "月曜日",
+    "dayTuesday": "火曜日",
+    "dayWednesday": "水曜日",
+    "dayThursday": "木曜日",
+    "dayFriday": "金曜日",
+    "daySaturday": "土曜日",
+    "daySunday": "日曜日",
+    "noCaption": "キャプションなし",
+    "instagramFallback": "instagram"
   },
   "Workflow": {
     "title": "投稿履歴",
