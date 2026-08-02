@@ -7,21 +7,21 @@ export default function PermissionsDisclosure() {
     const t = useTranslations('Account')
 
     const scopes = [
-        { scope: 'instagram_basic', badge: t('permissionsBadgeRead'), desc: 'Read your Instagram profile', why: 'Display your username, profile picture, and account details' },
-        { scope: 'instagram_content_publish', badge: t('permissionsBadgeWrite'), desc: 'Publish posts on your behalf', why: 'Post images, carousels, and Reels to Instagram via the official API' },
-        { scope: 'instagram_manage_messages', badge: `${t('permissionsBadgeRead')}/${t('permissionsBadgeWrite')}`, desc: 'Read and send Instagram Direct Messages', why: 'Enable the Auto DM Reply automation feature' },
-        { scope: 'pages_show_list', badge: t('permissionsBadgeRead'), desc: 'See your Facebook Pages', why: 'Identify which Facebook Page is linked to your Instagram Business account' },
-        { scope: 'pages_read_engagement', badge: t('permissionsBadgeRead'), desc: 'Read Page engagement data', why: 'Fetch reach, profile views, and engagement metrics for your dashboard' },
-        { scope: 'pages_manage_metadata', badge: t('permissionsBadgeWrite'), desc: 'Manage Page webhooks', why: 'Subscribe to real-time webhook events for incoming DMs and comments' },
-        { scope: 'business_management', badge: t('permissionsBadgeRead'), desc: 'Access Business Manager', why: 'Confirm your account is a verified Business or Creator account' },
+        { scope: 'instagram_basic', badge: t('permissionsBadgeRead'), desc: t('scopeInstagramBasicDesc'), why: t('scopeInstagramBasicWhy') },
+        { scope: 'instagram_content_publish', badge: t('permissionsBadgeWrite'), desc: t('scopePublishDesc'), why: t('scopePublishWhy') },
+        { scope: 'instagram_manage_messages', badge: `${t('permissionsBadgeRead')}/${t('permissionsBadgeWrite')}`, desc: t('scopeMessagesDesc'), why: t('scopeMessagesWhy') },
+        { scope: 'pages_show_list', badge: t('permissionsBadgeRead'), desc: t('scopePagesListDesc'), why: t('scopePagesListWhy') },
+        { scope: 'pages_read_engagement', badge: t('permissionsBadgeRead'), desc: t('scopeEngagementDesc'), why: t('scopeEngagementWhy') },
+        { scope: 'pages_manage_metadata', badge: t('permissionsBadgeWrite'), desc: t('scopeWebhooksDesc'), why: t('scopeWebhooksWhy') },
+        { scope: 'business_management', badge: t('permissionsBadgeRead'), desc: t('scopeBusinessDesc'), why: t('scopeBusinessWhy') },
     ]
 
     const dataAccess = [
-        { label: 'Instagram media insights', desc: 'views, reach, saves, like_count (read-only, for Analytics page)' },
-        { label: 'Instagram profile', desc: 'followers_count, profile_views (read-only, for Dashboard KPIs)' },
-        { label: 'Incoming DMs', desc: 'message text and sender ID (read, then optionally auto-reply)' },
-        { label: 'Incoming comments', desc: 'comment text, comment ID, media ID (read, then optionally auto-reply)' },
-        { label: 'Media publishing', desc: 'image URLs, video URLs, captions (write, only when you explicitly publish or schedule)' },
+        { label: t('dataInsightsLabel'), desc: t('dataInsightsDesc') },
+        { label: t('dataProfileLabel'), desc: t('dataProfileDesc') },
+        { label: t('dataDmLabel'), desc: t('dataDmDesc') },
+        { label: t('dataCommentsLabel'), desc: t('dataCommentsDesc') },
+        { label: t('dataPublishLabel'), desc: t('dataPublishDesc') },
     ]
 
     return (
@@ -51,7 +51,7 @@ export default function PermissionsDisclosure() {
                                         </span>
                                     </div>
                                     <p className="text-sm text-muted-text mt-0.5">{s.desc}</p>
-                                    <p className="text-xs text-muted-text/80 mt-0.5 italic">Why: {s.why}</p>
+                                    <p className="text-xs text-muted-text/80 mt-0.5 italic">{t('permissionsWhy')}: {s.why}</p>
                                 </div>
                             </div>
                         ))}
