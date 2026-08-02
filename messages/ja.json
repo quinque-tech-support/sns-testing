@@ -140,7 +140,16 @@
     "sysCumulative": "累計",
     "sysPublished": "{count} 件の投稿を公開済み",
     "system": "システム",
-    "queue": "キュー"
+    "queue": "キュー",
+    "tokenExpiredMessage": "パスワード変更またはセキュリティ更新により、Facebookセッションの有効期限が切れました。ダッシュボードのインサイトを復元するには、アカウントを再接続してください。",
+    "reconnectAccount": "アカウントを再接続",
+    "dayAbbrevSun": "日",
+    "dayAbbrevMon": "月",
+    "dayAbbrevTue": "火",
+    "dayAbbrevWed": "水",
+    "dayAbbrevThu": "木",
+    "dayAbbrevFri": "金",
+    "dayAbbrevSat": "土"
   },
   "Create": {
     "title": "コンテンツ作成",
