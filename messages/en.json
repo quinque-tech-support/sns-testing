@@ -15,7 +15,11 @@
     "logout": "Logout",
     "terms": "Terms",
     "privacy": "Privacy",
-    "dataDeletion": "Data Deletion"
+    "dataDeletion": "Data Deletion",
+    "defaultUserName": "User",
+    "userAvatarAlt": "User avatar",
+    "switchAccounts": "Switch Accounts",
+    "premiumUpdate": "Premium Update"
   },
   "Topbar": {
     "switchAccount": "Switch Account"

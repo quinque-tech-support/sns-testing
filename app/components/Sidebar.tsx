@@ -121,17 +121,17 @@ export function Sidebar({ user }: SidebarProps) {
                 </div>
                 
                 <div className="relative">
-                    <div onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)} className={`mt-2 bg-surface dark:bg-transparent rounded-xl border border-card-border dark:border-white/10 cursor-pointer hover:bg-white dark:hover:bg-white/5 transition-all duration-200 ease-out hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] ring-1 ring-transparent hover:ring-gray-200 dark:hover:ring-white/20 active:scale-[0.98] group ${isOpen ? 'p-3' : 'lg:p-1.5 p-3'}`} title={!isOpen ? user?.name || 'User' : undefined}>
+                    <div onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)} className={`mt-2 bg-surface dark:bg-transparent rounded-xl border border-card-border dark:border-white/10 cursor-pointer hover:bg-white dark:hover:bg-white/5 transition-all duration-200 ease-out hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] ring-1 ring-transparent hover:ring-gray-200 dark:hover:ring-white/20 active:scale-[0.98] group ${isOpen ? 'p-3' : 'lg:p-1.5 p-3'}`} title={!isOpen ? user?.name || t('defaultUserName') : undefined}>
                         <div className={`flex items-center ${!isOpen ? 'lg:justify-center' : 'gap-3'}`}>
                             <div className={`rounded-full flex items-center justify-center text-white font-bold shadow-sm overflow-hidden group-hover:shadow-md transition-shadow shrink-0 ${isOpen ? 'w-10 h-10' : 'lg:w-8 lg:h-8 w-10 h-10 text-xs'}`} style={{background:'linear-gradient(135deg,#7C3AED,#EC4899,#F97316)'}}>
                                 {user?.image ? (
-                                    <Image src={user.image} alt="User avatar" width={40} height={40} className="w-full h-full object-cover" onError={(e) => e.currentTarget.style.display = 'none'} />
+                                    <Image src={user.image} alt={t('userAvatarAlt')} width={40} height={40} className="w-full h-full object-cover" onError={(e) => e.currentTarget.style.display = 'none'} />
                                 ) : (
                                     initials
                                 )}
                             </div>
                             <div className={`flex-1 min-w-0 transition-all duration-200 flex flex-col justify-center ${isOpen ? 'opacity-100' : 'lg:hidden opacity-0 w-0'}`}>
-                                <p className="text-sm font-semibold text-foreground dark:text-white truncate tracking-tight">{user?.name || 'User'}</p>
+                                <p className="text-sm font-semibold text-foreground dark:text-white truncate tracking-tight">{user?.name || t('defaultUserName')}</p>
                                 <p className="text-[10px] sm:text-xs font-medium text-[#1E1B4B]/50 dark:text-white/50 truncate">{user?.email}</p>
                             </div>
                             {isOpen && <ChevronRight className={`w-4 h-4 text-muted-text/80 group-hover:text-gray-600 transition-transform ${isProfileMenuOpen ? 'rotate-90' : ''} shrink-0`} />}
@@ -143,14 +143,14 @@ export function Sidebar({ user }: SidebarProps) {
                             <div className="fixed inset-0 z-10" onClick={() => setIsProfileMenuOpen(false)}></div>
                             <div className={`absolute z-20 bg-card border border-card-border rounded-xl shadow-lg py-2 w-56 ${isOpen ? 'bottom-full left-0 mb-2' : 'left-full bottom-0 ml-2'}`}>
                                 <button className="w-full text-left px-4 py-2.5 text-sm hover:bg-surface/80 text-foreground flex items-center gap-3 transition-colors">
-                                    <UserPlus className="w-4 h-4 text-muted-text" /> Switch Accounts
+                                    <UserPlus className="w-4 h-4 text-muted-text" /> {t('switchAccounts')}
                                 </button>
                                 <Link href="/settings" onClick={() => setIsProfileMenuOpen(false)} className="w-full text-left px-4 py-2.5 text-sm hover:bg-surface/80 text-foreground flex items-center gap-3 transition-colors">
-                                    <Sparkles className="w-4 h-4 text-emerald-500" /> Premium Update
+                                    <Sparkles className="w-4 h-4 text-emerald-500" /> {t('premiumUpdate')}
                                 </Link>
                                 <div className="h-px bg-card-border my-1" />
                                 <button onClick={() => signOut({ callbackUrl: '/' })} className="w-full text-left px-4 py-2.5 text-sm hover:bg-red-50 text-red-600 flex items-center gap-3 transition-colors">
-                                    <LogOut className="w-4 h-4" /> Logout
+                                    <LogOut className="w-4 h-4" /> {t('logout')}
                                 </button>
                             </div>
                         </>

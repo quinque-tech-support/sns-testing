@@ -15,7 +15,11 @@
     "logout": "ログアウト",
     "terms": "利用規約",
     "privacy": "プライバシー",
-    "dataDeletion": "データ削除"
+    "dataDeletion": "データ削除",
+    "defaultUserName": "ユーザー",
+    "userAvatarAlt": "ユーザーアバター",
+    "switchAccounts": "アカウントを切り替え",
+    "premiumUpdate": "プレミアムにアップデート"
   },
   "Topbar": {
     "switchAccount": "アカウント切り替え"
