@@ -18,6 +18,9 @@
     "dataDeletion": "データ削除"
   },
   "Topbar": {
+    "toggleMenu": "メニューを切り替え",
+    "logoAlt": "Gravia",
+    "noAccount": "アカウントなし",
     "switchAccount": "アカウント切り替え"
   },
   "Automation": {
