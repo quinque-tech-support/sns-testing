@@ -549,7 +549,20 @@
     "noFollowingProfiles": "No followed profiles yet.",
     "searchingProfiles": "Profiles are being fetched",
     "searchingProfilesDesc": "Please wait a little more.",
-    "searchingProfilesJa": "プロファイルを取得しています。もう少しお待ちください。"
+    "searchingProfilesJa": "プロファイルを取得しています。もう少しお待ちください。",
+    "noProfilesFoundError": "No profiles found for this location or hashtags. Please try changing your campaign description, niche, or location.",
+    "searchPostsFailed": "Failed to search posts.",
+    "goToAccount": "Go to Account",
+    "unknownCampaignName": "Unknown",
+    "profileAlt": "Profile",
+    "noPic": "No Pic",
+    "unknownAuthor": "@Unknown",
+    "followersSuffix": "followers",
+    "postsSuffix": "posts",
+    "unfollowReadyBadge": "30+ days",
+    "add": "Add",
+    "scanning": "Scanning",
+    "running": "Running"
   },
   "ImageGen": {
     "title": "Image Generator",

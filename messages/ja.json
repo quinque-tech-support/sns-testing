@@ -549,7 +549,20 @@
     "noFollowingProfiles": "フォロー中のプロフィールはまだありません。",
     "searchingProfiles": "プロファイルを取得しています",
     "searchingProfilesDesc": "もう少しお待ちください。",
-    "searchingProfilesJa": "プロファイルを取得しています。もう少しお待ちください。"
+    "searchingProfilesJa": "プロファイルを取得しています。もう少しお待ちください。",
+    "noProfilesFoundError": "この場所またはハッシュタグに一致するプロフィールが見つかりませんでした。キャンペーンの説明、ニッチ、または場所を変更してみてください。",
+    "searchPostsFailed": "投稿の検索に失敗しました。",
+    "goToAccount": "アカウントへ移動",
+    "unknownCampaignName": "不明",
+    "profileAlt": "プロフィール",
+    "noPic": "画像なし",
+    "unknownAuthor": "@不明",
+    "followersSuffix": "フォロワー",
+    "postsSuffix": "投稿",
+    "unfollowReadyBadge": "30日以上",
+    "add": "追加",
+    "scanning": "スキャン中",
+    "running": "実行中"
   },
   "ImageGen": {
     "title": "画像ジェネレーター",
