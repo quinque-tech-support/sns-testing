@@ -101,8 +101,8 @@ export default function PromptBuilderForm() {
                                             <Sparkles className="w-3.5 h-3.5 text-white" />
                                         </div>
                                         <div>
-                                            <p className="text-xs font-bold text-gray-900 dark:text-white">Gemini Optimized Prompt</p>
-                                            <p className="text-[10px] text-purple-600 dark:text-purple-400 font-medium">Expanded by AI</p>
+                                            <p className="text-xs font-bold text-gray-900 dark:text-white">{t('geminiOptimizedTooltipTitle')}</p>
+                                            <p className="text-[10px] text-purple-600 dark:text-purple-400 font-medium">{t('expandedByAi')}</p>
                                         </div>
                                     </div>
 
