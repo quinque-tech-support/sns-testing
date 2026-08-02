@@ -323,7 +323,10 @@
     "deleteAccountWarning": "本当にアカウントを完全に削除しますか？連携済みのFacebookプロフィール、キャンペーン、投稿、AI生成画像がすべて消去されます。この操作は元に戻せません！",
     "confirmDelete": "はい、アカウントを削除します",
     "deleting": "削除中...",
-    "premiumUpdate": "プレミアムアップデート"
+    "premiumUpdate": "プレミアムアップデート",
+    "updateProfileFailed": "プロフィールの更新に失敗しました。",
+    "deleteProfileFailed": "プロフィールの削除に失敗しました。",
+    "avatarAlt": "アバター"
   },
   "HomePage": {
     "signIn": "サインイン",
