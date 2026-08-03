@@ -108,7 +108,9 @@
     "permissionsBadgeRead": "読み取り",
     "permissionsBadgeWrite": "書き込み",
     "permissionsFootnote": "メッセージの内容はアクティビティログに表示される以外には保存されません。すべてのAPI呼び出しはMeta公式Graph API v19.0を使用しています。",
-    "permissionsLearnMore": "Metaのアクセス権限リファレンス ↗"
+    "permissionsLearnMore": "Metaのアクセス権限リファレンス ↗",
+    "backToHome": "ホームに戻る",
+    "unknownUsername": "不明"
   },
   "Dashboard": {
     "title": "ダッシュボード概要",
@@ -171,7 +173,9 @@
     "preview": "プレビュー",
     "saveDraft": "下書き保存",
     "schedule": "日時を指定して予約",
-    "publishNow": "今すぐ公開"
+    "publishNow": "今すぐ公開",
+    "previewUsernameFallback": "ユーザー名",
+    "previewZeroLikes": "0件のいいね"
   },
   "Projects": {
     "title": "プロジェクト",
@@ -279,7 +283,8 @@
     "deleteFailed": "削除に失敗しました",
     "emptyTitle": "投稿履歴が空です",
     "emptyDesc": "最初の投稿を作成してここでトラッキングしましょう。",
-    "createPostBtn": "投稿を作成"
+    "createPostBtn": "投稿を作成",
+    "postFallback": "投稿"
   },
   "Settings": {
     "title": "システム設定",
@@ -362,7 +367,8 @@
     "privacy": "プライバシーポリシー",
     "permissions": "データとアクセス権限",
     "copyright": "© 2026 Gravia. All rights reserved.",
-    "dataDeletion": "データ削除"
+    "dataDeletion": "データ削除",
+    "toggleTheme": "テーマを切り替え"
   },
   "Privacy": {
     "title": "プライバシーポリシー",
@@ -631,5 +637,9 @@
     "errDeletePrompt": "プロンプトを削除できませんでした。もう一度お試しください。",
     "errOptimizePrompt": "プロンプトを最適化できませんでした。もう一度お試しください。",
     "errStartGen": "生成を開始できませんでした。もう一度お試しください。"
+  },
+  "ConfirmModal": {
+    "confirm": "確認",
+    "cancel": "キャンセル"
   }
 }

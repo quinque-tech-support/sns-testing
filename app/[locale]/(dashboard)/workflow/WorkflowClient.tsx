@@ -77,7 +77,7 @@ function PostCard({
             <div className={`aspect-[4/3] relative overflow-hidden ${isVideo ? 'bg-gray-900' : 'bg-surface'}`}>
                 <img
                     src={firstImageUrl(post.imageUrl)}
-                    alt={post.caption || 'Post'}
+                    alt={post.caption || t('postFallback')}
                     className={`w-full h-full object-cover transition-transform duration-700 ${
                         isVideo ? 'opacity-50' : 'group-hover:scale-105'
                     }`}

@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import { useTranslations } from 'next-intl'
 import { ConnectedAccount, MediaItem } from '../types'
 
 function cn(...inputs: ClassValue[]) {
@@ -38,6 +39,7 @@ export function MobilePreviewModal({
     setPreviewIndex,
     account
 }: MobilePreviewModalProps) {
+    const t = useTranslations('Create')
     if (!show) return null
 
     return (
@@ -74,7 +76,7 @@ export function MobilePreviewModal({
                                 )}
                             </div>
                         </div>
-                        <span className="text-xs font-bold text-foreground">{account?.username || account?.pageId || 'username'}</span>
+                        <span className="text-xs font-bold text-foreground">{account?.username || account?.pageId || t('previewUsernameFallback')}</span>
                     </div>
                     <span className="text-foreground font-bold tracking-widest text-xs">...</span>
                 </div>
@@ -126,13 +128,13 @@ export function MobilePreviewModal({
                         </div>
                         <Bookmark className="w-6 h-6 text-foreground" />
                     </div>
-                    <p className="text-xs font-bold text-foreground mb-1">0 likes</p>
+                    <p className="text-xs font-bold text-foreground mb-1">{t('previewZeroLikes')}</p>
                 </div>
 
                 {/* Caption Scrollable Area */}
                 <div className="px-3 pb-6 flex-1 overflow-y-auto min-h-0">
                     <p className="text-sm text-foreground whitespace-pre-wrap">
-                        <span className="font-bold mr-2">{account?.username || account?.pageId || 'username'}</span>
+                        <span className="font-bold mr-2">{account?.username || account?.pageId || t('previewUsernameFallback')}</span>
                         {caption || 'キャプションがここに表示されます...'}
                     </p>
                 </div>

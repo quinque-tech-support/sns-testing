@@ -108,7 +108,9 @@
     "permissionsBadgeRead": "Read",
     "permissionsBadgeWrite": "Write",
     "permissionsFootnote": "Gravia never stores your message content beyond what is shown in the Activity Log. All API calls use the official Meta Graph API v19.0.",
-    "permissionsLearnMore": "Meta Permissions Reference ↗"
+    "permissionsLearnMore": "Meta Permissions Reference ↗",
+    "backToHome": "Back to Home",
+    "unknownUsername": "unknown"
   },
   "Dashboard": {
     "title": "Dashboard Overview",
@@ -171,7 +173,9 @@
     "preview": "Preview",
     "saveDraft": "Save Draft",
     "schedule": "Schedule",
-    "publishNow": "Publish Now"
+    "publishNow": "Publish Now",
+    "previewUsernameFallback": "username",
+    "previewZeroLikes": "0 likes"
   },
   "Projects": {
     "title": "Projects",
@@ -279,7 +283,8 @@
     "deleteFailed": "Failed to delete",
     "emptyTitle": "Post history is empty",
     "emptyDesc": "Create your first post and start tracking here.",
-    "createPostBtn": "Create Post"
+    "createPostBtn": "Create Post",
+    "postFallback": "Post"
   },
   "Settings": {
     "title": "System Settings",
@@ -362,7 +367,8 @@
     "privacy": "Privacy Policy",
     "permissions": "Permissions",
     "copyright": "© 2026 Gravia. All rights reserved.",
-    "dataDeletion": "Data Deletion"
+    "dataDeletion": "Data Deletion",
+    "toggleTheme": "Toggle theme"
   },
   "Privacy": {
     "title": "Privacy Policy",
@@ -631,5 +637,9 @@
     "errDeletePrompt": "Could not delete prompt. Please try again.",
     "errOptimizePrompt": "Could not optimize prompt. Please try again.",
     "errStartGen": "Could not start generation. Please try again."
+  },
+  "ConfirmModal": {
+    "confirm": "Confirm",
+    "cancel": "Cancel"
   }
 }
