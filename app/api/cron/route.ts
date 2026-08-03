@@ -11,6 +11,16 @@ import { IG_GRAPH_BASE } from '@/lib/constants'
 export const dynamic = 'force-dynamic' // Ensure this route is never cached
 
 async function processSchedule(scheduleId: string) {
+    // Atomically claim the schedule so a retried/overlapping cron invocation
+    // can't pick up and publish the same PENDING schedule twice.
+    const claim = await prisma.schedule.updateMany({
+        where: { id: scheduleId, status: 'PENDING' },
+        data: { status: 'PROCESSING' }
+    })
+    if (claim.count === 0) {
+        return { success: false, scheduleId, error: 'Already claimed by another invocation' }
+    }
+
     try {
         const schedule = await prisma.schedule.findUnique({
             where: { id: scheduleId },
