@@ -1,12 +1,16 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-function requireEnv(name: string): string {
-    const value = process.env[name]
-    if (!value) {
-        throw new Error(`${name} is required but not set`)
-    }
-    return value
-}
+// Next.js only statically inlines NEXT_PUBLIC_* vars into the browser bundle
+// when the source uses a literal `process.env.NEXT_PUBLIC_X` reference — a
+// dynamic `process.env[name]` lookup can't be resolved at build time, so in
+// the browser (which has no real process.env) it silently evaluates to
+// undefined. These must stay as literal accesses, not routed through a
+// generic requireEnv(name) helper.
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+// Server-only secret — real process.env lookups work fine here since this
+// code path only ever runs on the server.
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 /**
  * Lazily constructs the client on first property access instead of at module
@@ -30,15 +34,19 @@ function lazyClient(factory: () => SupabaseClient): SupabaseClient {
     })
 }
 
-export const supabase = lazyClient(() =>
-    createClient(requireEnv('NEXT_PUBLIC_SUPABASE_URL'), requireEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY'))
-)
+export const supabase = lazyClient(() => {
+    if (!supabaseUrl) throw new Error('NEXT_PUBLIC_SUPABASE_URL is required but not set')
+    if (!supabaseAnonKey) throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY is required but not set')
+    return createClient(supabaseUrl, supabaseAnonKey)
+})
 
-export const supabaseAdmin = lazyClient(() =>
-    createClient(requireEnv('NEXT_PUBLIC_SUPABASE_URL'), requireEnv('SUPABASE_SERVICE_ROLE_KEY'), {
+export const supabaseAdmin = lazyClient(() => {
+    if (!supabaseUrl) throw new Error('NEXT_PUBLIC_SUPABASE_URL is required but not set')
+    if (!serviceRoleKey) throw new Error('SUPABASE_SERVICE_ROLE_KEY is required but not set')
+    return createClient(supabaseUrl, serviceRoleKey, {
         auth: {
             autoRefreshToken: false,
             persistSession: false,
         },
     })
-)
+})
