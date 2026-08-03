@@ -759,7 +759,21 @@
     "pageOf": "{total}ページ中{page}ページ目",
     "geminiOptimizedTooltipTitle": "Gemini最適化プロンプト",
     "expandedByAi": "AIによって拡張済み",
-    "generatedOutputAlt": "生成された画像"
+    "generatedOutputAlt": "生成された画像",
+    "catPhotography": "写真",
+    "catDigitalArt": "デジタルアート",
+    "catAnimeManga": "アニメ・マンガ",
+    "cat3dRender": "3Dレンダー",
+    "catPainting": "絵画",
+    "catIllustration": "イラスト",
+    "tag4kResolution": "4k解像度",
+    "tagHighlyDetailed": "高精細",
+    "tagCinematicLighting": "シネマティックライティング",
+    "tagVibrantColors": "鮮やかな色彩",
+    "tagDarkMoody": "ダーク・ムーディー",
+    "tagMacroPhotography": "マクロ撮影",
+    "tagCyberpunk": "サイバーパンク",
+    "tagFantasy": "ファンタジー"
   },
   "ConfirmModal": {
     "confirm": "確認",

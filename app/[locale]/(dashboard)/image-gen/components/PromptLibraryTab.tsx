@@ -3,7 +3,7 @@
 import React from 'react'
 import { Loader2, Wand2, Plus, FolderOpen, Copy, Trash2, X } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useImageGen, PromptTemplate } from './ImageGenContext'
+import { useImageGen, PromptTemplate, CATEGORY_LABEL_KEYS, TAG_LABEL_KEYS } from './ImageGenContext'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 export default function PromptLibraryTab() {
@@ -85,7 +85,7 @@ export default function PromptLibraryTab() {
                                     <td className="px-6 py-4">
                                         {template.category ? (
                                             <span className="text-xs font-semibold bg-blue-50 text-blue-600 border border-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20 px-2.5 py-1 rounded-full">
-                                                {template.category}
+                                                {CATEGORY_LABEL_KEYS[template.category] ? t(CATEGORY_LABEL_KEYS[template.category] as any) : template.category}
                                             </span>
                                         ) : (
                                             <span className="text-muted-text text-xs">—</span>
@@ -105,7 +105,7 @@ export default function PromptLibraryTab() {
                                         <div className="flex gap-1.5 flex-wrap max-w-[200px]">
                                             {template.tags?.slice(0, 2).map((tag: string, i: number) => (
                                                 <span key={i} className="text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200 dark:bg-white/5 dark:text-muted-text dark:border-card-border px-2 py-0.5 rounded-md">
-                                                    {tag}
+                                                    {TAG_LABEL_KEYS[tag] ? t(TAG_LABEL_KEYS[tag] as any) : tag}
                                                 </span>
                                             ))}
                                             {template.tags?.length > 2 && (

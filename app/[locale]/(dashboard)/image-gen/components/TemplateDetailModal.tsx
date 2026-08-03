@@ -3,7 +3,7 @@
 import React from 'react'
 import { Loader2, Sparkles, AlertCircle, FolderOpen, Trash2, X, Copy } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useImageGen } from './ImageGenContext'
+import { useImageGen, CATEGORY_LABEL_KEYS, TAG_LABEL_KEYS } from './ImageGenContext'
 
 export default function TemplateDetailModal() {
     const t = useTranslations('ImageGen')
@@ -62,7 +62,7 @@ export default function TemplateDetailModal() {
                             <div>
                                 <span className="text-[10px] font-bold text-muted-text uppercase tracking-wider block mb-1">{t('modalCategoryLabel')}</span>
                                 <span className="text-xs font-semibold bg-blue-50 text-blue-600 border border-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20 px-2.5 py-1 rounded-full">
-                                    {selectedTemplate.category}
+                                    {CATEGORY_LABEL_KEYS[selectedTemplate.category] ? t(CATEGORY_LABEL_KEYS[selectedTemplate.category] as any) : selectedTemplate.category}
                                 </span>
                             </div>
                         )}
@@ -72,7 +72,7 @@ export default function TemplateDetailModal() {
                                 <div className="flex flex-wrap gap-1.5">
                                     {selectedTemplate.tags.map((tag: string, i: number) => (
                                         <span key={i} className="text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200 dark:bg-white/5 dark:text-muted-text dark:border-card-border px-2.5 py-1 rounded-md">
-                                            {tag}
+                                            {TAG_LABEL_KEYS[tag] ? t(TAG_LABEL_KEYS[tag] as any) : tag}
                                         </span>
                                     ))}
                                 </div>

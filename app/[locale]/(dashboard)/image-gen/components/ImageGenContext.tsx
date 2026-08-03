@@ -3,8 +3,32 @@
 import React, { createContext, useContext, useState, useRef, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 
+// These values are sent verbatim into the AI image-generation prompt (see
+// app/api/prompts/build/route.ts), so they stay in English regardless of
+// locale — only the button label shown to the user is translated, via the
+// *_LABEL_KEYS maps below.
 export const DEFAULT_CATEGORIES = ['Photography', 'Digital Art', 'Anime/Manga', '3D Render', 'Painting', 'Illustration']
 export const DEFAULT_TAGS = ['4k resolution', 'highly detailed', 'cinematic lighting', 'vibrant colors', 'dark & moody', 'macro photography', 'cyberpunk', 'fantasy']
+
+export const CATEGORY_LABEL_KEYS: Record<string, string> = {
+    'Photography': 'catPhotography',
+    'Digital Art': 'catDigitalArt',
+    'Anime/Manga': 'catAnimeManga',
+    '3D Render': 'cat3dRender',
+    'Painting': 'catPainting',
+    'Illustration': 'catIllustration',
+}
+
+export const TAG_LABEL_KEYS: Record<string, string> = {
+    '4k resolution': 'tag4kResolution',
+    'highly detailed': 'tagHighlyDetailed',
+    'cinematic lighting': 'tagCinematicLighting',
+    'vibrant colors': 'tagVibrantColors',
+    'dark & moody': 'tagDarkMoody',
+    'macro photography': 'tagMacroPhotography',
+    'cyberpunk': 'tagCyberpunk',
+    'fantasy': 'tagFantasy',
+}
 
 export interface ProjectMini {
     id: string

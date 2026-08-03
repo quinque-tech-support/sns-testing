@@ -3,7 +3,7 @@
 import React from 'react'
 import { Sparkles, Save, Loader2, Settings2, ChevronDown, CheckCircle2, Plus, X, ChevronRight } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useImageGen, DEFAULT_CATEGORIES, DEFAULT_TAGS } from './ImageGenContext'
+import { useImageGen, DEFAULT_CATEGORIES, DEFAULT_TAGS, CATEGORY_LABEL_KEYS, TAG_LABEL_KEYS } from './ImageGenContext'
 import { twMerge } from './utils'
 
 export default function PromptBuilderForm() {
@@ -163,7 +163,7 @@ export default function PromptBuilderForm() {
                                                 : "bg-white dark:bg-surface border-gray-200 dark:border-card-border hover:border-purple-300 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                                         )}
                                     >
-                                        {cat}
+                                        {t(CATEGORY_LABEL_KEYS[cat] as any)}
                                     </button>
                                 ))}
                                 <button
@@ -215,7 +215,7 @@ export default function PromptBuilderForm() {
                                             )}
                                         >
                                             {isSelected ? <CheckCircle2 className="w-3 h-3 inline-block mr-1 -ml-1" /> : <Plus className="w-3 h-3 inline-block mr-1 -ml-1" />}
-                                            {tag}
+                                            {t(TAG_LABEL_KEYS[tag] as any)}
                                         </button>
                                     )
                                 })}
@@ -243,7 +243,7 @@ export default function PromptBuilderForm() {
                                 <div className="flex flex-wrap gap-1.5 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-gray-200 dark:border-card-border mt-2">
                                     {selectedTags.map(tag => (
                                         <span key={tag} className="flex items-center gap-1.5 bg-white dark:bg-card border border-gray-200 dark:border-card-border text-xs font-medium px-2.5 py-1 rounded-md shadow-sm">
-                                            {tag}
+                                            {TAG_LABEL_KEYS[tag] ? t(TAG_LABEL_KEYS[tag] as any) : tag}
                                             <button type="button" onClick={() => setSelectedTags(prev => prev.filter(t => t !== tag))} className="text-gray-400 hover:text-red-500 transition-colors">
                                                 <X className="w-3.5 h-3.5" />
                                             </button>
