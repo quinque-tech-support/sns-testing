@@ -759,7 +759,21 @@
     "pageOf": "Page {page} of {total}",
     "geminiOptimizedTooltipTitle": "Gemini Optimized Prompt",
     "expandedByAi": "Expanded by AI",
-    "generatedOutputAlt": "Generated output"
+    "generatedOutputAlt": "Generated output",
+    "catPhotography": "Photography",
+    "catDigitalArt": "Digital Art",
+    "catAnimeManga": "Anime/Manga",
+    "cat3dRender": "3D Render",
+    "catPainting": "Painting",
+    "catIllustration": "Illustration",
+    "tag4kResolution": "4k resolution",
+    "tagHighlyDetailed": "highly detailed",
+    "tagCinematicLighting": "cinematic lighting",
+    "tagVibrantColors": "vibrant colors",
+    "tagDarkMoody": "dark & moody",
+    "tagMacroPhotography": "macro photography",
+    "tagCyberpunk": "cyberpunk",
+    "tagFantasy": "fantasy"
   },
   "ConfirmModal": {
     "confirm": "Confirm",
