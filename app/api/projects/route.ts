@@ -69,6 +69,14 @@ export async function POST(req: Request) {
         
         if (!name) return apiError('Name is required', 400)
 
+        if (accountId) {
+            const account = await prisma.connectedAccount.findUnique({
+                where: { id: accountId, userId },
+                select: { id: true },
+            })
+            if (!account) return apiError('Instagram account not found', 400)
+        }
+
         const project = await prisma.project.create({
             data: {
                 userId,

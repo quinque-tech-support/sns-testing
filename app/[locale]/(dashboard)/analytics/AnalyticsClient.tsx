@@ -146,7 +146,7 @@ export default function AnalyticsClient({ postsCount, publishedCount, pendingCou
                                         {day.publishedCount > 0 && <div style={{ height: `${day.pubHeight}%` }} className="absolute bottom-0 w-full bg-purple-500 group-hover:bg-purple-600 rounded-t-sm" />}
                                         {day.count > 0 && (
                                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 text-white text-[10px] font-bold py-1.5 px-3 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none z-20 whitespace-nowrap">
-                                                {day.count} post{day.count !== 1 ? 's' : ''} ({day.publishedCount} published)
+                                                {t('dayTooltip', { count: day.count, published: day.publishedCount })}
                                                 <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900" />
                                             </div>
                                         )}
@@ -214,10 +214,10 @@ export default function AnalyticsClient({ postsCount, publishedCount, pendingCou
                             return (
                                 <div key={post.id} className="bg-card rounded-2xl border border-card-border shadow-sm overflow-hidden group hover:border-purple-200 hover:shadow-md transition-all">
                                     <div className="aspect-square relative overflow-hidden bg-surface">
-                                        <img src={firstImageUrl(post.imageUrl)} alt={post.caption || 'Post'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                        <img src={firstImageUrl(post.imageUrl)} alt={post.caption || t('postFallback')} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                                         <div className="absolute top-3 left-3 px-2 py-1 bg-black/50 backdrop-blur-md rounded-lg flex items-center gap-1 border border-white/20">
                                             <Instagram className="w-3 h-3 text-white" />
-                                            <span className="text-[10px] font-bold text-white uppercase tracking-wider">{post.connectedAccount?.username ? `@${post.connectedAccount.username}` : 'Post'}</span>
+                                            <span className="text-[10px] font-bold text-white uppercase tracking-wider">{post.connectedAccount?.username ? `@${post.connectedAccount.username}` : t('postFallback')}</span>
                                         </div>
                                     </div>
                                     <div className="p-4 space-y-4">
@@ -259,10 +259,10 @@ export default function AnalyticsClient({ postsCount, publishedCount, pendingCou
                             return (
                                 <div key={post.id} className="bg-card rounded-2xl border border-card-border shadow-sm overflow-hidden group hover:border-red-200 hover:shadow-md transition-all opacity-80 hover:opacity-100">
                                     <div className="aspect-square relative overflow-hidden bg-surface grayscale hover:grayscale-0 transition-all">
-                                        <img src={firstImageUrl(post.imageUrl)} alt={post.caption || 'Post'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                        <img src={firstImageUrl(post.imageUrl)} alt={post.caption || t('postFallback')} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                                         <div className="absolute top-3 left-3 px-2 py-1 bg-black/50 backdrop-blur-md rounded-lg flex items-center gap-1 border border-white/20">
                                             <Instagram className="w-3 h-3 text-white" />
-                                            <span className="text-[10px] font-bold text-white uppercase tracking-wider">{post.connectedAccount?.username ? `@${post.connectedAccount.username}` : 'Post'}</span>
+                                            <span className="text-[10px] font-bold text-white uppercase tracking-wider">{post.connectedAccount?.username ? `@${post.connectedAccount.username}` : t('postFallback')}</span>
                                         </div>
                                     </div>
                                     <div className="p-4 space-y-4">

@@ -68,6 +68,9 @@ function mockIgSuccess() {
 describe('saveDraft', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    // saveDraft verifies connectedAccount ownership before creating a Post;
+    // default to an owned account so existing tests don't need to opt in individually.
+    mockAccount()
   })
 
   it('should return success and postId when single image is provided', async () => {
@@ -137,6 +140,9 @@ describe('schedulePost', () => {
     jest.clearAllMocks()
     jest.useFakeTimers()
     jest.setSystemTime(new Date('2025-06-15T12:00:00Z').getTime())
+    // schedulePost verifies connectedAccount ownership before creating a Post;
+    // default to an owned account so existing tests don't need to opt in individually.
+    mockAccount()
   })
 
   afterEach(() => {

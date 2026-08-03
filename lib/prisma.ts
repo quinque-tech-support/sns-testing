@@ -30,7 +30,7 @@ const prismaClientSingleton = () => {
         account: {
           async $allOperations({ operation, args, query }) {
             const typedArgs = args as any
-            if (['create', 'update'].includes(operation) && typedArgs.data) {
+            if (['create', 'update', 'updateMany'].includes(operation) && typedArgs.data) {
               encryptAccountData(typedArgs.data)
             }
             if (operation === 'upsert') {
@@ -46,7 +46,7 @@ const prismaClientSingleton = () => {
         connectedAccount: {
           async $allOperations({ operation, args, query }) {
             const typedArgs = args as any
-            if (['create', 'update'].includes(operation) && typedArgs.data) {
+            if (['create', 'update', 'updateMany'].includes(operation) && typedArgs.data) {
               encryptConnectedAccountData(typedArgs.data)
             }
             if (operation === 'upsert') {

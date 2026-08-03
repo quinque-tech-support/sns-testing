@@ -37,7 +37,7 @@ export async function DELETE(req: NextRequest) {
         const { Redis } = require('@upstash/redis');
         const redis = Redis.fromEnv();
         const existingJob = await redis.get(`job:${jobId}`);
-        if (existingJob) {
+        if (existingJob && (existingJob as any).userId === session.user.id) {
             await redis.set(`job:${jobId}`, { ...(existingJob as any), status: 'CANCELLED' }, { ex: 3600 });
         }
 

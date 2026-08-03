@@ -28,7 +28,7 @@ export async function GET(req: Request) {
             ]
         }
 
-        const [templates] = await Promise.all([
+        const [templates, total] = await Promise.all([
             prisma.promptTemplate.findMany({
                 where,
                 include: {
@@ -40,13 +40,14 @@ export async function GET(req: Request) {
                 skip: (page - 1) * pageSize,
                 take: pageSize,
             }),
+            prisma.promptTemplate.count({ where }),
         ])
 
         return apiSuccess({
             templates,
-            total: templates.length,
+            total,
             page,
-            totalPages: Math.ceil(templates.length / pageSize),
+            totalPages: Math.ceil(total / pageSize),
         })
     } catch (error: any) {
         if (error?.isAuthError) return apiError("Unauthorized", 401)

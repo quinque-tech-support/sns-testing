@@ -15,9 +15,16 @@
     "logout": "ログアウト",
     "terms": "利用規約",
     "privacy": "プライバシー",
-    "dataDeletion": "データ削除"
+    "dataDeletion": "データ削除",
+    "defaultUserName": "ユーザー",
+    "userAvatarAlt": "ユーザーアバター",
+    "switchAccounts": "アカウントを切り替え",
+    "premiumUpdate": "プレミアムにアップデート"
   },
   "Topbar": {
+    "toggleMenu": "メニューを切り替え",
+    "logoAlt": "Gravia",
+    "noAccount": "アカウントなし",
     "switchAccount": "アカウント切り替え"
   },
   "Automation": {
@@ -53,7 +60,41 @@
     "logDetails": "詳細",
     "logTime": "時間",
     "loading": "読み込み中...",
-    "noActivity": "アクティビティはまだありません"
+    "noActivity": "アクティビティはまだありません",
+    "refresh": "↻ 更新",
+    "dmEventsHint": "自動化が有効になると、ここにDMイベントが表示されます",
+    "commentReplyBadge": "コメント返信",
+    "dmReplyBadge": "DM返信",
+    "logIn": "受信:",
+    "logOut": "送信:",
+    "pageOf": "{total}ページ中{page}ページ目",
+    "consentTitle": "データアクセスとプライバシー",
+    "consentSubtitle": "自動化を実現するためにアクセスする情報",
+    "consentIntro": "自動化を有効にする前に、接続されたビジネスまたはクリエイターアカウントから当アプリがアクセスするデータ、その理由、そして保護方法について完全に透明性を保ちたいと考えています。",
+    "consentDmTitle": "1. ダイレクトメッセージデータ",
+    "consentDmBadge": "manage_messages経由",
+    "consentDmDesc": "お客様からメッセージが届いた際に即座に自動返信をトリガー<strong>するために</strong>DMにアクセスします。",
+    "consentDmBullet1": "お客様のDM内の<strong>全文、音声メッセージ、リンク、メディア</strong>へのアクセス。",
+    "consentDmBullet2": "<strong>送信者のプロフィール</strong>(名前、プロフィール画像、プラットフォーム固有のID)へのアクセス。",
+    "consentDmBullet3": "<strong>スレッドのメタデータ</strong>(タイムスタンプ、既読状況、配信ステータス)へのアクセス。",
+    "consentDmBullet4": "お客様に代わって<strong>自動的にメッセージを送信</strong>し、タグを付与する権限。",
+    "consentCommentTitle": "2. コメントデータ",
+    "consentCommentBadge": "manage_comments経由",
+    "consentCommentDesc": "お客様がリールや投稿にコメントした際にリードマグネットのリンクを即座に自動送信<strong>するために</strong>コメントにアクセスします。",
+    "consentCommentBullet1": "投稿、リール、ライブ動画に残された<strong>公開テキストとメディア</strong>へのアクセス。",
+    "consentCommentBullet2": "コメント投稿者の<strong>公開プロフィール名とID</strong>へのアクセス。",
+    "consentCommentBullet3": "コメントされた<strong>特定の投稿または広告キャンペーン</strong>とのリンク付け。",
+    "consentCommentBullet4": "自動化ルールに基づいて<strong>コメントへの返信、非表示、削除</strong>を行う権限。",
+    "consentMetaTitle": "3. アカウントのメタデータ",
+    "consentMetaDesc": "メッセージを正しい自動化フローに安全にルーティング<strong>するために</strong>アカウント情報にアクセスします。",
+    "consentMetaBullet1": "接続された<strong>ビジネスページ名、カテゴリ、APIアクセストークン</strong>へのアクセス。",
+    "consentSecurityTitle": "4. データのセキュリティと利用",
+    "consentSecurityBullet1": "データは<strong>ライブチャット履歴ダッシュボード</strong>を実現するためだけに安全に保存されます。",
+    "consentSecurityBullet2": "<strong>お客様とのやり取りデータをデータブローカーや第三者の広告主に販売することはありません。</strong>",
+    "consentSecurityBullet3": "AI機能を使用する場合、データは安全に処理され、<strong>公開LLMモデルの学習には一切使用されません</strong>。",
+    "consentCheckboxLabel": "上記のデータアクセスおよびプライバシー規約を読み、同意します。",
+    "consentCancel": "キャンセル",
+    "consentEnable": "理解して有効にする"
   },
   "Account": {
     "title": "Instagramアカウント",
@@ -108,7 +149,34 @@
     "permissionsBadgeRead": "読み取り",
     "permissionsBadgeWrite": "書き込み",
     "permissionsFootnote": "メッセージの内容はアクティビティログに表示される以外には保存されません。すべてのAPI呼び出しはMeta公式Graph API v19.0を使用しています。",
-    "permissionsLearnMore": "Metaのアクセス権限リファレンス ↗"
+    "permissionsLearnMore": "Metaのアクセス権限リファレンス ↗",
+    "permissionsWhy": "理由",
+    "scopeInstagramBasicDesc": "Instagramプロフィールの読み取り",
+    "scopeInstagramBasicWhy": "ユーザー名、プロフィール画像、アカウント詳細を表示するため",
+    "scopePublishDesc": "あなたに代わって投稿を公開",
+    "scopePublishWhy": "公式APIを通じて画像、カルーセル、リールをInstagramに投稿するため",
+    "scopeMessagesDesc": "Instagramダイレクトメッセージの読み取りと送信",
+    "scopeMessagesWhy": "自動DM返信機能を有効にするため",
+    "scopePagesListDesc": "Facebookページの表示",
+    "scopePagesListWhy": "どのFacebookページがInstagramビジネスアカウントにリンクされているかを識別するため",
+    "scopeEngagementDesc": "ページのエンゲージメントデータの読み取り",
+    "scopeEngagementWhy": "ダッシュボード用にリーチ、プロフィール閲覧数、エンゲージメント指標を取得するため",
+    "scopeWebhooksDesc": "ページのWebhook管理",
+    "scopeWebhooksWhy": "受信DMやコメントのリアルタイムWebhookイベントを購読するため",
+    "scopeBusinessDesc": "ビジネスマネージャーへのアクセス",
+    "scopeBusinessWhy": "アカウントが認証済みのビジネスまたはクリエイターアカウントであることを確認するため",
+    "dataInsightsLabel": "Instagramメディアインサイト",
+    "dataInsightsDesc": "views、reach、saves、like_count(読み取り専用、分析ページ用)",
+    "dataProfileLabel": "Instagramプロフィール",
+    "dataProfileDesc": "followers_count、profile_views(読み取り専用、ダッシュボードKPI用)",
+    "dataDmLabel": "受信DM",
+    "dataDmDesc": "メッセージ本文と送信者ID(読み取り、その後任意で自動返信)",
+    "dataCommentsLabel": "受信コメント",
+    "dataCommentsDesc": "コメント本文、コメントID、メディアID(読み取り、その後任意で自動返信)",
+    "dataPublishLabel": "メディアの公開",
+    "dataPublishDesc": "画像URL、動画URL、キャプション(書き込み、明示的に公開・予約投稿した場合のみ)",
+    "backToHome": "ホームに戻る",
+    "unknownUsername": "不明"
   },
   "Dashboard": {
     "title": "ダッシュボード概要",
@@ -140,7 +208,16 @@
     "sysCumulative": "累計",
     "sysPublished": "{count} 件の投稿を公開済み",
     "system": "システム",
-    "queue": "キュー"
+    "queue": "キュー",
+    "tokenExpiredMessage": "パスワード変更またはセキュリティ更新により、Facebookセッションの有効期限が切れました。ダッシュボードのインサイトを復元するには、アカウントを再接続してください。",
+    "reconnectAccount": "アカウントを再接続",
+    "dayAbbrevSun": "日",
+    "dayAbbrevMon": "月",
+    "dayAbbrevTue": "火",
+    "dayAbbrevWed": "水",
+    "dayAbbrevThu": "木",
+    "dayAbbrevFri": "金",
+    "dayAbbrevSat": "土"
   },
   "Create": {
     "title": "コンテンツ作成",
@@ -171,7 +248,12 @@
     "preview": "プレビュー",
     "saveDraft": "下書き保存",
     "schedule": "日時を指定して予約",
-    "publishNow": "今すぐ公開"
+    "publishNow": "今すぐ公開",
+    "reelBadge": "リール",
+    "aiGeneratedLabel": "AI生成",
+    "noAiImagesYet": "まだAI生成画像がありません",
+    "previewUsernameFallback": "ユーザー名",
+    "previewZeroLikes": "0件のいいね"
   },
   "Projects": {
     "title": "プロジェクト",
@@ -214,7 +296,9 @@
     "saving": "保存中...",
     "deleteTitle": "プロジェクトの削除",
     "deleteConfirm": "本当にこのプロジェクトを削除しますか？\n関連付けられたデータも削除される可能性があります。",
-    "deleteBtn": "削除する"
+    "deleteBtn": "削除する",
+    "hashtagsPlaceholder": "#タグ1 #タグ2",
+    "ageRangePlaceholder": "例: 18-24"
   },
   "Analytics": {
     "title": "アナリティクス",
@@ -239,7 +323,9 @@
     "comments": "コメント",
     "noTopPosts": "投稿がまだありません",
     "noTopPostsDesc": "最初の投稿を作成・予約して、ここにパフォーマンスを表示しましょう。",
-    "needsImprovement": "改善が必要な投稿 (ワースト)"
+    "needsImprovement": "改善が必要な投稿 (ワースト)",
+    "dayTooltip": "{count}件の投稿 ({published}件公開済み)",
+    "postFallback": "投稿"
   },
   "Calendar": {
     "title": "コンテンツカレンダー",
@@ -259,7 +345,16 @@
     "deleteWarning": "この操作は取り消せません。",
     "cancel": "キャンセル",
     "deleteBtn": "削除する",
-    "deleteFailed": "削除に失敗しました"
+    "deleteFailed": "削除に失敗しました",
+    "dayMonday": "月曜日",
+    "dayTuesday": "火曜日",
+    "dayWednesday": "水曜日",
+    "dayThursday": "木曜日",
+    "dayFriday": "金曜日",
+    "daySaturday": "土曜日",
+    "daySunday": "日曜日",
+    "noCaption": "キャプションなし",
+    "instagramFallback": "instagram"
   },
   "Workflow": {
     "title": "投稿履歴",
@@ -279,7 +374,8 @@
     "deleteFailed": "削除に失敗しました",
     "emptyTitle": "投稿履歴が空です",
     "emptyDesc": "最初の投稿を作成してここでトラッキングしましょう。",
-    "createPostBtn": "投稿を作成"
+    "createPostBtn": "投稿を作成",
+    "postFallback": "投稿"
   },
   "Settings": {
     "title": "システム設定",
@@ -323,7 +419,10 @@
     "deleteAccountWarning": "本当にアカウントを完全に削除しますか？連携済みのFacebookプロフィール、キャンペーン、投稿、AI生成画像がすべて消去されます。この操作は元に戻せません！",
     "confirmDelete": "はい、アカウントを削除します",
     "deleting": "削除中...",
-    "premiumUpdate": "プレミアムアップデート"
+    "premiumUpdate": "プレミアムアップデート",
+    "updateProfileFailed": "プロフィールの更新に失敗しました。",
+    "deleteProfileFailed": "プロフィールの削除に失敗しました。",
+    "avatarAlt": "アバター"
   },
   "HomePage": {
     "signIn": "サインイン",
@@ -362,7 +461,8 @@
     "privacy": "プライバシーポリシー",
     "permissions": "データとアクセス権限",
     "copyright": "© 2026 Gravia. All rights reserved.",
-    "dataDeletion": "データ削除"
+    "dataDeletion": "データ削除",
+    "toggleTheme": "テーマを切り替え"
   },
   "Privacy": {
     "title": "プライバシーポリシー",
@@ -549,7 +649,20 @@
     "noFollowingProfiles": "フォロー中のプロフィールはまだありません。",
     "searchingProfiles": "プロファイルを取得しています",
     "searchingProfilesDesc": "もう少しお待ちください。",
-    "searchingProfilesJa": "プロファイルを取得しています。もう少しお待ちください。"
+    "searchingProfilesJa": "プロファイルを取得しています。もう少しお待ちください。",
+    "noProfilesFoundError": "この場所またはハッシュタグに一致するプロフィールが見つかりませんでした。キャンペーンの説明、ニッチ、または場所を変更してみてください。",
+    "searchPostsFailed": "投稿の検索に失敗しました。",
+    "goToAccount": "アカウントへ移動",
+    "unknownCampaignName": "不明",
+    "profileAlt": "プロフィール",
+    "noPic": "画像なし",
+    "unknownAuthor": "@不明",
+    "followersSuffix": "フォロワー",
+    "postsSuffix": "投稿",
+    "unfollowReadyBadge": "30日以上",
+    "add": "追加",
+    "scanning": "スキャン中",
+    "running": "実行中"
   },
   "ImageGen": {
     "title": "画像ジェネレーター",
@@ -630,7 +743,24 @@
     "errSavePrompt": "プロンプトを保存できませんでした。もう一度お試しください。",
     "errDeletePrompt": "プロンプトを削除できませんでした。もう一度お試しください。",
     "errOptimizePrompt": "プロンプトを最適化できませんでした。もう一度お試しください。",
-    "errStartGen": "生成を開始できませんでした。もう一度お試しください。"
+    "errStartGen": "生成を開始できませんでした。もう一度お試しください。",
+    "errDescriptionRequired": "まず説明を入力してください。",
+    "statusOptimizing": "プロンプトを最適化中...",
+    "statusStarting": "開始しています...",
+    "statusInProgress": "処理中...",
+    "defaultTemplateNamePrefix": "プロンプト",
+    "similarTooltip": "類似画像を生成",
+    "similarBtn": "類似",
+    "confirmBtn": "確認",
+    "deleteTooltip": "削除",
+    "pageOf": "{total}ページ中{page}ページ目",
+    "geminiOptimizedTooltipTitle": "Gemini最適化プロンプト",
+    "expandedByAi": "AIによって拡張済み",
+    "generatedOutputAlt": "生成された画像"
+  },
+  "ConfirmModal": {
+    "confirm": "確認",
+    "cancel": "キャンセル"
   },
   "SignIn": {
     "errInvalidEmail": "有効なメールアドレスを入力してください。",

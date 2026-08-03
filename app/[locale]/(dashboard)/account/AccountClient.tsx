@@ -6,7 +6,7 @@ import {
     RefreshCw, ChevronRight, UserCircle, LogOut, MoreHorizontal
 } from 'lucide-react'
 import { disconnectAccount } from './actions'
-import { useRef, useEffect, useTransition } from 'react'
+import { useRef, useEffect, useState, useTransition } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from '@/i18n/routing'
 
@@ -27,6 +27,7 @@ interface AccountClientProps {
 export default function AccountClient({ connectedAccounts, error, success }: AccountClientProps) {
     const [isPending, startTransition] = useTransition()
     const [isRefreshing, startRefreshTransition] = useTransition()
+    const [disconnectError, setDisconnectError] = useState<string | null>(null)
     const errorRef = useRef<HTMLDivElement>(null)
     const t = useTranslations('Account')
     const router = useRouter()
@@ -72,6 +73,12 @@ export default function AccountClient({ connectedAccounts, error, success }: Acc
                 <div ref={errorRef} className="p-4 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 text-red-700 dark:text-red-400 rounded-2xl flex items-center gap-3">
                     <AlertCircle className="w-5 h-5 shrink-0" />
                     <p className="text-sm font-medium">{getErrorMessage(error)}</p>
+                </div>
+            )}
+            {disconnectError && (
+                <div className="p-4 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 text-red-700 dark:text-red-400 rounded-2xl flex items-center gap-3">
+                    <AlertCircle className="w-5 h-5 shrink-0" />
+                    <p className="text-sm font-medium">{disconnectError}</p>
                 </div>
             )}
             {success && (
@@ -121,7 +128,7 @@ export default function AccountClient({ connectedAccounts, error, success }: Acc
                                             </div>
                                         </div>
                                         <div>
-                                            <h3 className="text-xl font-bold text-foreground">@{account.username || 'unknown'}</h3>
+                                            <h3 className="text-xl font-bold text-foreground">@{account.username || t('unknownUsername')}</h3>
                                             <div className="flex items-center gap-2 mt-1">
                                                 <span className="text-xs font-bold text-muted-text bg-surface px-2 py-0.5 rounded-lg border border-card-border uppercase tracking-tight">{t('businessAccount')}</span>
                                                 <span className="flex items-center gap-1 text-[10px] font-bold text-green-600 uppercase tracking-widest">
@@ -163,8 +170,10 @@ export default function AccountClient({ connectedAccounts, error, success }: Acc
                                     </button>
                                     <button
                                         onClick={() => {
-                                            startTransition(() => {
-                                                disconnectAccount(account.id)
+                                            setDisconnectError(null)
+                                            startTransition(async () => {
+                                                const result = await disconnectAccount(account.id)
+                                                if (result?.error) setDisconnectError(result.error)
                                             })
                                         }}
                                         disabled={isPending}

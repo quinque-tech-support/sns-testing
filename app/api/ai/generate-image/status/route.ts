@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
         // Fetch job status
         const jobData: any = await redis.get(`job:${jobId}`);
 
-        if (!jobData) {
+        if (!jobData || jobData.userId !== session.user.id) {
             return NextResponse.json({ error: 'Job not found' }, { status: 404 });
         }
 
