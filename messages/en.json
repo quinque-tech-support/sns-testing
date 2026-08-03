@@ -206,7 +206,16 @@
     "sysCumulative": "Cumulative",
     "sysPublished": "Published {count} posts",
     "system": "System",
-    "queue": "Queue"
+    "queue": "Queue",
+    "tokenExpiredMessage": "Your Facebook session has expired due to a password change or security update. Please reconnect your account to restore dashboard insights.",
+    "reconnectAccount": "Reconnect Account",
+    "dayAbbrevSun": "Sun",
+    "dayAbbrevMon": "Mon",
+    "dayAbbrevTue": "Tue",
+    "dayAbbrevWed": "Wed",
+    "dayAbbrevThu": "Thu",
+    "dayAbbrevFri": "Fri",
+    "dayAbbrevSat": "Sat"
   },
   "Create": {
     "title": "Create Content",
