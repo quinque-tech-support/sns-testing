@@ -15,6 +15,28 @@ import type { HistoryItem, ConnectedAccount, MediaItem } from '@/app/[locale]/(d
 jest.mock('next-intl', () => ({
     useTranslations: (namespace: string) => (key: string) => {
         const translations: Record<string, Record<string, string>> = {
+            DraftSelectionModal: {
+                title: '下書き',
+                subtitle: '保存した下書きを再開します',
+                noProjectSelected: 'プロジェクトが選択されていません',
+                noProjectSelectedDesc: '下書きを表示するにはプロジェクトを選択してください',
+                loading: '読み込み中...',
+                noCaptionFallback: '（キャプションなし）',
+                draftBadge: '下書き',
+                editBtn: '編集する',
+                emptyTitle: '下書きがありません',
+                emptyDesc: '下書きボタンで保存すると、ここに表示されます',
+            },
+            HistorySelectionModal: {
+                title: '過去の投稿から作成',
+                subtitle: 'エンゲージメントの高かった投稿を再利用して新しいコンテンツを作成します',
+                noProjectSelected: 'プロジェクトが選択されていません',
+                noProjectSelectedDesc: '履歴を表示するにはプロジェクトを選択してください',
+                analyzing: 'トップ投稿を分析中...',
+                reuseBtn: '再利用する',
+                emptyTitle: '履歴データが見つかりません',
+                emptyDesc: 'システムが十分なデータポイントを収集していません',
+            },
             Create: {
                 previewUsernameFallback: 'ユーザー名',
                 previewZeroLikes: '0件のいいね',

@@ -4,7 +4,7 @@ import { Inter } from "next/font/google";
 import "../globals.css";
 import Providers from "../providers";
 import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
+import { getMessages, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 
@@ -19,13 +19,21 @@ const inter = Inter({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "Gravia — AIでインスタ運用を、もっと楽に、もっと伸ばす。",
-  icons: {
-    icon: "/images/gravia_mark.png",
-  },
-  description: "GraviaはAIを活用したInstagram運用プラットフォームです。キャプション自動生成・スケジュール管理・アナリティクスを一括で。",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'Metadata' });
+  return {
+    title: t('title'),
+    icons: {
+      icon: "/images/gravia_mark.png",
+    },
+    description: t('description'),
+  };
+}
 
 export default async function RootLayout({
   children,

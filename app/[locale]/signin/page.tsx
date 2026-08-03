@@ -5,6 +5,7 @@ import { signIn, useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Link } from '@/i18n/routing'
 import Image from 'next/image'
+import { useTranslations } from 'next-intl'
 import { validateEmail } from '@/lib/validation'
 import { Loader2, ArrowLeft, ChevronDown } from 'lucide-react'
 
@@ -29,6 +30,7 @@ function MetaIcon() {
 
 function SignInForm() {
     const router = useRouter()
+    const t = useTranslations('SignIn')
     const searchParams = useSearchParams()
     const message = searchParams.get('message')
     const errorParam = searchParams.get('error')
@@ -43,13 +45,13 @@ function SignInForm() {
         e.preventDefault()
         setError('')
         const emailValidation = validateEmail(email)
-        if (!emailValidation.valid) { setError(emailValidation.error || '有効なメールアドレスを入力してください。'); return }
+        if (!emailValidation.valid) { setError(emailValidation.error || t('errInvalidEmail')); return }
         setLoading(true)
         try {
             const result = await signIn('credentials', { email, password, redirect: false })
-            if (result?.error) setError('メールアドレスまたはパスワードが正しくありません。')
+            if (result?.error) setError(t('errInvalidCredentials'))
             else window.location.replace('/dashboard')
-        } catch { setError('エラーが発生しました。もう一度お試しください。') }
+        } catch { setError(t('errGeneric')) }
         finally { setLoading(false) }
     }
 
@@ -64,7 +66,7 @@ function SignInForm() {
             )}
             {errorParam && (
                 <div className="p-3 sm:p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 rounded-2xl text-sm font-medium">
-                    認証に失敗しました。もう一度お試しください。
+                    {t('errAuthFailed')}
                 </div>
             )}
 
@@ -80,7 +82,7 @@ function SignInForm() {
                     active:scale-[0.98] transition-all duration-200"
             >
                 <GoogleIcon />
-                Googleでサインイン
+                {t('signInWithGoogle')}
             </button>
 
             <button
@@ -93,13 +95,13 @@ function SignInForm() {
                     active:scale-[0.98] transition-all duration-200"
             >
                 <MetaIcon />
-                Metaでサインイン
+                {t('signInWithMeta')}
             </button>
 
             {/* Divider */}
             <div className="flex items-center gap-3 py-1">
                 <div className="flex-1 h-px bg-slate-200 dark:bg-white/10"></div>
-                <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider shrink-0">または</span>
+                <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider shrink-0">{t('or')}</span>
                 <div className="flex-1 h-px bg-slate-200 dark:bg-white/10"></div>
             </div>
 
@@ -112,7 +114,7 @@ function SignInForm() {
                     hover:bg-slate-200 dark:hover:bg-white/10
                     active:scale-[0.98] transition-all duration-200"
             >
-                メールアドレスでサインイン
+                {t('signInWithEmail')}
                 <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showEmailForm ? 'rotate-180' : ''}`} />
             </button>
 
@@ -121,17 +123,17 @@ function SignInForm() {
                 <form onSubmit={handleSubmit} className="space-y-4 pt-2">
                     {error && <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 rounded-2xl text-sm font-medium">{error}</div>}
                     <div className="space-y-1.5">
-                        <label htmlFor="email" className="block text-sm font-bold text-slate-700 dark:text-slate-300">メールアドレス</label>
+                        <label htmlFor="email" className="block text-sm font-bold text-slate-700 dark:text-slate-300">{t('emailLabel')}</label>
                         <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className={inputCls} placeholder="you@example.com" />
                     </div>
                     <div className="space-y-1.5">
-                        <label htmlFor="password" className="block text-sm font-bold text-slate-700 dark:text-slate-300">パスワード</label>
+                        <label htmlFor="password" className="block text-sm font-bold text-slate-700 dark:text-slate-300">{t('passwordLabel')}</label>
                         <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className={inputCls} placeholder="••••••••" />
                     </div>
                     <button type="submit" disabled={loading}
                         className="w-full text-white py-3.5 sm:py-4 px-4 rounded-2xl font-bold shadow-lg shadow-purple-500/30 hover:opacity-90 transition-all active:scale-95 flex items-center justify-center gap-2 text-sm"
                         style={{background:'linear-gradient(135deg,#7C3AED,#EC4899,#F97316)'}}>
-                        {loading ? <><Loader2 className="w-5 h-5 animate-spin" />サインイン中...</> : 'サインイン'}
+                        {loading ? <><Loader2 className="w-5 h-5 animate-spin" />{t('signingIn')}</> : t('signInBtn')}
                     </button>
                 </form>
             </div>
@@ -141,6 +143,7 @@ function SignInForm() {
 
 export default function SignIn() {
     const router = useRouter()
+    const t = useTranslations('SignIn')
     const { status } = useSession()
     useEffect(() => { if (status === 'authenticated') router.replace('/dashboard') }, [status, router])
 
@@ -161,15 +164,15 @@ export default function SignIn() {
             </div>
 
             <Link href="/" className="absolute top-4 left-4 sm:top-8 sm:left-8 flex items-center gap-2 text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors z-10">
-                <ArrowLeft className="w-4 h-4" /> ホームに戻る
+                <ArrowLeft className="w-4 h-4" /> {t('backToHome')}
             </Link>
 
             <div className="w-full max-w-[420px] bg-white dark:bg-white/[0.03] rounded-[2rem] border border-slate-200 dark:border-white/10 p-6 sm:p-8 shadow-2xl shadow-purple-500/5 dark:shadow-purple-500/5 relative z-10">
                 <div className="flex flex-col items-center text-center mb-6 sm:mb-8">
-                    <Image src="/images/gravia_mark.png" alt="Gravia" width={48} height={48} className="mb-3 sm:w-14 sm:h-12.5" />
-                    <Image src="/images/gravia_text.png" alt="Gravia" width={100} height={30} className="object-contain mb-3 sm:mb-4" />
-                    <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">お帰りなさい</h1>
-                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">アカウントにサインインして続けましょう</p>
+                    <Image src="/images/gravia_mark.png" alt={t('logoAlt')} width={48} height={48} className="mb-3 sm:w-14 sm:h-12.5" />
+                    <Image src="/images/gravia_text.png" alt={t('logoAlt')} width={100} height={30} className="object-contain mb-3 sm:mb-4" />
+                    <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">{t('welcomeBack')}</h1>
+                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">{t('welcomeBackDesc')}</p>
                 </div>
 
                 <Suspense fallback={<div className="h-48 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin" style={{ color: '#7C3AED' }} /></div>}>
@@ -178,8 +181,8 @@ export default function SignIn() {
 
                 <div className="mt-6 sm:mt-8 pt-5 sm:pt-6 border-t border-slate-200 dark:border-white/10 text-center">
                     <p className="text-xs sm:text-sm font-medium text-slate-400 dark:text-slate-500">
-                        アカウントをお持ちではありませんか？{' '}
-                        <Link href="/signup" className="font-bold text-[#7C3AED] hover:opacity-80 transition-opacity">無料で登録</Link>
+                        {t('noAccount')}{' '}
+                        <Link href="/signup" className="font-bold text-[#7C3AED] hover:opacity-80 transition-opacity">{t('signUpFree')}</Link>
                     </p>
                 </div>
             </div>

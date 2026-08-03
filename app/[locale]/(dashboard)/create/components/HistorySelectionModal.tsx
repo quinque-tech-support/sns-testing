@@ -9,6 +9,7 @@ import {
     Heart,
     Video
 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { HistoryItem, parseImageUrls } from '../types'
 
 interface HistorySelectionModalProps {
@@ -28,6 +29,7 @@ export function HistorySelectionModal({
     isLoadingHistory,
     handleSelectHistory
 }: HistorySelectionModalProps) {
+    const t = useTranslations('HistorySelectionModal')
     if (!show) return null
 
     return (
@@ -39,8 +41,8 @@ export function HistorySelectionModal({
                             <History className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                         </div>
                         <div className="flex flex-col">
-                            <h2 className="text-lg font-bold text-foreground leading-tight">過去の投稿から作成</h2>
-                            <p className="text-xs text-muted-text font-medium">エンゲージメントの高かった投稿を再利用して新しいコンテンツを作成します</p>
+                            <h2 className="text-lg font-bold text-foreground leading-tight">{t('title')}</h2>
+                            <p className="text-xs text-muted-text font-medium">{t('subtitle')}</p>
                         </div>
                     </div>
                     <button type="button" onClick={onClose} className="p-2 text-muted-text/80 hover:text-gray-600 hover:bg-surface dark:hover:bg-surface/80 rounded-xl transition-colors"><X className="w-5 h-5"/></button>
@@ -50,15 +52,15 @@ export function HistorySelectionModal({
                     {!selectedProjectId ? (
                         <div className="flex flex-col items-center justify-center py-20 text-center">
                             <FolderPlus className="w-12 h-12 text-gray-300 mb-4" />
-                            <p className="text-muted-text font-bold mb-1">プロジェクトが選択されていません</p>
-                            <p className="text-muted-text/80 text-sm">履歴を表示するにはプロジェクトを選択してください</p>
+                            <p className="text-muted-text font-bold mb-1">{t('noProjectSelected')}</p>
+                            <p className="text-muted-text/80 text-sm">{t('noProjectSelectedDesc')}</p>
                         </div>
                     ) : (
                         <div className="flex flex-col gap-4">
                             {isLoadingHistory ? (
                                 <div className="py-20 flex flex-col items-center justify-center">
                                     <Loader2 className="w-8 h-8 animate-spin text-blue-500 mb-4" />
-                                    <p className="text-muted-text font-medium text-sm">トップ投稿を分析中...</p>
+                                    <p className="text-muted-text font-medium text-sm">{t('analyzing')}</p>
                                 </div>
                             ) : historyItems.length > 0 ? (
                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -75,7 +77,7 @@ export function HistorySelectionModal({
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80" />
                                             
                                             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 bg-black/20 backdrop-blur-[2px]">
-                                                <span className="bg-card text-foreground text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">再利用する</span>
+                                                <span className="bg-card text-foreground text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">{t('reuseBtn')}</span>
                                             </div>
                                             {hist.mediaType === 'VIDEO' && (
                                                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -104,8 +106,8 @@ export function HistorySelectionModal({
                             ) : (
                                 <div className="col-span-full py-20 flex flex-col items-center justify-center text-center">
                                     <History className="w-12 h-12 text-gray-300 mb-4" />
-                                    <p className="text-muted-text font-bold mb-1">履歴データが見つかりません</p>
-                                    <p className="text-muted-text/80 text-sm">システムが十分なデータポイントを収集していません</p>
+                                    <p className="text-muted-text font-bold mb-1">{t('emptyTitle')}</p>
+                                    <p className="text-muted-text/80 text-sm">{t('emptyDesc')}</p>
                                 </div>
                             )}
                         </div>
