@@ -292,7 +292,9 @@
     "saving": "保存中...",
     "deleteTitle": "プロジェクトの削除",
     "deleteConfirm": "本当にこのプロジェクトを削除しますか？\n関連付けられたデータも削除される可能性があります。",
-    "deleteBtn": "削除する"
+    "deleteBtn": "削除する",
+    "hashtagsPlaceholder": "#タグ1 #タグ2",
+    "ageRangePlaceholder": "例: 18-24"
   },
   "Analytics": {
     "title": "アナリティクス",
