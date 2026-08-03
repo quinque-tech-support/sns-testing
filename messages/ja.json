@@ -174,7 +174,9 @@
     "dataCommentsLabel": "受信コメント",
     "dataCommentsDesc": "コメント本文、コメントID、メディアID(読み取り、その後任意で自動返信)",
     "dataPublishLabel": "メディアの公開",
-    "dataPublishDesc": "画像URL、動画URL、キャプション(書き込み、明示的に公開・予約投稿した場合のみ)"
+    "dataPublishDesc": "画像URL、動画URL、キャプション(書き込み、明示的に公開・予約投稿した場合のみ)",
+    "backToHome": "ホームに戻る",
+    "unknownUsername": "不明"
   },
   "Dashboard": {
     "title": "ダッシュボード概要",
@@ -249,7 +251,9 @@
     "publishNow": "今すぐ公開",
     "reelBadge": "リール",
     "aiGeneratedLabel": "AI生成",
-    "noAiImagesYet": "まだAI生成画像がありません"
+    "noAiImagesYet": "まだAI生成画像がありません",
+    "previewUsernameFallback": "ユーザー名",
+    "previewZeroLikes": "0件のいいね"
   },
   "Projects": {
     "title": "プロジェクト",
@@ -370,7 +374,8 @@
     "deleteFailed": "削除に失敗しました",
     "emptyTitle": "投稿履歴が空です",
     "emptyDesc": "最初の投稿を作成してここでトラッキングしましょう。",
-    "createPostBtn": "投稿を作成"
+    "createPostBtn": "投稿を作成",
+    "postFallback": "投稿"
   },
   "Settings": {
     "title": "システム設定",
@@ -456,7 +461,8 @@
     "privacy": "プライバシーポリシー",
     "permissions": "データとアクセス権限",
     "copyright": "© 2026 Gravia. All rights reserved.",
-    "dataDeletion": "データ削除"
+    "dataDeletion": "データ削除",
+    "toggleTheme": "テーマを切り替え"
   },
   "Privacy": {
     "title": "プライバシーポリシー",
@@ -751,5 +757,9 @@
     "geminiOptimizedTooltipTitle": "Gemini最適化プロンプト",
     "expandedByAi": "AIによって拡張済み",
     "generatedOutputAlt": "生成された画像"
+  },
+  "ConfirmModal": {
+    "confirm": "確認",
+    "cancel": "キャンセル"
   }
 }

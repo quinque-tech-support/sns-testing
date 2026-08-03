@@ -12,6 +12,18 @@ import { HistorySelectionModal } from '@/app/[locale]/(dashboard)/create/compone
 import { MobilePreviewModal } from '@/app/[locale]/(dashboard)/create/components/MobilePreviewModal'
 import type { HistoryItem, ConnectedAccount, MediaItem } from '@/app/[locale]/(dashboard)/create/types'
 
+jest.mock('next-intl', () => ({
+    useTranslations: (namespace: string) => (key: string) => {
+        const translations: Record<string, Record<string, string>> = {
+            Create: {
+                previewUsernameFallback: 'ユーザー名',
+                previewZeroLikes: '0件のいいね',
+            },
+        }
+        return translations[namespace]?.[key] ?? key
+    },
+}))
+
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
 const makeDraft = (overrides: Partial<HistoryItem> = {}): HistoryItem => ({

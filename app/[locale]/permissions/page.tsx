@@ -17,7 +17,7 @@ export default async function PermissionsPage() {
             <div className="max-w-4xl mx-auto space-y-6">
                 <Link href="/" className="inline-flex items-center gap-2 text-sm font-bold text-muted-text hover:text-foreground transition-colors">
                     <ArrowLeft className="w-4 h-4" />
-                    Back to Home
+                    {t('backToHome')}
                 </Link>
                 <PermissionsDisclosure />
             </div>

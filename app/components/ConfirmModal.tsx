@@ -1,6 +1,7 @@
 'use client'
 
 import { AlertCircle } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 interface ConfirmModalProps {
     isOpen: boolean
@@ -17,13 +18,17 @@ export default function ConfirmModal({
     isOpen,
     title,
     message,
-    confirmText = '確認',
-    cancelText = 'キャンセル',
+    confirmText,
+    cancelText,
     onConfirm,
     onCancel,
     isDestructive = true
 }: ConfirmModalProps) {
+    const t = useTranslations('ConfirmModal')
     if (!isOpen) return null
+
+    const resolvedConfirmText = confirmText ?? t('confirm')
+    const resolvedCancelText = cancelText ?? t('cancel')
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
@@ -42,7 +47,7 @@ export default function ConfirmModal({
                         onClick={onCancel}
                         className="px-4 py-2 bg-surface hover:bg-surface/80 border border-card-border rounded-xl font-bold text-foreground transition-colors"
                     >
-                        {cancelText}
+                        {resolvedCancelText}
                     </button>
                     <button
                         onClick={onConfirm}
@@ -50,7 +55,7 @@ export default function ConfirmModal({
                             isDestructive ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
                         }`}
                     >
-                        {confirmText}
+                        {resolvedConfirmText}
                     </button>
                 </div>
             </div>

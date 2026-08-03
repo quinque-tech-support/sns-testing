@@ -128,7 +128,7 @@ export default function AccountClient({ connectedAccounts, error, success }: Acc
                                             </div>
                                         </div>
                                         <div>
-                                            <h3 className="text-xl font-bold text-foreground">@{account.username || 'unknown'}</h3>
+                                            <h3 className="text-xl font-bold text-foreground">@{account.username || t('unknownUsername')}</h3>
                                             <div className="flex items-center gap-2 mt-1">
                                                 <span className="text-xs font-bold text-muted-text bg-surface px-2 py-0.5 rounded-lg border border-card-border uppercase tracking-tight">{t('businessAccount')}</span>
                                                 <span className="flex items-center gap-1 text-[10px] font-bold text-green-600 uppercase tracking-widest">

@@ -174,7 +174,9 @@
     "dataCommentsLabel": "Incoming comments",
     "dataCommentsDesc": "comment text, comment ID, media ID (read, then optionally auto-reply)",
     "dataPublishLabel": "Media publishing",
-    "dataPublishDesc": "image URLs, video URLs, captions (write, only when you explicitly publish or schedule)"
+    "dataPublishDesc": "image URLs, video URLs, captions (write, only when you explicitly publish or schedule)",
+    "backToHome": "Back to Home",
+    "unknownUsername": "unknown"
   },
   "Dashboard": {
     "title": "Dashboard Overview",
@@ -249,7 +251,9 @@
     "publishNow": "Publish Now",
     "reelBadge": "REEL",
     "aiGeneratedLabel": "AI Generated",
-    "noAiImagesYet": "No AI generated images yet"
+    "noAiImagesYet": "No AI generated images yet",
+    "previewUsernameFallback": "username",
+    "previewZeroLikes": "0 likes"
   },
   "Projects": {
     "title": "Projects",
@@ -370,7 +374,8 @@
     "deleteFailed": "Failed to delete",
     "emptyTitle": "Post history is empty",
     "emptyDesc": "Create your first post and start tracking here.",
-    "createPostBtn": "Create Post"
+    "createPostBtn": "Create Post",
+    "postFallback": "Post"
   },
   "Settings": {
     "title": "System Settings",
@@ -456,7 +461,8 @@
     "privacy": "Privacy Policy",
     "permissions": "Permissions",
     "copyright": "© 2026 Gravia. All rights reserved.",
-    "dataDeletion": "Data Deletion"
+    "dataDeletion": "Data Deletion",
+    "toggleTheme": "Toggle theme"
   },
   "Privacy": {
     "title": "Privacy Policy",
@@ -751,5 +757,9 @@
     "geminiOptimizedTooltipTitle": "Gemini Optimized Prompt",
     "expandedByAi": "Expanded by AI",
     "generatedOutputAlt": "Generated output"
+  },
+  "ConfirmModal": {
+    "confirm": "Confirm",
+    "cancel": "Cancel"
   }
 }

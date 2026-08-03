@@ -71,6 +71,9 @@ describe('Create Actions', () => {
         jest.useFakeTimers()
         jest.setSystemTime(new Date('2025-06-15T12:00:00Z').getTime())
         mockRequireAuth.mockResolvedValue('user-1')
+        // saveDraft/schedulePost verify connectedAccount ownership before creating a Post;
+        // default to an owned account so existing tests don't need to opt in individually.
+        mockPrismaConnectedAccountFindUnique.mockResolvedValue({ id: 'account-1' })
     })
 
     afterEach(() => {
