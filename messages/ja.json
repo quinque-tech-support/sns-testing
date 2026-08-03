@@ -246,7 +246,10 @@
     "preview": "プレビュー",
     "saveDraft": "下書き保存",
     "schedule": "日時を指定して予約",
-    "publishNow": "今すぐ公開"
+    "publishNow": "今すぐ公開",
+    "reelBadge": "リール",
+    "aiGeneratedLabel": "AI生成",
+    "noAiImagesYet": "まだAI生成画像がありません"
   },
   "Projects": {
     "title": "プロジェクト",
