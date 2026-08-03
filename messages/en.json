@@ -314,7 +314,9 @@
     "comments": "Comments",
     "noTopPosts": "No Posts Yet",
     "noTopPostsDesc": "Create and publish your first post to see performance here.",
-    "needsImprovement": "Needs Improvement (Worst)"
+    "needsImprovement": "Needs Improvement (Worst)",
+    "dayTooltip": "{count, plural, one {# post} other {# posts}} ({published} published)",
+    "postFallback": "Post"
   },
   "Calendar": {
     "title": "Content Calendar",

@@ -314,7 +314,9 @@
     "comments": "コメント",
     "noTopPosts": "投稿がまだありません",
     "noTopPostsDesc": "最初の投稿を作成・予約して、ここにパフォーマンスを表示しましょう。",
-    "needsImprovement": "改善が必要な投稿 (ワースト)"
+    "needsImprovement": "改善が必要な投稿 (ワースト)",
+    "dayTooltip": "{count}件の投稿 ({published}件公開済み)",
+    "postFallback": "投稿"
   },
   "Calendar": {
     "title": "コンテンツカレンダー",
