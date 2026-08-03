@@ -382,7 +382,10 @@
     "deleteAccountWarning": "Are you sure you want to permanently delete your account? This will erase all connected Facebook profiles, campaigns, posts, and AI generated images. This action cannot be undone!",
     "confirmDelete": "Yes, Delete My Account",
     "deleting": "Deleting...",
-    "premiumUpdate": "Premium Update"
+    "premiumUpdate": "Premium Update",
+    "updateProfileFailed": "Failed to update profile.",
+    "deleteProfileFailed": "Failed to delete profile.",
+    "avatarAlt": "Avatar"
   },
   "HomePage": {
     "signIn": "Sign In",
