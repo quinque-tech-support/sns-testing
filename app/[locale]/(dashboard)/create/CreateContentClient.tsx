@@ -403,7 +403,7 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
                                                     <div className="w-[140px] h-[140px] rounded-xl bg-gray-900 flex items-center justify-center border border-card-border shadow-sm relative overflow-hidden">
                                                         <img src={src} className="absolute inset-0 w-full h-full object-cover opacity-50" alt="" />
                                                         <Video className="w-8 h-8 text-white/80 z-10" />
-                                                        <span className="absolute bottom-2 left-2 text-[10px] bg-white/20 text-white backdrop-blur-md px-2 py-0.5 rounded font-medium z-10">REEL</span>
+                                                        <span className="absolute bottom-2 left-2 text-[10px] bg-white/20 text-white backdrop-blur-md px-2 py-0.5 rounded font-medium z-10">{t('reelBadge')}</span>
                                                     </div>
                                                 ) : (
                                                     <img src={src} className="w-[140px] h-[140px] rounded-xl object-cover border border-card-border shadow-sm" alt="media" />
@@ -507,7 +507,7 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
                                                                     ) : (
                                                                         <div className="col-span-full py-4 flex flex-col items-center justify-center bg-surface rounded-xl border border-dashed border-card-border">
                                                                             <Sparkles className="w-5 h-5 text-gray-300 mb-1" />
-                                                                            <span className="text-[10px] text-muted-text/80 font-medium">No images yet</span>
+                                                                            <span className="text-[10px] text-muted-text/80 font-medium">{t('noAiImagesYet')}</span>
                                                                         </div>
                                                                     )}
                                                                 </div>
@@ -519,14 +519,14 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
                                                                             onClick={() => setActiveImageTab('uploaded')}
                                                                             className={cn("px-3 py-1.5 text-sm font-bold rounded-lg transition-colors", activeImageTab === 'uploaded' ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400" : "text-muted-text hover:bg-surface")}
                                                                         >
-                                                                            Uploaded Images
+                                                                            {t('uploadedImagesTab')}
                                                                         </button>
                                                                         <button
                                                                             type="button"
                                                                             onClick={() => setActiveImageTab('ai')}
                                                                             className={cn("px-3 py-1.5 text-sm font-bold rounded-lg transition-colors", activeImageTab === 'ai' ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400" : "text-muted-text hover:bg-surface")}
                                                                         >
-                                                                            AI Images
+                                                                            {t('aiImagesTab')}
                                                                         </button>
                                                                     </div>
                                                                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-[280px] overflow-y-auto pr-1 scrollbar-thin">
@@ -574,7 +574,7 @@ export default function CreateContentClient({ accounts: _ignored, aiUsageOption 
                                                                             ) : (
                                                                                 <div className="col-span-full py-4 flex flex-col items-center justify-center bg-surface rounded-xl border border-dashed border-card-border">
                                                                                     <Sparkles className="w-5 h-5 text-gray-300 mb-1" />
-                                                                                    <span className="text-[10px] text-muted-text/80 font-medium">No AI generated images yet</span>
+                                                                                    <span className="text-[10px] text-muted-text/80 font-medium">{t('noAiImagesYet')}</span>
                                                                                 </div>
                                                                             )
                                                                         )}

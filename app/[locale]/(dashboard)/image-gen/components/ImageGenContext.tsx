@@ -308,13 +308,13 @@ export function ImageGenProvider({ children, projects }: { children: React.React
 
     const handleGenerateImage = async () => {
         if (!description) {
-            setGenerationError('Please provide a description first.')
+            setGenerationError(t('errDescriptionRequired'))
             return
         }
 
         try {
             setIsGeneratingImage(true)
-            setGenerationStatus('Optimizing Prompt...')
+            setGenerationStatus(t('statusOptimizing'))
             setGenerationError(null)
             setGeneratedImageUrl(null)
             setLastJobId(null)
@@ -338,7 +338,7 @@ export function ImageGenProvider({ children, projects }: { children: React.React
             setNegativePrompt(builtNeg)
 
             // 2. Start the generation job
-            setGenerationStatus('Starting...')
+            setGenerationStatus(t('statusStarting'))
             const res = await fetch('/api/ai/generate-image/start', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -359,7 +359,7 @@ export function ImageGenProvider({ children, projects }: { children: React.React
 
             const { jobId, imageUrl: predictedUrl } = await res.json()
             setLastJobId(jobId)
-            setGenerationStatus('IN_PROGRESS')
+            setGenerationStatus(t('statusInProgress'))
             pollStatus(jobId, predictedUrl)
 
         } catch (err: any) {
@@ -404,7 +404,7 @@ export function ImageGenProvider({ children, projects }: { children: React.React
 
             const finalTemplateName = selectedProject
                 ? selectedProject.name
-                : `Prompt ${new Date().toLocaleDateString()}`
+                : `${t('defaultTemplateNamePrefix')} ${new Date().toLocaleDateString()}`
 
             const res = await fetch('/api/prompts/saved', {
                 method: 'POST',

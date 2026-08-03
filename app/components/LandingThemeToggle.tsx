@@ -1,15 +1,17 @@
 'use client'
 
 import { Sun, Moon } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { useTheme } from './ThemeContext'
 
 export function LandingThemeToggle() {
     const { theme, toggleTheme } = useTheme()
+    const t = useTranslations('HomePage')
 
     return (
         <button
             onClick={toggleTheme}
-            aria-label="Toggle theme"
+            aria-label={t('toggleTheme')}
             className="relative w-14 h-7 rounded-full transition-all duration-300 active:scale-95 flex items-center px-1"
             style={{
                 background: theme === 'dark'

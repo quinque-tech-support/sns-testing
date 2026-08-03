@@ -43,7 +43,7 @@ export default function ImageGenerationPanel() {
             <div className="h-full w-full rounded-[20px] p-6 bg-white dark:bg-surface border border-gray-100 dark:border-card-border shadow-sm min-h-[400px] flex flex-col items-center">
                 <div className="flex-1 w-full max-w-[320px] rounded-xl overflow-hidden bg-gray-100 dark:bg-white/5 flex items-center justify-center relative aspect-[4/5] mx-auto shadow-md border border-gray-200 dark:border-card-border group">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={generatedImageUrl} alt="Generated output" className="w-full h-full object-cover" />
+                    <img src={generatedImageUrl} alt={t('generatedOutputAlt')} className="w-full h-full object-cover" />
                     <button
                         type="button"
                         onClick={discardImage}

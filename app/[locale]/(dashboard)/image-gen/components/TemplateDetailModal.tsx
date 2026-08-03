@@ -34,7 +34,7 @@ export default function TemplateDetailModal() {
                         <h3 className="font-bold text-xl text-foreground flex items-center gap-2">
                             {selectedTemplate.name}
                             {selectedTemplate.isSystem && (
-                                <span className="text-[10px] font-bold bg-indigo-50 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-500/30 px-2 py-0.5 rounded-full shrink-0">System</span>
+                                <span className="text-[10px] font-bold bg-indigo-50 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-500/30 px-2 py-0.5 rounded-full shrink-0">{t('systemBadge')}</span>
                             )}
                         </h3>
                         {selectedTemplate.description && (

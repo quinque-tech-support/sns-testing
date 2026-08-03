@@ -51,7 +51,7 @@ describe('useProjects › openModal', () => {
     expect(result.current.isModalOpen).toBe(true)
     expect(result.current.name).toBe('')
     expect(result.current.description).toBe('')
-    expect(result.current.hashtags).toBe('')
+    expect(result.current.hashtags).toEqual([])
   })
 
   it('should open modal and pre-fill fields when project is provided', () => {
@@ -64,7 +64,7 @@ describe('useProjects › openModal', () => {
     expect(result.current.isModalOpen).toBe(true)
     expect(result.current.name).toBe('Alpha')
     expect(result.current.description).toBe('Desc')
-    expect(result.current.hashtags).toBe('#tag1')
+    expect(result.current.hashtags).toEqual(['#tag1'])
     expect(result.current.objective).toBe('awareness')
     expect(result.current.ageRange).toBe('18-24')
   })
@@ -90,7 +90,7 @@ describe('useProjects › openModal', () => {
     })
 
     expect(result.current.name).toBe('')
-    expect(result.current.hashtags).toBe('')
+    expect(result.current.hashtags).toEqual([])
   })
 })
 
@@ -134,7 +134,7 @@ describe('useProjects › handleSave — create', () => {
       result.current.openModal()
       result.current.setName('New')
       result.current.setDescription('New Desc')
-      result.current.setHashtags('#new')
+      result.current.setHashtags(['#new'])
     })
 
     await act(async () => {
@@ -147,13 +147,13 @@ describe('useProjects › handleSave — create', () => {
     expect(mockRefresh).toHaveBeenCalled()
   })
 
-  it('should parse space/comma separated hashtags and add # prefix', async () => {
+  it('should add # prefix to hashtags missing it', async () => {
     const { result } = renderHook(() => useProjects([]), { wrapper })
     mockFetch.mockResolvedValue({ ok: true, json: async () => ({ id: 'p2', name: 'New' }) })
 
     act(() => {
       result.current.openModal()
-      result.current.setHashtags('food, travel #nature')
+      result.current.setHashtags(['food', 'travel', '#nature'])
     })
 
     await act(async () => {
@@ -170,7 +170,7 @@ describe('useProjects › handleSave — create', () => {
 
     act(() => {
       result.current.openModal()
-      result.current.setHashtags('#food')
+      result.current.setHashtags(['#food'])
     })
 
     await act(async () => {

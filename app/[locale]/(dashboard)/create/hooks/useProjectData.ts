@@ -3,15 +3,12 @@
 import { useState, useEffect } from 'react'
 import useSWR from 'swr'
 import { Project, HistoryItem, ProjectImage } from '../types'
-import { createClient } from '@supabase/supabase-js'
+// import removed
 import { getProjectImageUploadUrl, registerProjectImages } from '../actions'
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { supabase } from '@/lib/supabase'
 
 export function useProjectData(initialProjects: Project[] = []) {
     // Projects

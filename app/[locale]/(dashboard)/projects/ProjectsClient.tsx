@@ -222,13 +222,13 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
                                             {t('defaultHashtags')} <span className="text-red-500">*</span>
                                         </label>
                                         <div className="space-y-2">
-                                            <input 
-                                                type="text" 
-                                                value={hashtagInput} 
-                                                onChange={e => setHashtagInput(e.target.value)} 
+                                            <input
+                                                type="text"
+                                                value={hashtagInput}
+                                                onChange={e => setHashtagInput(e.target.value)}
                                                 onKeyDown={handleHashtagKeyDown}
-                                                className="w-full bg-surface border border-card-border rounded-lg px-4 py-2 focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 outline-none transition-all" 
-                                                placeholder={t('hashtagPlaceholder') || "Type and press Enter (#tag)"} 
+                                                className="w-full bg-surface border border-card-border rounded-lg px-4 py-2 focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 outline-none transition-all"
+                                                placeholder={t('hashtagsPlaceholder')}
                                             />
                                             {hashtags.length > 0 && (
                                                 <div className="flex flex-wrap gap-2">
@@ -256,7 +256,7 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-bold text-foreground/80 mb-1">{t('ageRange')} <span className="text-red-500">*</span></label>
-                                        <input required type="text" value={ageRange} onChange={e=>setAgeRange(e.target.value)} className="w-full bg-surface border border-card-border rounded-lg px-4 py-2 focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 outline-none transition-all" placeholder="e.g. 18-24" />
+                                        <input required type="text" value={ageRange} onChange={e=>setAgeRange(e.target.value)} className="w-full bg-surface border border-card-border rounded-lg px-4 py-2 focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 outline-none transition-all" placeholder={t('ageRangePlaceholder')} />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-bold text-foreground/80 mb-1">{t('gender')} <span className="text-muted-text/80 text-[10px] font-normal ml-1">{t('optional')}</span></label>
@@ -522,7 +522,7 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
                                                 <span className="text-xs text-muted-text block mb-0.5">{t('preferredCta')}</span>
                                                 <div className="flex flex-wrap gap-1.5">
                                                     {viewingProject.preferredCtaTypes.split(',').map(c => c.trim()).filter(Boolean).map((c, i) => (
-                                                        <span key={i} className="px-2.5 py-1 bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 text-xs font-bold rounded-lg border border-green-100 dark:border-green-500/20">{c}</span>
+                                                        <span key={i} className="px-2.5 py-1 bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 text-xs font-bold rounded-lg border border-green-100 dark:border-green-500/20">{CTA_OPTIONS.find(opt => opt.value === c)?.label || c}</span>
                                                     ))}
                                                 </div>
                                             </div>

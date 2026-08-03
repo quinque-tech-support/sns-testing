@@ -68,6 +68,9 @@ function mockIgSuccess() {
 describe('saveDraft', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    // saveDraft verifies connectedAccount ownership before creating a Post;
+    // default to an owned account so existing tests don't need to opt in individually.
+    mockAccount()
   })
 
   it('should return success and postId when single image is provided', async () => {
@@ -137,6 +140,9 @@ describe('schedulePost', () => {
     jest.clearAllMocks()
     jest.useFakeTimers()
     jest.setSystemTime(new Date('2025-06-15T12:00:00Z').getTime())
+    // schedulePost verifies connectedAccount ownership before creating a Post;
+    // default to an owned account so existing tests don't need to opt in individually.
+    mockAccount()
   })
 
   afterEach(() => {
@@ -511,9 +517,9 @@ describe('registerProjectImages', () => {
     expect(result).toEqual({ count: 3 })
     expect(prisma.projectImage.createMany).toHaveBeenCalledWith({
       data: [
-        { projectId: 'proj-1', userId: 'user-1', url: 'u1', storagePath: 's1', fileName: 'f1' },
-        { projectId: 'proj-1', userId: 'user-1', url: 'u2', storagePath: 's2', fileName: 'f2' },
-        { projectId: 'proj-1', userId: 'user-1', url: 'u3', storagePath: 's3', fileName: 'f3' }
+        { projectId: 'proj-1', userId: 'user-1', url: 'u1', storagePath: 's1', fileName: 'f1', source: 'UPLOADED' },
+        { projectId: 'proj-1', userId: 'user-1', url: 'u2', storagePath: 's2', fileName: 'f2', source: 'UPLOADED' },
+        { projectId: 'proj-1', userId: 'user-1', url: 'u3', storagePath: 's3', fileName: 'f3', source: 'UPLOADED' }
       ]
     })
   })

@@ -52,7 +52,12 @@ export async function POST(req: Request) {
             .update(buffer)
             .digest('hex')}`
 
-        if (signature !== expectedSignature) {
+        const signatureBuf = Buffer.from(signature)
+        const expectedBuf = Buffer.from(expectedSignature)
+        const signatureValid =
+            signatureBuf.length === expectedBuf.length && crypto.timingSafeEqual(signatureBuf, expectedBuf)
+
+        if (!signatureValid) {
             console.warn('[FacebookWebhook] Signature mismatch — verify INSTAGRAM_APP_SECRET matches Meta Dashboard')
             return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
         }

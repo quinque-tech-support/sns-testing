@@ -21,6 +21,14 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
 
         if (!name) return new NextResponse('Name is required', { status: 400 })
 
+        if (accountId) {
+            const account = await prisma.connectedAccount.findUnique({
+                where: { id: accountId, userId },
+                select: { id: true },
+            })
+            if (!account) return new NextResponse('Instagram account not found', { status: 400 })
+        }
+
         const project = await prisma.project.update({
             where: { id: params.id, userId: userId },
             data: { 
