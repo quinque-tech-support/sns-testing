@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Client as QStashClient } from '@upstash/qstash';
 import { prisma } from '@/lib/prisma';
 import { buildImagePrompt } from './promptBuilder';
+import { getWebhookSecret } from '@/lib/webhook-secret';
 
 const redis = Redis.fromEnv();
 const qstash = new QStashClient({ token: process.env.QSTASH_TOKEN || 'dummy' });
@@ -141,7 +142,7 @@ export async function executeGenerationWorker(payload: { jobId: string, prompt: 
         method: 'POST',
         headers: { 
             'Content-Type': 'application/json',
-            'x-webhook-secret': process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || 'fallback-secret' 
+            'x-webhook-secret': getWebhookSecret()
         },
         body: JSON.stringify({
             jobId,
@@ -161,7 +162,7 @@ export async function failGenerationWorker(jobId: string, errorMsg: string) {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
-                'x-webhook-secret': process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || 'fallback-secret'
+                'x-webhook-secret': getWebhookSecret()
             },
             body: JSON.stringify({
                 jobId,

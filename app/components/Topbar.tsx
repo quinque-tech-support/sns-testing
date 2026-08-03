@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Link } from '@/i18n/routing'
 import Image from 'next/image'
 import { ChevronDown, Instagram, Menu, Sun, Moon } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { useAccount } from './AccountContext'
 import { useSidebar } from './SidebarContext'
 import { useTheme } from './ThemeContext'
@@ -17,6 +18,7 @@ interface TopbarProps {
 }
 
 export function Topbar({ user }: TopbarProps) {
+    const t = useTranslations('Topbar')
     const { accounts, selectedAccountId, setSelectedAccountId, activeAccount } = useAccount()
     const { toggleSidebar } = useSidebar()
     const { theme, toggleTheme } = useTheme()
@@ -32,15 +34,15 @@ export function Topbar({ user }: TopbarProps) {
             <div className="flex items-center gap-3 md:gap-5 flex-1">
                 <button 
                     onClick={toggleSidebar}
-                    aria-label="Toggle Menu"
+                    aria-label={t('toggleMenu')}
                     className="p-2 -ml-2 rounded-lg text-muted-text hover:bg-surface dark:hover:bg-surface/80 transition-all duration-200 ease-out active:scale-95"
                 >
                     <Menu className="w-5 h-5" />
                 </button>
 
                 <Link href="/dashboard" className="flex items-center gap-2 group transition-transform duration-200 ease-out active:scale-[0.98] mr-2">
-                    <Image src="/images/gravia_mark.png" alt="Gravia" width={32} height={32} className="rounded-lg" />
-                    <Image src="/images/gravia_text.png" alt="Gravia" width={80} height={24} className="hidden sm:block object-contain dark-invert" />
+                    <Image src="/images/gravia_mark.png" alt={t('logoAlt')} width={32} height={32} className="rounded-lg" />
+                    <Image src="/images/gravia_text.png" alt={t('logoAlt')} width={80} height={24} className="hidden sm:block object-contain dark-invert" />
                 </Link>
             </div>
 
@@ -60,7 +62,7 @@ export function Topbar({ user }: TopbarProps) {
                                 </div>
                             </div>
                             <span className="text-sm font-semibold text-foreground hidden sm:inline">
-                                @{activeAccount?.username || activeAccount?.pageId || 'no_account'}
+                                @{activeAccount?.username || activeAccount?.pageId || t('noAccount')}
                             </span>
                             <ChevronDown className="w-4 h-4 text-muted-text/80 group-hover:text-gray-600 transition-colors" />
                         </button>
@@ -70,7 +72,7 @@ export function Topbar({ user }: TopbarProps) {
                                 <div className="fixed inset-0 z-10" onClick={() => setIsAccountMenuOpen(false)}></div>
                                 <div className="absolute right-0 mt-2 w-56 bg-card border border-card-border rounded-xl shadow-lg z-20 py-2 top-full">
                                     <div className="px-3 py-2 text-xs font-semibold text-muted-text/80 uppercase tracking-wider">
-                                        アカウント切り替え
+                                        {t('switchAccount')}
                                     </div>
                                     <div className="max-h-60 overflow-y-auto">
                                         {accounts.map(acc => (

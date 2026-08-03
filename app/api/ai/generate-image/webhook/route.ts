@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { finalizeGenerationWebhook } from '@/lib/ai/vision/imageGeneration';
+import { getWebhookSecret } from '@/lib/webhook-secret';
 
 export async function POST(req: NextRequest) {
     try {
         const secret = req.headers.get('x-webhook-secret');
-        const expectedSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || 'fallback-secret';
+        const expectedSecret = getWebhookSecret();
         if (secret !== expectedSecret) {
             console.error('[GenerateImageWebhookRoute] Unauthorized: Invalid webhook secret');
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

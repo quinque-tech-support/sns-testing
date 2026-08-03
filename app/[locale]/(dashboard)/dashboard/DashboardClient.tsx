@@ -76,7 +76,18 @@ function formatNum(n: number): string {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 import { use, Suspense } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
+
+// English weekday abbreviations (from page.tsx's chartData) mapped to a translation key for display.
+const DAY_ABBREV_KEYS: Record<string, string> = {
+    Sun: 'dayAbbrevSun',
+    Mon: 'dayAbbrevMon',
+    Tue: 'dayAbbrevTue',
+    Wed: 'dayAbbrevWed',
+    Thu: 'dayAbbrevThu',
+    Fri: 'dayAbbrevFri',
+    Sat: 'dayAbbrevSat',
+}
 
 function TokenBanner({ insightsPromise }: { insightsPromise: Promise<InsightsData> }) {
     const { isTokenExpired } = use(insightsPromise)
@@ -89,11 +100,11 @@ function TokenBanner({ insightsPromise }: { insightsPromise: Promise<InsightsDat
             <div className="flex items-center gap-3">
                 <AlertCircle className="w-5 h-5 shrink-0" />
                 <p className="text-sm font-medium">
-                    Your Facebook session has expired due to a password change or security update. Please reconnect your account to restore dashboard insights.
+                    {t('tokenExpiredMessage')}
                 </p>
             </div>
             <Link href="/account" className="bg-red-100 dark:bg-red-800 hover:bg-red-200 dark:hover:bg-red-700 text-red-700 dark:text-red-100 px-4 py-2 rounded-lg text-sm font-bold transition-colors shrink-0 ml-4">
-                Reconnect Account
+                {t('reconnectAccount')}
             </Link>
         </div>
     )
@@ -222,6 +233,7 @@ export default function DashboardClient({
     connectedAccountUsername
 }: DashboardClientProps) {
     const t = useTranslations('Dashboard')
+    const locale = useLocale()
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500 max-w-7xl mx-auto">
@@ -284,7 +296,7 @@ export default function DashboardClient({
                 </div>
                 <div className="flex justify-between mt-4 px-0">
                     {chartData.map((day, i) => (
-                        <span key={i} className="text-[10px] font-bold text-muted-text/80 uppercase flex-1 text-center">{day.label}</span>
+                        <span key={i} className="text-[10px] font-bold text-muted-text/80 uppercase flex-1 text-center">{t(DAY_ABBREV_KEYS[day.label] as any)}</span>
                     ))}
                 </div>
             </div>
@@ -315,7 +327,7 @@ export default function DashboardClient({
                                     <p className="text-sm font-bold text-foreground truncate">{s.post.caption || t('noCaption')}</p>
                                     <p className="text-xs text-muted-text mt-0.5 flex items-center gap-1">
                                         <Calendar className="w-3 h-3" />
-                                        {new Date(s.scheduledFor).toLocaleDateString(t('views') === 'Views' ? 'en-US' : 'ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                        {new Date(s.scheduledFor).toLocaleDateString(locale === 'ja' ? 'ja-JP' : 'en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-1 px-2 py-1 bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-lg shrink-0">

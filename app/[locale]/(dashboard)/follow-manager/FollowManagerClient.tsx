@@ -229,7 +229,7 @@ export default function FollowManagerClient() {
         try {
             const data = await searchPosts(cId, connectedAccount.id, niche, location)
             if (data.length === 0) {
-                setSearchError('No profiles found for this location or hashtags. Please try changing your campaign description, niche, or location.')
+                setSearchError(t('noProfilesFoundError'))
             } else {
                 setActiveTab('discovered')
                 await loadTargets(cId, 1)
@@ -237,7 +237,7 @@ export default function FollowManagerClient() {
             }
         } catch (error: any) {
             console.error("Search failed", error)
-            setSearchError(error.message || "Failed to search posts.")
+            setSearchError(error.message || t('searchPostsFailed'))
         }
         setIsSearching(false)
     }
@@ -315,7 +315,7 @@ export default function FollowManagerClient() {
                         </p>
                     </div>
                     <Link href="/account" className="px-4 py-2 bg-yellow-100 hover:bg-yellow-200 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-500 text-sm font-bold rounded-lg transition-colors whitespace-nowrap">
-                        Go to Account
+                        {t('goToAccount')}
                     </Link>
                 </div>
             </div>
@@ -324,19 +324,19 @@ export default function FollowManagerClient() {
 
     const selectedCampaign = campaigns.find(c => c.id === selectedCampaignId)
 
-    const unifiedList = dbTargets.map(t => ({
-        id: t.id,
-        postId: t.postId,
-        mediaUrl: t.postImage,
-        permalink: t.postLink,
-        authorName: t.authorName,
-        status: t.status,
-        campaignName: t.campaign?.name || campaigns.find(c => c.id === t.campaignId)?.name || 'Unknown',
-        followedAt: t.followedAt,
-        campaignId: t.campaignId,
-        followersCount: t.followersCount,
-        mediaCount: t.mediaCount,
-        biography: t.biography,
+    const unifiedList = dbTargets.map(target => ({
+        id: target.id,
+        postId: target.postId,
+        mediaUrl: target.postImage,
+        permalink: target.postLink,
+        authorName: target.authorName,
+        status: target.status,
+        campaignName: target.campaign?.name || campaigns.find(c => c.id === target.campaignId)?.name || t('unknownCampaignName'),
+        followedAt: target.followedAt,
+        campaignId: target.campaignId,
+        followersCount: target.followersCount,
+        mediaCount: target.mediaCount,
+        biography: target.biography,
     }))
 
     // Check if followed > 30 days ago for unfollow reminder
@@ -551,9 +551,9 @@ export default function FollowManagerClient() {
                                             <td className="px-6 py-4">
                                                 <a href={item.permalink} target="_blank" rel="noreferrer" className="block w-14 h-14 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800 border-2 border-card-border flex-shrink-0 relative group">
                                                     {item.mediaUrl ? (
-                                                        <img src={item.mediaUrl} alt="Profile" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                                                        <img src={item.mediaUrl} alt={t('profileAlt')} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                                                     ) : (
-                                                        <div className="w-full h-full flex items-center justify-center text-[10px] text-muted-text/50">No Pic</div>
+                                                        <div className="w-full h-full flex items-center justify-center text-[10px] text-muted-text/50">{t('noPic')}</div>
                                                     )}
                                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-full">
                                                         <ExternalLink className="w-4 h-4 text-white" />
@@ -563,7 +563,7 @@ export default function FollowManagerClient() {
                                             <td className="px-6 py-4">
                                                 <div className="flex flex-col gap-1">
                                                     <a href={item.permalink} target="_blank" rel="noreferrer" className="text-sm font-bold text-foreground hover:text-indigo-600 transition-colors">
-                                                        {item.authorName ? `@${item.authorName}` : '@Unknown'}
+                                                        {item.authorName ? `@${item.authorName}` : t('unknownAuthor')}
                                                     </a>
                                                     {item.biography && (
                                                         <p className="text-xs text-muted-text max-w-[300px] line-clamp-2" title={item.biography}>
@@ -573,12 +573,12 @@ export default function FollowManagerClient() {
                                                     <div className="flex items-center gap-3 mt-1">
                                                         {item.followersCount != null && item.followersCount > 0 && (
                                                             <span className="text-[11px] font-semibold text-foreground/70">
-                                                                {item.followersCount.toLocaleString()} followers
+                                                                {item.followersCount.toLocaleString()} {t('followersSuffix')}
                                                             </span>
                                                         )}
                                                         {item.mediaCount != null && item.mediaCount > 0 && (
                                                             <span className="text-[11px] font-semibold text-foreground/70">
-                                                                {item.mediaCount.toLocaleString()} posts
+                                                                {item.mediaCount.toLocaleString()} {t('postsSuffix')}
                                                             </span>
                                                         )}
                                                     </div>
@@ -608,7 +608,7 @@ export default function FollowManagerClient() {
                                                         {showUnfollowReminder && (
                                                             <span className="inline-flex w-fit items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800 mt-0.5">
                                                                 <Clock className="w-3 h-3" />
-                                                                30+ days
+                                                                {t('unfollowReadyBadge')}
                                                             </span>
                                                         )}
                                                     </div>
@@ -749,7 +749,7 @@ export default function FollowManagerClient() {
                                         placeholder={t('egHashtags')} />
                                     <button onClick={() => addHashtag(hashtagInput, setHashtagInput, newHashtags, setNewHashtags)}
                                         className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 text-xs font-bold rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition-colors">
-                                        Add
+                                        {t('add')}
                                     </button>
                                 </div>
                                 <p className="text-[11px] text-muted-text mt-2">{t('pressEnterAdd')}</p>
@@ -828,7 +828,7 @@ export default function FollowManagerClient() {
                                         placeholder={t('egHashtags')} />
                                     <button onClick={() => addHashtag(editHashtagInput, setEditHashtagInput, editHashtags, setEditHashtags)}
                                         className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 text-xs font-bold rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition-colors">
-                                        Add
+                                        {t('add')}
                                     </button>
                                 </div>
                                 <div className="flex flex-wrap gap-2 mt-3">
@@ -904,8 +904,8 @@ export default function FollowManagerClient() {
                         
                         <div className="mt-8 flex flex-col gap-2 w-full">
                             <div className="flex justify-between text-[10px] font-bold text-muted-text uppercase tracking-wider">
-                                <span>Scanning</span>
-                                <span className="text-indigo-500 animate-pulse">Running</span>
+                                <span>{t('scanning')}</span>
+                                <span className="text-indigo-500 animate-pulse">{t('running')}</span>
                             </div>
                             <div className="h-1.5 w-full bg-surface border border-card-border rounded-full overflow-hidden relative">
                                 <div className="absolute top-0 bottom-0 left-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full animate-pulse" style={{ width: '100%' }}></div>

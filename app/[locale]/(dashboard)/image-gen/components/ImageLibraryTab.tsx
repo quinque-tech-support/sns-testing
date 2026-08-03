@@ -53,10 +53,10 @@ export default function ImageLibraryTab() {
                                         <button
                                             onClick={() => handleGenerateSimilar(image.prompt || '', image.negativePrompt || '')}
                                             className="px-3 py-1.5 bg-white/90 hover:bg-white text-gray-900 text-[11px] font-bold rounded-lg backdrop-blur-sm transition-colors flex items-center gap-1.5 shadow-md"
-                                            title="Generate Similar"
+                                            title={t('similarTooltip')}
                                         >
                                             <RefreshCw className="w-3.5 h-3.5" />
-                                            Similar
+                                            {t('similarBtn')}
                                         </button>
                                         {imageDeleteConfirmId === image.id ? (
                                             <div className="flex gap-1">
@@ -66,7 +66,7 @@ export default function ImageLibraryTab() {
                                                     className="px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white text-[11px] font-bold rounded-lg transition-colors flex items-center gap-1"
                                                 >
                                                     {isDeletingImageId === image.id ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-                                                    Confirm
+                                                    {t('confirmBtn')}
                                                 </button>
                                                 <button
                                                     onClick={() => setImageDeleteConfirmId(null)}
@@ -79,7 +79,7 @@ export default function ImageLibraryTab() {
                                             <button
                                                 onClick={() => setImageDeleteConfirmId(image.id)}
                                                 className="p-1.5 bg-white/90 hover:bg-red-50 text-red-600 rounded-lg backdrop-blur-sm transition-colors shadow-md"
-                                                title="Delete"
+                                                title={t('deleteTooltip')}
                                             >
                                                 <Trash2 className="w-3.5 h-3.5" />
                                             </button>
@@ -96,7 +96,7 @@ export default function ImageLibraryTab() {
                                                 {image.project.name}
                                             </span>
                                         ) : (
-                                            <span className="text-[10px] text-muted-text">General</span>
+                                            <span className="text-[10px] text-muted-text">{t('noProject')}</span>
                                         )}
                                     </div>
                                 </div>
@@ -106,7 +106,7 @@ export default function ImageLibraryTab() {
 
                     {imageTotalPages > 1 && (
                         <div className="flex items-center justify-between bg-card border border-card-border rounded-xl px-5 py-3">
-                            <p className="text-xs text-muted-text">Page {imagePage} of {imageTotalPages}</p>
+                            <p className="text-xs text-muted-text">{t('pageOf', { page: imagePage, total: imageTotalPages })}</p>
                             <div className="flex gap-1.5">
                                 <button
                                     disabled={imagePage <= 1}
