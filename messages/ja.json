@@ -253,7 +253,9 @@
     "aiGeneratedLabel": "AI生成",
     "noAiImagesYet": "まだAI生成画像がありません",
     "previewUsernameFallback": "ユーザー名",
-    "previewZeroLikes": "0件のいいね"
+    "previewZeroLikes": "0件のいいね",
+    "uploadedImagesTab": "アップロード画像",
+    "aiImagesTab": "AI画像"
   },
   "Projects": {
     "title": "プロジェクト",
@@ -269,6 +271,7 @@
     "customPurpose": "カスタムの目的を入力",
     "projectDesc": "プロジェクト説明",
     "defaultHashtags": "デフォルトハッシュタグ",
+    "hashtagPlaceholder": "入力してEnterを押す (#tag)",
     "targetAudience": "ターゲット層",
     "ageRange": "年齢層",
     "gender": "性別",

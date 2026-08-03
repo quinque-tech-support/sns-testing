@@ -20,8 +20,8 @@ export async function GET(req: NextRequest) {
 
         const images = await prisma.projectImage.findMany({
             where: { 
-                projectId: generalProject.id,
-                userId: session.user.id
+                userId: session.user.id,
+                source: 'AI_GENERATED'
             },
             orderBy: { createdAt: 'desc' }
         });

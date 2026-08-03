@@ -22,7 +22,7 @@ jest.mock('@/lib/prisma', () => ({
     schedule:         { create: jest.fn(), findMany: jest.fn(), update: jest.fn(), updateMany: jest.fn(), count: jest.fn() },
     connectedAccount: { findUnique: jest.fn(), findMany: jest.fn(), count: jest.fn() },
     project:          { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() },
-    projectImage:     { findUnique: jest.fn(), findMany: jest.fn(), createMany: jest.fn(), delete: jest.fn(), deleteMany: jest.fn() },
+    projectImage:     { findUnique: jest.fn(), findMany: jest.fn(), createMany: jest.fn(), update: jest.fn(), updateMany: jest.fn(), delete: jest.fn(), deleteMany: jest.fn() },
   }
 }))
 

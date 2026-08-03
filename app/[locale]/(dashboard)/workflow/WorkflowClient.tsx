@@ -345,16 +345,7 @@ function WorkflowColumn({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-function CreatePostButton({ label = "新しい投稿を作成", className = "" }: { label?: string; className?: string }) {
-    return (
-        <Link
-            href="/create"
-            className={`inline-flex items-center justify-center gap-2 px-6 py-3 instagram-gradient text-white rounded-xl font-bold shadow-lg shadow-gray-900/20 hover:opacity-90 transition-all duration-200 ease-out active:scale-95 hover:shadow-xl hover:-translate-y-0.5 ${className}`}
-        >
-            <PlusCircle className="w-4 h-4" />{label}
-        </Link>
-    )
-}
+
 
 export default function WorkflowClient({ columns, insightsPromise }: WorkflowClientProps) {
     const t = useTranslations('Workflow')
@@ -409,32 +400,14 @@ export default function WorkflowClient({ columns, insightsPromise }: WorkflowCli
                 <div>
                     <h1 className="text-2xl font-bold text-foreground">{t('title')}</h1>
                 </div>
-                <CreatePostButton label={t('createPostBtn')} className="w-fit" />
-            </div>
-
-            {/* Summary Pills */}
-            <div className="flex flex-wrap gap-3">
-                {COLUMNS.map((key) => {
-                    const cfg = statusConfig[key]
-                    const Icon = cfg.icon
-                    return (
-                        <div key={key} className={`flex items-center gap-2 px-4 py-2 ${cfg.bg} border ${cfg.border} rounded-xl`}>
-                            <Icon className={`w-4 h-4 ${cfg.color}`} />
-                            <span className={`text-sm font-bold ${cfg.color}`}>{t(cfg.labelKey as any)}</span>
-                            <span className={`text-sm font-black ${cfg.color}`}>{columns[key].totalCount}</span>
-                        </div>
-                    )
-                })}
+                
             </div>
 
             {totalPosts === 0 ? (
                 <div className="bg-card rounded-2xl border-2 border-dashed border-card-border p-20 text-center">
-                    <div className="w-14 h-14 instagram-gradient rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-gray-900/20">
-                        <ListChecks className="w-7 h-7 text-white" />
-                    </div>
                     <p className="text-base font-bold text-foreground">{t('emptyTitle')}</p>
                     <p className="text-sm text-muted-text/80 mt-1 mb-6">{t('emptyDesc')}</p>
-                    <CreatePostButton label={t('createPostBtn')} />
+                    
                 </div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">

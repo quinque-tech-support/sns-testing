@@ -59,7 +59,7 @@ function ImageGenInner() {
                         onClick={() => setActiveTab('image-library')}
                         className={twMerge(
                             'px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5',
-                            activeTab === 'image-library' ? 'bg-purple-600 text-white shadow-sm' : 'text-muted-text hover:text-foreground hover:bg-white/50 dark:hover:bg-white/5'
+                            activeTab === 'image-library' ? 'bg-indigo-600 text-white shadow-sm' : 'text-muted-text hover:text-foreground hover:bg-white/50 dark:hover:bg-white/5'
                         )}
                     >
                         <ImageIcon className="w-3.5 h-3.5" />

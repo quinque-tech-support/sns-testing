@@ -26,7 +26,6 @@ export function useProjectData(initialProjects: Project[] = []) {
     const { data: projectImagesData, isLoading: isLoadingProjectImages, mutate: mutateProjectImages } = useSWR(selectedProjectId ? `/api/projects/${selectedProjectId}/images` : null, fetcher)
     const projectImages = projectImagesData || []
 
-    // General Images via SWR
     const { data: generalImagesData, isLoading: isLoadingGeneralImages } = useSWR('/api/images/general', fetcher)
     const generalImages = generalImagesData?.images || []
 

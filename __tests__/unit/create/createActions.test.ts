@@ -517,9 +517,9 @@ describe('registerProjectImages', () => {
     expect(result).toEqual({ count: 3 })
     expect(prisma.projectImage.createMany).toHaveBeenCalledWith({
       data: [
-        { projectId: 'proj-1', userId: 'user-1', url: 'u1', storagePath: 's1', fileName: 'f1' },
-        { projectId: 'proj-1', userId: 'user-1', url: 'u2', storagePath: 's2', fileName: 'f2' },
-        { projectId: 'proj-1', userId: 'user-1', url: 'u3', storagePath: 's3', fileName: 'f3' }
+        { projectId: 'proj-1', userId: 'user-1', url: 'u1', storagePath: 's1', fileName: 'f1', source: 'UPLOADED' },
+        { projectId: 'proj-1', userId: 'user-1', url: 'u2', storagePath: 's2', fileName: 'f2', source: 'UPLOADED' },
+        { projectId: 'proj-1', userId: 'user-1', url: 'u3', storagePath: 's3', fileName: 'f3', source: 'UPLOADED' }
       ]
     })
   })

@@ -80,6 +80,7 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
     } = useProjects(initialProjects)
 
     const [projectToDelete, setProjectToDelete] = useState<string | null>(null)
+    const [hashtagInput, setHashtagInput] = useState('')
     const errorRef = useRef<HTMLDivElement>(null)
     const t = useTranslations('Projects')
 
@@ -89,6 +90,24 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
         }
     }, [error])
 
+    const handleHashtagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter' || e.key === ' ' || e.key === ',') {
+            e.preventDefault()
+            const val = hashtagInput.trim()
+            if (val) {
+                const newTag = val.startsWith('#') ? val : `#${val}`
+                if (!hashtags.includes(newTag)) {
+                    setHashtags([...hashtags, newTag])
+                }
+                setHashtagInput('')
+            }
+        }
+    }
+
+    const removeHashtag = (tagToRemove: string) => {
+        setHashtags(hashtags.filter(tag => tag !== tagToRemove))
+    }
+
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -97,8 +116,7 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
                 </div>
                 <button
                     onClick={() => openModal()}
-                    className="px-5 py-2.5 w-full md:w-auto justify-center md:justify-start text-white font-bold rounded-xl transition-all shadow-lg shadow-purple-500/25 flex items-center gap-2 max-w-max hover:opacity-90 active:scale-95"
-                    style={{background:'linear-gradient(135deg,#7C3AED,#EC4899,#F97316)'}}
+                    className="px-5 py-2.5 w-full md:w-auto justify-center text-sm md:justify-start bg-indigo-600 hover:bg-indigo-700 dark:bg-gray-600 dark:hover:bg-gray-700 text-white font-bold rounded-xl transition-all flex items-center gap-2 max-w-max active:scale-95"
                 >
                     <Plus className="w-5 h-5" />
                     {t('newProject')}
@@ -203,7 +221,28 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
                                             <Hash className="w-4 h-4 text-muted-text/80" />
                                             {t('defaultHashtags')} <span className="text-red-500">*</span>
                                         </label>
-                                        <input required type="text" value={hashtags} onChange={e=>setHashtags(e.target.value)} className="w-full bg-surface border border-card-border rounded-lg px-4 py-2 focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 outline-none transition-all" placeholder={t('hashtagsPlaceholder')} />
+                                        <div className="space-y-2">
+                                            <input
+                                                type="text"
+                                                value={hashtagInput}
+                                                onChange={e => setHashtagInput(e.target.value)}
+                                                onKeyDown={handleHashtagKeyDown}
+                                                className="w-full bg-surface border border-card-border rounded-lg px-4 py-2 focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 outline-none transition-all"
+                                                placeholder={t('hashtagsPlaceholder')}
+                                            />
+                                            {hashtags.length > 0 && (
+                                                <div className="flex flex-wrap gap-2">
+                                                    {hashtags.map((tag, i) => (
+                                                        <span key={i} className="flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 text-sm font-bold rounded-lg border border-indigo-100 dark:border-indigo-500/20">
+                                                            {tag}
+                                                            <button type="button" onClick={() => removeHashtag(tag)} className="hover:text-red-500 focus:outline-none">
+                                                                <X className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </div>

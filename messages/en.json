@@ -253,7 +253,9 @@
     "aiGeneratedLabel": "AI Generated",
     "noAiImagesYet": "No AI generated images yet",
     "previewUsernameFallback": "username",
-    "previewZeroLikes": "0 likes"
+    "previewZeroLikes": "0 likes",
+    "uploadedImagesTab": "Uploaded Images",
+    "aiImagesTab": "AI Images"
   },
   "Projects": {
     "title": "Projects",
@@ -269,6 +271,7 @@
     "customPurpose": "Enter custom purpose",
     "projectDesc": "Project Description",
     "defaultHashtags": "Default Hashtags",
+    "hashtagPlaceholder": "Type and press Enter (#tag)",
     "targetAudience": "Target Audience",
     "ageRange": "Age Range",
     "gender": "Gender",

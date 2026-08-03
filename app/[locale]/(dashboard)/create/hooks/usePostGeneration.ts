@@ -13,6 +13,25 @@ export interface AnalysisResults {
     pastCaptionsUsed?: string[];
 }
 
+function cleanAndCombineCaption(generatedCaption: string, aiTags: string[], projectTags: string[]) {
+    const lines = (generatedCaption || '').trimEnd().split('\n')
+    while (lines.length > 0) {
+        const lastLine = lines[lines.length - 1].trim()
+        if (lastLine.length > 0 && lastLine.split(/\s+/).every(word => word.startsWith('#'))) {
+            lines.pop()
+        } else {
+            break
+        }
+    }
+    const baseCaption = lines.join('\n').trimEnd()
+    
+    const allTags = Array.from(new Set([...(aiTags || []), ...projectTags]))
+    const tagsToAdd = allTags.filter(tag => !baseCaption.includes(tag))
+    
+    if (tagsToAdd.length === 0) return baseCaption
+    return baseCaption ? `${baseCaption}\n\n${tagsToAdd.join(' ')}` : tagsToAdd.join(' ')
+}
+
 export function usePostGeneration() {
     const locale = useLocale()
     const [caption, setCaption] = useState('')
@@ -147,22 +166,12 @@ export function usePostGeneration() {
 
             if (json.options && json.options.length > 0) {
                 const opt = json.options[0]
-                // Combine AI hashtags and project hashtags, remove duplicates
-                const allTags = Array.from(new Set([...(opt.hashtags || []), ...projectHashtags]))
-                
-                // Directly set the caption and hashtags
-                const combinedCaption = allTags.length > 0
-                    ? `${opt.caption}\n\n${allTags.join(' ')}`
-                    : opt.caption
-
+                const combinedCaption = cleanAndCombineCaption(opt.caption, opt.hashtags, projectHashtags)
                 setCaption(combinedCaption)
             } else {
                 // Fallback
-                const fallbackTags = Array.from(new Set([...(Array.isArray(json.hashtags) ? json.hashtags : []), ...projectHashtags]))
-                const combinedCaption = fallbackTags.length > 0
-                    ? `${json.caption}\n\n${fallbackTags.join(' ')}`
-                    : (json.caption || '')
-                    
+                const aiTags = Array.isArray(json.hashtags) ? json.hashtags : []
+                const combinedCaption = cleanAndCombineCaption(json.caption, aiTags, projectHashtags)
                 setCaption(combinedCaption)
             }
 
