@@ -730,6 +730,19 @@
     "errSavePrompt": "プロンプトを保存できませんでした。もう一度お試しください。",
     "errDeletePrompt": "プロンプトを削除できませんでした。もう一度お試しください。",
     "errOptimizePrompt": "プロンプトを最適化できませんでした。もう一度お試しください。",
-    "errStartGen": "生成を開始できませんでした。もう一度お試しください。"
+    "errStartGen": "生成を開始できませんでした。もう一度お試しください。",
+    "errDescriptionRequired": "まず説明を入力してください。",
+    "statusOptimizing": "プロンプトを最適化中...",
+    "statusStarting": "開始しています...",
+    "statusInProgress": "処理中...",
+    "defaultTemplateNamePrefix": "プロンプト",
+    "similarTooltip": "類似画像を生成",
+    "similarBtn": "類似",
+    "confirmBtn": "確認",
+    "deleteTooltip": "削除",
+    "pageOf": "{total}ページ中{page}ページ目",
+    "geminiOptimizedTooltipTitle": "Gemini最適化プロンプト",
+    "expandedByAi": "AIによって拡張済み",
+    "generatedOutputAlt": "生成された画像"
   }
 }

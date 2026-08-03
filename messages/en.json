@@ -730,6 +730,19 @@
     "errSavePrompt": "Could not save prompt. Please try again.",
     "errDeletePrompt": "Could not delete prompt. Please try again.",
     "errOptimizePrompt": "Could not optimize prompt. Please try again.",
-    "errStartGen": "Could not start generation. Please try again."
+    "errStartGen": "Could not start generation. Please try again.",
+    "errDescriptionRequired": "Please provide a description first.",
+    "statusOptimizing": "Optimizing Prompt...",
+    "statusStarting": "Starting...",
+    "statusInProgress": "In Progress...",
+    "defaultTemplateNamePrefix": "Prompt",
+    "similarTooltip": "Generate Similar",
+    "similarBtn": "Similar",
+    "confirmBtn": "Confirm",
+    "deleteTooltip": "Delete",
+    "pageOf": "Page {page} of {total}",
+    "geminiOptimizedTooltipTitle": "Gemini Optimized Prompt",
+    "expandedByAi": "Expanded by AI",
+    "generatedOutputAlt": "Generated output"
   }
 }
