@@ -10,6 +10,9 @@ process.env.FACEBOOK_APP_ID = 'test-fb-app-id'
 process.env.FACEBOOK_APP_SECRET = 'test-fb-app-secret'
 process.env.NEXTAUTH_SECRET = 'test-nextauth-secret'
 process.env.NEXTAUTH_URL = 'http://localhost:3000'
+process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co'
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-supabase-anon-key'
+process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-supabase-service-role-key'
 
 // ─── Web API polyfills (needed for next/server in jsdom) ──────────────────
 // jsdom does not ship with the Fetch Web API. We add a minimal implementation
