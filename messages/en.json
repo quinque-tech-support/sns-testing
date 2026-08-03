@@ -22,6 +22,9 @@
     "premiumUpdate": "Premium Update"
   },
   "Topbar": {
+    "toggleMenu": "Toggle Menu",
+    "logoAlt": "Gravia",
+    "noAccount": "no_account",
     "switchAccount": "Switch Account"
   },
   "Automation": {
