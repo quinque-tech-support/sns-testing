@@ -94,18 +94,6 @@ async function handleDmEvent(
   }
 
   console.log(`[AutomationService] ✅ Queued DM_REPLY for sender ${senderId} across ${activeAccounts.length} accounts with delay ${Math.round(delay / 1000)}s`)
-
-  // Auto-process: schedule processDueEvents to run after the delay expires
-  // This ensures the reply is sent without needing an external cron trigger
-  setTimeout(async () => {
-    try {
-      console.log(`[AutomationService] Auto-processing due events...`)
-      const result = await processDueEvents()
-      console.log(`[AutomationService] Auto-process complete:`, result)
-    } catch (e) {
-      console.error(`[AutomationService] Auto-process failed:`, e)
-    }
-  }, delay + 3000) // Add 3s buffer to ensure scheduledFor has passed
 }
 
 async function handleCommentEvent(
@@ -179,14 +167,6 @@ async function handleCommentEvent(
   }
 
   console.log(`[AutomationService] ✅ Queued COMMENT_REPLY for sender ${senderId} across ${activeAccounts.length} accounts with delay ${Math.round(delay / 1000)}s`)
-
-  setTimeout(async () => {
-    try {
-      await processDueEvents()
-    } catch (e) {
-      console.error(`[AutomationService] Auto-process failed:`, e)
-    }
-  }, delay + 3000)
 }
 
 
