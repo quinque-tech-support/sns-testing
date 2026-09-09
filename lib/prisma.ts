@@ -5,7 +5,16 @@ import { getCached } from './redis'
 
 const connectionString = `${process.env.DATABASE_URL}`
 
-const pool = new Pool({ connectionString })
+// A custom database CA preserves certificate and hostname verification on hosts
+// whose default trust store does not include the database provider's root.
+const databaseCa = process.env.DATABASE_SSL_CA
+const databaseUrl = databaseCa ? new URL(connectionString) : null
+// pg otherwise lets sslmode replace the explicit SSL object (and its CA).
+if (databaseUrl) databaseUrl.searchParams.delete('sslmode')
+const pool = new Pool({
+  connectionString: databaseUrl?.toString() ?? connectionString,
+  ...(databaseCa ? { ssl: { ca: databaseCa, rejectUnauthorized: true } } : {}),
+})
 const adapter = new PrismaPg(pool)
 
 import { encrypt, decrypt } from './encryption'
