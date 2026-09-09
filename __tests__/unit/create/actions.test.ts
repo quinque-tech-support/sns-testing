@@ -10,7 +10,7 @@ jest.mock('@/lib/prisma', () => ({
         schedule: { create: jest.fn() },
         connectedAccount: { findUnique: jest.fn() },
         project: { findUnique: jest.fn() },
-        projectImage: { createMany: jest.fn(), delete: jest.fn() },
+        projectImage: { createMany: jest.fn(), deleteMany: jest.fn() },
     }
 }))
 
@@ -36,7 +36,7 @@ const mockPrismaScheduleCreate = prisma.schedule.create as jest.Mock
 const mockPrismaConnectedAccountFindUnique = prisma.connectedAccount.findUnique as jest.Mock
 const mockPrismaProjectFindUnique = prisma.project.findUnique as jest.Mock
 const mockPrismaProjectImageCreateMany = prisma.projectImage.createMany as jest.Mock
-const mockPrismaProjectImageDelete = prisma.projectImage.delete as jest.Mock
+const mockPrismaProjectImageDelete = prisma.projectImage.deleteMany as jest.Mock
 
 const mockSupabaseStorageCreateSignedUploadUrl = supabaseAdmin.storage.from('').createSignedUploadUrl as jest.Mock
 const mockSupabaseStorageGetPublicUrl = supabaseAdmin.storage.from('').getPublicUrl as jest.Mock
@@ -123,7 +123,7 @@ describe('Create Actions', () => {
 
             await saveDraft(formData)
 
-            expect(mockPrismaProjectImageDelete).toHaveBeenCalledWith({ where: { id: 'lib-1' } })
+            expect(mockPrismaProjectImageDelete).toHaveBeenCalledWith({ where: { id: 'lib-1', userId: 'user-1', projectId: null } })
         })
 
         it('should NOT attempt library image deletion when libraryImageId is NOT provided', async () => {

@@ -106,23 +106,23 @@ describe('saveDraft', () => {
     expect(prisma.post.create).not.toHaveBeenCalled()
   })
 
-  it('should call projectImage.delete when libraryImageId is present', async () => {
+  it('should call projectImage.deleteMany when libraryImageId is present', async () => {
     mockRequireAuth.mockResolvedValue('test-user-id')
     ;(prisma.post.create as jest.Mock).mockResolvedValue({ id: 'post-1' })
-    ;(prisma.projectImage.delete as jest.Mock).mockResolvedValue({})
+    ;(prisma.projectImage.deleteMany as jest.Mock).mockResolvedValue({})
 
     await saveDraft(fd({ libraryImageId: 'lib-1' }))
 
-    expect(prisma.projectImage.delete).toHaveBeenCalledWith({ where: { id: 'lib-1' } })
+    expect(prisma.projectImage.deleteMany).toHaveBeenCalledWith({ where: { id: 'lib-1', userId: 'test-user-id', projectId: null } })
   })
 
-  it('should not call projectImage.delete when libraryImageId is missing', async () => {
+  it('should not call projectImage.deleteMany when libraryImageId is missing', async () => {
     mockRequireAuth.mockResolvedValue('test-user-id')
     ;(prisma.post.create as jest.Mock).mockResolvedValue({ id: 'post-1' })
 
     await saveDraft(fd({ libraryImageId: '' }))
 
-    expect(prisma.projectImage.delete).not.toHaveBeenCalled()
+    expect(prisma.projectImage.deleteMany).not.toHaveBeenCalled()
   })
 
   it('should return error when unauthenticated', async () => {
@@ -530,4 +530,25 @@ describe('registerProjectImages', () => {
 
     expect(result).toEqual({ error: expect.any(String) })
   })
+})
+
+// In-memory rows model the delete predicate across two owners; no external services.
+describe('library consumption ownership (#153)',()=>{
+ beforeEach(()=>{jest.clearAllMocks();mockRequireAuth.mockResolvedValue('alice');mockAccount();(prisma.post.create as jest.Mock).mockResolvedValue({id:'post-owned'})})
+ it.each([
+  ['foreign image','bob',null,null,false],
+  ['wrong selected project','alice','project-a','project-b',false],
+  ['general library owned image','alice',null,null,true],
+  ['owned project image','alice','project-a','project-a',true],
+ ])('%s',async(_label,owner,imageProject,selectedProject,removed)=>{
+  const rows=[{id:'library-1',userId:owner,projectId:imageProject}]
+  ;(prisma.projectImage.deleteMany as jest.Mock).mockImplementation(async({where})=>{
+   const index=rows.findIndex(row=>row.id===where.id&&row.userId===where.userId&&row.projectId===where.projectId)
+   if(index>=0)rows.splice(index,1)
+   return {count:index>=0?1:0}
+  })
+  await saveDraft(fd({libraryImageId:'library-1',...(selectedProject?{projectId:selectedProject}:{})}))
+  expect(rows).toHaveLength(removed?0:1)
+  expect(prisma.projectImage.deleteMany).toHaveBeenCalledWith({where:{id:'library-1',userId:'alice',projectId:selectedProject,...(selectedProject?{project:{userId:'alice'}}:{})}})
+ })
 })

@@ -18,10 +18,12 @@ const IG_SUBCODE_MEDIA_NOT_READY = 2207027
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-/** Safely delete a library image without throwing on miss. */
-async function consumeLibraryImage(libraryImageId: string | null): Promise<void> {
+/** Consume only an owned image from the selected, owned project (or general library). */
+async function consumeLibraryImage(libraryImageId: string | null, userId: string, projectId: string | null): Promise<void> {
     if (!libraryImageId) return
-    await prisma.projectImage.delete({ where: { id: libraryImageId } }).catch(() => {})
+    await prisma.projectImage.deleteMany({
+        where: { id: libraryImageId, userId, projectId, ...(projectId ? { project: { userId } } : {}) },
+    }).catch(() => {})
 }
 
 function sleep(ms: number) {
@@ -202,7 +204,7 @@ export async function saveDraft(formData: FormData): Promise<ActionResult<{ post
             },
         })
 
-        await consumeLibraryImage(libraryImageId)
+        await consumeLibraryImage(libraryImageId, userId, projectId)
         revalidatePath('/dashboard')
         revalidatePath('/workflow')
         return { success: true, data: { postId: post.id } }
@@ -303,7 +305,7 @@ export async function publishNow(formData: FormData): Promise<ActionResult<{ pos
             await prisma.schedule.create({
                 data: { postId: post.id, scheduledFor: new Date(), status: 'PUBLISHED' },
             })
-            await consumeLibraryImage(libraryImageId)
+            await consumeLibraryImage(libraryImageId, userId, projectId)
             revalidatePath('/dashboard')
             revalidatePath('/workflow')
             return { success: true, data: { postId: post.id } }
@@ -369,7 +371,7 @@ export async function publishNow(formData: FormData): Promise<ActionResult<{ pos
         await prisma.schedule.create({
             data: { postId: post.id, scheduledFor: new Date(), status: 'PUBLISHED' },
         })
-        await consumeLibraryImage(libraryImageId)
+        await consumeLibraryImage(libraryImageId, userId, projectId)
         revalidatePath('/dashboard')
         revalidatePath('/workflow')
         return { success: true, data: { postId: post.id } }
@@ -416,7 +418,7 @@ export async function schedulePost(formData: FormData): Promise<ActionResult<{ p
             data: { postId: post.id, scheduledFor, status: 'PENDING' },
         })
 
-        await consumeLibraryImage(libraryImageId)
+        await consumeLibraryImage(libraryImageId, userId, projectId)
         revalidatePath('/dashboard')
         revalidatePath('/calendar')
         revalidatePath('/workflow')
