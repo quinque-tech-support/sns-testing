@@ -1,5 +1,6 @@
 {
   "Sidebar": {
+    "templates": "Templates",
     "dashboard": "Dashboard",
     "create": "Create Content",
     "imageGen": "Image Generator",

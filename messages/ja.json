@@ -1,5 +1,6 @@
 {
   "Sidebar": {
+    "templates": "テンプレート",
     "dashboard": "ダッシュボード",
     "create": "コンテンツ作成",
     "imageGen": "画像生成",

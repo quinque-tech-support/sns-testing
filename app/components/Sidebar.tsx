@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import {
     LayoutDashboard,
+    Layers,
     PlusCircle,
     Calendar,
     BarChart3,
@@ -29,6 +30,7 @@ const navigation = [
     { key: 'create', href: '/create', icon: PlusCircle },
     { key: 'imageGen', href: '/image-gen', icon: ImageIcon },
     { key: 'projects', href: '/projects', icon: FolderKanban },
+    { key: 'templates', href: '/templates', icon: Layers },
     { key: 'calendar', href: '/calendar', icon: Calendar },
     { key: 'analytics', href: '/analytics', icon: BarChart3 },
     { key: 'workflow', href: '/workflow', icon: ListChecks },
