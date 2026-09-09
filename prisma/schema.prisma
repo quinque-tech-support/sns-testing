@@ -155,6 +155,8 @@ model Project {
   profession                   String?
   wordsToAvoid                 String?
   accountId                    String?
+  imageGenInstructions         String?
+  logo                         Json?
   patternCaches                PatternCache[]
   posts                        Post[]
   connectedAccount             ConnectedAccount? @relation(fields: [accountId], references: [id], onDelete: SetNull)

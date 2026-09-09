@@ -1,3 +1,4 @@
+import type { ProjectFormData, LogoConfig } from '@/lib/projects/form-model'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import useSWR from 'swr'
@@ -5,6 +6,8 @@ import useSWR from 'swr'
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 
 export interface Project {
+    imageGenInstructions?: string | null
+    logo?: LogoConfig | null
     id: string
     accountId?: string | null
     name: string
@@ -185,6 +188,38 @@ export function useProjects(initialProjects: Project[]) {
         }
     }
 
+    const saveRedesigned = async (form: ProjectFormData) => {
+        setIsSaving(true)
+        setError('')
+        try {
+            let logo = form.logo
+            if (logo?.previewUrl?.startsWith('blob:')) {
+                const blob = await (await fetch(logo.previewUrl)).blob()
+                const upload = new FormData()
+                upload.append('file', blob, logo.fileName)
+                const response = await fetch('/api/projects/logo', {method: 'POST', body: upload})
+                const result = await response.json()
+                if (!response.ok) throw new Error(result.error || 'ロゴを保存できませんでした。')
+                logo = {...logo, previewUrl: result.url, isStaticAsset: true}
+            }
+            const response = await fetch(editingProject ? `/api/projects/${editingProject.id}` : '/api/projects', {
+                method: editingProject ? 'PUT' : 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({form: {...form, logo}, accountId: editingProject ? editingProject.accountId : activeAccount?.id}),
+            })
+            if (!response.ok) {
+                const result = await response.json().catch(() => ({}))
+                throw new Error(result.error || 'プロジェクトを保存できませんでした。')
+            }
+            const saved: Project = await response.json()
+            await mutateProjects(editingProject ? safeProjects.map((p: Project) => p.id === saved.id ? saved : p) : [saved, ...safeProjects], {revalidate: false})
+            closeModal()
+            router.refresh()
+        } catch (error) {
+            setError(error instanceof Error ? error.message : '保存に失敗しました。')
+        } finally { setIsSaving(false) }
+    }
+
     const handleDelete = async (id: string, e?: React.MouseEvent) => {
         if (e) e.stopPropagation()
 
@@ -219,6 +254,6 @@ export function useProjects(initialProjects: Project[]) {
         toneRestrictions, setToneRestrictions,
         customPromptNotes, setCustomPromptNotes,
         campaignSpecificInstructions, setCampaignSpecificInstructions,
-        openModal, closeModal, openViewModal, closeViewModal, handleSave, handleDelete
+        openModal, closeModal, openViewModal, closeViewModal, handleSave, handleDelete, saveRedesigned
     }
 }

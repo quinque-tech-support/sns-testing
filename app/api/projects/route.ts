@@ -1,3 +1,4 @@
+import { parseProjectForm } from '@/lib/projects/form-validation'
 import { requireAuth } from '@/lib/auth.utils'
 import { prisma } from '@/lib/prisma'
 import { apiError, apiSuccess } from '@/lib/api.utils'
@@ -57,6 +58,9 @@ export async function POST(req: Request) {
         const userId = await requireAuth()
 
         const body = await req.json()
+        const redesigned = body.form === undefined ? undefined : parseProjectForm(body.form, userId)
+        if (redesigned === null) return apiError('プロジェクトの入力内容を確認してください。', 400)
+        if (redesigned) Object.assign(body, redesigned)
         const { 
             name, description, objective, accountId,
             ageRange, gender, location, profession,
@@ -81,6 +85,7 @@ export async function POST(req: Request) {
             data: {
                 userId,
                 accountId,
+                ...(redesigned ? {imageGenInstructions: redesigned.imageGenInstructions, ...(redesigned.logo ? {logo: redesigned.logo} : {})} : {}),
                 name,
                 description,
                 objective,

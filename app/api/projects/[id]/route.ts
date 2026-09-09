@@ -1,3 +1,4 @@
+import { parseProjectForm } from '@/lib/projects/form-validation'
 import { apiError } from '@/lib/api.utils'
 import { requireAuth } from '@/lib/auth.utils'
 import { prisma } from '@/lib/prisma'
@@ -9,6 +10,9 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
         const userId = await requireAuth()
 
         const body = await req.json()
+        const redesigned = body.form === undefined ? undefined : parseProjectForm(body.form, userId)
+        if (redesigned === null) return apiError('プロジェクトの入力内容を確認してください。', 400)
+        if (redesigned) Object.assign(body, redesigned)
         const { 
             name, description, objective,
             ageRange, gender, location, profession,
@@ -29,9 +33,11 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
             if (!account) return new NextResponse('Instagram account not found', { status: 400 })
         }
 
-        const project = await prisma.project.update({
+        const updateProject = async (tx: Pick<typeof prisma, 'project' | '$executeRaw'>) => {
+        const updated = await tx.project.update({
             where: { id: params.id, userId: userId },
             data: { 
+                ...(redesigned ? {imageGenInstructions: redesigned.imageGenInstructions, ...(redesigned.logo ? {logo: redesigned.logo} : {})} : {}),
                 name, 
                 accountId,
                 description,
@@ -55,6 +61,13 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
             }
         })
 
+        if (redesigned && !redesigned.logo) {
+            await tx.$executeRaw`UPDATE "Project" SET "logo" = NULL WHERE "id" = ${params.id} AND "userId" = ${userId}`
+            return {...updated, logo: null}
+        }
+        return updated
+        }
+        const project = redesigned ? await prisma.$transaction(tx => updateProject(tx)) : await updateProject(prisma)
         return NextResponse.json(project)
     } catch (error: any) {
         if (error?.isAuthError) return apiError("Unauthorized", 401)
