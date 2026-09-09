@@ -10,7 +10,7 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
         const userId = await requireAuth()
 
         const body = await req.json()
-        const redesigned = body.form === undefined ? undefined : parseProjectForm(body.form, userId)
+        const redesigned = body.form === undefined ? undefined : parseProjectForm(body.form, userId, 'update')
         if (redesigned === null) return apiError('プロジェクトの入力内容を確認してください。', 400)
         if (redesigned) Object.assign(body, redesigned)
         const { 

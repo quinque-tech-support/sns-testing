@@ -21,6 +21,9 @@ export interface ProjectFormData {
     hashtags: string[]
     minAge: number | null
     maxAge: number | null
+    preserveAgeRange?: boolean
+    preserveGender?: boolean
+    existingTargeting?: { ageRange: string; gender: string }
     gender: Gender
     cityRegion: string
     professions: string[]

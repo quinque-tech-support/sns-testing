@@ -40,6 +40,10 @@ export default function NewProjectModal({ isOpen, editingProject, onClose, onSav
     const [hashtags, setHashtags] = useState<string[]>([])
     const [minAge, setMinAge] = useState<number | null>(null)
     const [maxAge, setMaxAge] = useState<number | null>(null)
+    const [ageEdited, setAgeEdited] = useState(false)
+    const [genderEdited, setGenderEdited] = useState(false)
+    const preserveAgeRange = !!editingProject?.existingTargeting && !ageEdited
+    const preserveGender = !!editingProject?.existingTargeting && !genderEdited
     const [gender, setGender] = useState<Gender>('any')
     const [cityRegion, setCityRegion] = useState('')
     const [professions, setProfessions] = useState<string[]>([])
@@ -91,6 +95,8 @@ export default function NewProjectModal({ isOpen, editingProject, onClose, onSav
 
     useEffect(() => {
         if (!isOpen) return
+        setAgeEdited(false)
+        setGenderEdited(false)
         if (editingProject) {
             setName(editingProject.name)
             setPurpose(editingProject.purpose)
@@ -118,6 +124,8 @@ export default function NewProjectModal({ isOpen, editingProject, onClose, onSav
 
     useEffect(() => {
         if (!isOpen) return
+        setAgeEdited(false)
+        setGenderEdited(false)
         const onKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape' && !logoDialogOpen && !saving) onClose()
         }
@@ -211,7 +219,7 @@ export default function NewProjectModal({ isOpen, editingProject, onClose, onSav
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         const trimmedName = name.trim()
-        const ageError = validateAgeRange(minAge, maxAge)
+        const ageError = preserveAgeRange ? '' : validateAgeRange(minAge, maxAge)
 
         let hasError = false
         if (!trimmedName) {
@@ -240,6 +248,8 @@ export default function NewProjectModal({ isOpen, editingProject, onClose, onSav
             purpose,
             description: description.trim(),
             hashtags: [...new Set([...hashtags, ...hashtagInput.split(/[\s,]+/).filter(Boolean).map(t => t.startsWith('#') ? t : `#${t}`)])],
+            preserveAgeRange,
+            preserveGender,
             minAge,
             maxAge,
             gender,
@@ -389,6 +399,7 @@ export default function NewProjectModal({ isOpen, editingProject, onClose, onSav
                                         maxLength={2}
                                         value={minAge ?? ''}
                                         onChange={e => {
+                                            setAgeEdited(true)
                                             const digits = sanitizeAgeDigits(e.target.value)
                                             setMinAge(digits === '' ? null : Number.parseInt(digits, 10))
                                             if (ageRangeError) setAgeRangeError('')
@@ -410,6 +421,7 @@ export default function NewProjectModal({ isOpen, editingProject, onClose, onSav
                                         maxLength={2}
                                         value={maxAge ?? ''}
                                         onChange={e => {
+                                            setAgeEdited(true)
                                             const digits = sanitizeAgeDigits(e.target.value)
                                             setMaxAge(digits === '' ? null : Number.parseInt(digits, 10))
                                             if (ageRangeError) setAgeRangeError('')
@@ -422,6 +434,7 @@ export default function NewProjectModal({ isOpen, editingProject, onClose, onSav
                                         }`}
                                     />
                                 </div>
+                                {preserveAgeRange && <p className="mt-1 text-xs text-muted-text">現在の設定: {editingProject?.existingTargeting?.ageRange || "未設定"}（年齢を変更しない場合は維持されます）</p>}
                                 {ageRangeError && (
                                     <p id="pv-agerange-error" className="mt-1 text-xs font-semibold text-red-600 flex items-center gap-1">
                                         <AlertCircle className="w-3.5 h-3.5" /> {ageRangeError}
@@ -436,10 +449,11 @@ export default function NewProjectModal({ isOpen, editingProject, onClose, onSav
                                 </label>
                                 <select
                                     id="pv-gender"
-                                    value={gender}
-                                    onChange={e => setGender(e.target.value as Gender)}
+                                    value={preserveGender ? '__existing' : gender}
+                                    onChange={e => { setGenderEdited(true); setGender(e.target.value as Gender) }}
                                     className="w-full bg-surface border border-card-border rounded-lg px-4 py-2 focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 outline-none transition-all text-sm"
                                 >
+                                    {preserveGender && <option value={preserveGender ? '__existing' : gender}>現在の設定: {editingProject?.existingTargeting?.gender || "未設定"}</option>}
                                     {GENDER_OPTIONS.map(o => (
                                         <option key={o.value} value={o.value}>{o.label}</option>
                                     ))}

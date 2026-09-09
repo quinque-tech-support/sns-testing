@@ -28,3 +28,31 @@ describe('persisted project form validation', () => {
         expect(parseProjectForm({...form, logo}, 'owner')).not.toBeNull()
     })
 })
+
+describe('unchanged targeting on updates', () => {
+    test('omits targeting updates so stored legacy strings remain intact', () => {
+        const result = parseProjectForm({...form, minAge: null, maxAge: null,
+            preserveAgeRange: true, preserveGender: true}, 'owner', 'update')
+        expect(result).not.toBeNull()
+        for (const ageRange of ['18+', '20代', '', '20–35']) {
+            for (const gender of ['Female', '男女', '女性', '']) {
+                const original = {ageRange, gender}
+                const patch = Object.fromEntries(Object.entries(result!).filter(([, value]) => value !== undefined))
+                expect({...original, ...patch}).toMatchObject(original)
+            }
+        }
+    })
+    test('allows explicit replacement and explicit any gender', () => {
+        expect(parseProjectForm({...form, preserveAgeRange: false, preserveGender: false}, 'owner', 'update'))
+            .toMatchObject({ageRange: '20-35', gender: ''})
+    })
+    test('rejects partial or invalid replacement ages', () => {
+        for (const minAge of [null, 12, 35, 20.5]) {
+            expect(parseProjectForm({...form, minAge, preserveAgeRange: false}, 'owner', 'update')).toBeNull()
+        }
+    })
+    test('cannot bypass create validation with preservation flags', () => {
+        expect(parseProjectForm({...form, minAge: null, maxAge: null, preserveAgeRange: true}, 'owner')).toBeNull()
+        expect(parseProjectForm({...form, preserveGender: true}, 'owner')).toBeNull()
+    })
+})
