@@ -63,3 +63,35 @@ test('locked elements remain selectable but cannot move with keyboard',()=>{
  fireEvent.click(screen.getByRole('button'))
  expect(onMove).not.toHaveBeenCalled();expect(onSelect).toHaveBeenCalled()
 })
+
+test('resize survives capture loss and commits once on document release',()=>{
+ class TestPointerEvent extends MouseEvent {pointerId:number;constructor(type:string,init:PointerEventInit={}){super(type,init);this.pointerId=init.pointerId??1}}
+ const original=window.PointerEvent
+ Object.defineProperty(window,'PointerEvent',{configurable:true,value:TestPointerEvent})
+ try{
+  const onResize=jest.fn()
+  const {container}=render(<div data-slide-canvas><MovableElement selected onMove={jest.fn()} onResize={onResize}>Card</MovableElement></div>)
+  const canvas=container.firstElementChild!,card=screen.getByRole('button',{name:'Card'}),handle=screen.getByRole('button',{name:'Resize se'})
+  canvas.getBoundingClientRect=()=>rect(0,0,400,500);card.getBoundingClientRect=()=>rect(40,50,100,80)
+  handle.setPointerCapture=jest.fn();handle.hasPointerCapture=()=>false;handle.releasePointerCapture=jest.fn()
+  fireEvent.pointerDown(handle,{button:0,clientX:140,clientY:130,pointerId:7})
+  fireEvent.pointerMove(handle,{clientX:160,clientY:150,pointerId:7})
+  fireEvent.lostPointerCapture(handle,{pointerId:7})
+  fireEvent.pointerMove(document,{clientX:180,clientY:170,pointerId:7})
+  fireEvent.pointerUp(document,{pointerId:7})
+  fireEvent.lostPointerCapture(handle,{pointerId:7})
+  expect(onResize).toHaveBeenCalledTimes(1)
+  expect(onResize).toHaveBeenLastCalledWith({width:35,height:30},{x:0,y:0})
+  card.getBoundingClientRect=()=>rect(40,50,140,120)
+  fireEvent.pointerDown(handle,{button:0,clientX:180,clientY:170,pointerId:8})
+  fireEvent.pointerMove(document,{clientX:200,clientY:190,pointerId:8})
+  fireEvent.pointerUp(document,{pointerId:8})
+  expect(onResize).toHaveBeenCalledTimes(2)
+  expect(onResize).toHaveBeenLastCalledWith({width:40,height:35},{x:0,y:0})
+  fireEvent.pointerDown(handle,{button:0,clientX:180,clientY:170,pointerId:9})
+  fireEvent.pointerMove(document,{clientX:220,clientY:210,pointerId:9})
+  fireEvent.pointerCancel(document,{pointerId:9})
+  fireEvent.pointerUp(document,{pointerId:9})
+  expect(onResize).toHaveBeenCalledTimes(2)
+ }finally{Object.defineProperty(window,'PointerEvent',{configurable:true,value:original})}
+})
